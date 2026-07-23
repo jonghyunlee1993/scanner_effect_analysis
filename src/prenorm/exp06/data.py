@@ -14,6 +14,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset, Sampler
 
 from prenorm.data.transforms import rgb_to_tensor, tuple_geometric_aug
+from prenorm.data.identity import INTERNAL_LATTICE_ID, EXTERNAL_S60_LATTICE_ID
 from utils import store
 
 
@@ -52,12 +53,12 @@ class BalancedPairDataset(Dataset):
         self._rng = None
         self.records: list[dict] = []
         sources = {
-            "gt450": (internal, str(cfg.paths.internal_store)),
-            "versa": (internal, str(cfg.paths.internal_store)),
-            "s60": (s60, str(cfg.paths.s60_store)),
+            "gt450": (internal, str(cfg.paths.internal_store), INTERNAL_LATTICE_ID),
+            "versa": (internal, str(cfg.paths.internal_store), INTERNAL_LATTICE_ID),
+            "s60": (s60, str(cfg.paths.s60_store), EXTERNAL_S60_LATTICE_ID),
         }
         for scanner in cfg.target_scanners:
-            frame, store_dir = sources[str(scanner)]
+            frame, store_dir, lattice_id = sources[str(scanner)]
             frame = frame[frame["split"] == split]
             pair_ok = (
                 frame["present_at2"].astype(bool)
@@ -68,6 +69,7 @@ class BalancedPairDataset(Dataset):
             for row in frame[pair_ok].sort_values(["slide_id", "tile_id"]).to_dict("records"):
                 self.records.append({
                     "scanner": str(scanner),
+                    "lattice_id": lattice_id,
                     "store_dir": store_dir,
                     "slide_id": str(row["slide_id"]),
                     "tuple_id": int(row["tuple_id"]),
@@ -138,7 +140,7 @@ class BalancedPairDataset(Dataset):
             "source": rgb_to_tensor(source),
             "reference": rgb_to_tensor(reference),
             **{key: row[key] for key in (
-                "scanner", "slide_id", "tuple_id", "tile_id", "x", "y",
+                "scanner", "lattice_id", "slide_id", "tuple_id", "tile_id", "x", "y",
                 "tissue_density", "q_reg"
             )},
         }
@@ -221,9 +223,12 @@ class BalancedScannerBatchSampler(Sampler[list[int]]):
 def collate_pair_batch(batch, context: int):
     context_items, query_items = batch[:context], batch[context:]
     scanners = {item["scanner"] for item in batch}
+    lattices = {item["lattice_id"] for item in batch}
     slides = {item["slide_id"] for item in batch}
-    if len(scanners) != 1 or len(slides) != 1:
-        raise ValueError("an Exp-06 batch must contain one scanner and one slide")
+    if len(scanners) != 1 or len(lattices) != 1 or len(slides) != 1:
+        raise ValueError(
+            "an Exp-06 batch must contain one scanner, one lattice, and one slide"
+        )
     return {
         "context_source": torch.stack([item["source"] for item in context_items]),
         "context_mask": torch.ones(len(context_items), dtype=torch.bool),
@@ -231,6 +236,7 @@ def collate_pair_batch(batch, context: int):
         "reference": torch.stack([item["reference"] for item in query_items]),
         "q_reg": torch.tensor([item["q_reg"] for item in query_items], dtype=torch.float32),
         "scanner": next(iter(scanners)),
+        "lattice_id": next(iter(lattices)),
         "slide_id": next(iter(slides)),
         "tuple_id": torch.tensor([item["tuple_id"] for item in query_items]),
         "tile_id": torch.tensor([item["tile_id"] for item in query_items]),

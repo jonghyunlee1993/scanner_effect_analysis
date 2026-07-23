@@ -1,5 +1,14 @@
 import torch
+import numpy as np
 
+from eval_exp07_uni_bands import range_audit, variants as band_variants
+from prenorm.data.identity import (
+    EXTERNAL_S60_LATTICE_ID,
+    INTERNAL_LATTICE_ID,
+    LocationKey,
+    location_key,
+    matched_indices_by_lattice,
+)
 from prenorm.exp06.frequency import FixedLaplacianPyramid
 from prenorm.exp07.projection import (
     scalar_range_alpha,
@@ -108,3 +117,76 @@ def test_exp07_local_projection_retains_at_least_scalar_efficacy():
     # Local projection must not do worse than the global scalar, and here should
     # do meaningfully better because only the saturated corner needs backing off.
     assert local_mae <= scalar_mae + 1e-4
+
+
+def test_location_key_namespaces_independent_lattices():
+    internal = {
+        "lattice_id": INTERNAL_LATTICE_ID,
+        "slide_id": "8-12_14",
+        "tuple_id": 7,
+    }
+    external = {
+        "lattice_id": EXTERNAL_S60_LATTICE_ID,
+        "slide_id": "8-12_14",
+        "tuple_id": 7,
+    }
+    assert location_key(internal) != location_key(external)
+    assert location_key(internal).group_token() != location_key(external).group_token()
+
+
+def test_location_key_requires_lattice_identity():
+    try:
+        location_key({"slide_id": "8-12_14", "tuple_id": 7})
+    except ValueError as error:
+        assert "lattice_id" in str(error)
+    else:
+        raise AssertionError("missing lattice_id must fail closed")
+
+
+def test_matched_indices_are_balanced_within_each_lattice():
+    records = [
+        {"scanner": "gt450", "lattice_id": INTERNAL_LATTICE_ID,
+         "slide_id": "s", "tuple_id": 1},
+        {"scanner": "gt450", "lattice_id": INTERNAL_LATTICE_ID,
+         "slide_id": "s", "tuple_id": 2},
+        {"scanner": "versa", "lattice_id": INTERNAL_LATTICE_ID,
+         "slide_id": "s", "tuple_id": 2},
+        {"scanner": "versa", "lattice_id": INTERNAL_LATTICE_ID,
+         "slide_id": "s", "tuple_id": 3},
+        {"scanner": "s60", "lattice_id": EXTERNAL_S60_LATTICE_ID,
+         "slide_id": "s", "tuple_id": 2},
+        {"scanner": "s60", "lattice_id": EXTERNAL_S60_LATTICE_ID,
+         "slide_id": "s", "tuple_id": 3},
+    ]
+    selected = matched_indices_by_lattice(
+        records, ("gt450", "versa", "s60"), None, np.random.default_rng(0)
+    )
+    internal = selected[INTERNAL_LATTICE_ID]
+    external = selected[EXTERNAL_S60_LATTICE_ID]
+    assert internal["keys"] == [LocationKey(INTERNAL_LATTICE_ID, "s", 2)]
+    assert len(internal["indices"]["gt450"]) == len(internal["indices"]["versa"]) == 1
+    assert [key.tuple_id for key in external["keys"]] == [2, 3]
+
+
+def test_band_full_oracle_is_the_exact_paired_reference():
+    torch.manual_seed(7)
+    pyramid = FixedLaplacianPyramid(3)
+    source = torch.rand(2, 3, 32, 32) * 2 - 1
+    reference = torch.rand(2, 3, 32, 32) * 2 - 1
+    affine = torch.zeros(4, 3)
+    affine[:3] = torch.eye(3)
+    generated = band_variants(
+        pyramid, source, reference, affine, steps=2
+    )
+    assert "both_oracle" not in generated
+    assert "corr_low_at2_high" in generated
+    assert torch.equal(generated["full_oracle"], reference)
+
+
+def test_range_audit_reports_pre_clamp_violations_per_image():
+    images = torch.zeros(2, 3, 2, 2)
+    images[0, 0, 0, 0] = 1.25
+    images[0, 1, 0, 0] = -1.10
+    audit = range_audit(images)
+    np.testing.assert_allclose(audit["pixel_fraction"], [2 / 12, 0])
+    np.testing.assert_allclose(audit["max_excess"], [0.25, 0])

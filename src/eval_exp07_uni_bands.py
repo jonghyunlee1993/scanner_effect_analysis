@@ -2,16 +2,17 @@
 foundation model reads, and can correcting it buy UNI invariance?
 
 The registered AT2 pair lets us TRANSPLANT the true AT2 detail bands at the same
-location -- an oracle high-frequency correction with zero hallucination -- and
-measure the ceiling before investing in any generative synthesis.  We embed a
-spectrum of band manipulations with UNI and report scanner separability and
-paired cosine to AT2 for each:
+location with zero coefficient-estimation error.  Mixing low and high bands from
+different scanners can nevertheless leave the valid image range, so every
+variant is audited before UNI's defensive clamp.  We embed the manipulations and
+report scanner separability and paired cosine to AT2 for each:
 
   raw          source unchanged
   low_corr     our low-band affine+local correction, source detail copied (Track-1)
   low_oracle   AT2 low transplanted, source detail kept  (perfect low fix; control)
-  hi_oracle    source low kept, AT2 detail transplanted   (perfect high fix; PROBE 1)
-  both_oracle  our low correction + AT2 detail            (both tracks)
+  hi_oracle    source low kept, AT2 detail transplanted   (paired-band probe)
+  corr_low_at2_high  our low correction + AT2 detail      (hybrid, not full oracle)
+  full_oracle  exact paired AT2 image                      (positive control)
   atten{λ}     our low correction, source detail scaled by λ in {0.75,0.5,0.25,0}
                (deterministic blur frontier; λ=0 = pure low band)
 
@@ -34,6 +35,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from prenorm.exp06.data import BalancedPairDataset
 from prenorm.exp06.frequency import FixedLaplacianPyramid
 from prenorm.exp07.projection import local_range_project
+from prenorm.data.identity import (
+    lattice_task_name,
+    location_key,
+    matched_indices_by_lattice,
+)
 from utils.config import load_config
 from eval_report import load_uni, embed_uni, scanner_probe
 
@@ -58,11 +64,25 @@ def variants(pyramid, source, reference, affine, steps):
         "low_corr": pyramid.reconstruct(low_c, bands_s),
         "low_oracle": pyramid.reconstruct(low_a, bands_s),
         "hi_oracle": pyramid.reconstruct(low_s, bands_a),
-        "both_oracle": pyramid.reconstruct(low_c, bands_a),
+        "corr_low_at2_high": pyramid.reconstruct(low_c, bands_a),
+        # Exact reference, intentionally bypassing a decompose/reconstruct
+        # round-trip. This must collapse a properly paired scanner probe to chance.
+        "full_oracle": reference,
     }
     for lam in ATTEN:
         out[f"atten{lam:.2f}"] = pyramid.reconstruct(low_c, [lam * b for b in bands_s])
     return out
+
+
+@torch.no_grad()
+def range_audit(images, tolerance=1e-6):
+    """Per-image range violations before UNI's defensive input clamp."""
+    excess = (images.abs() - 1.0).clamp_min(0)
+    outside = excess > tolerance
+    return {
+        "pixel_fraction": outside.float().flatten(1).mean(1).cpu().numpy(),
+        "max_excess": excess.flatten(1).amax(1).cpu().numpy(),
+    }
 
 
 def main(argv=None):
@@ -81,37 +101,56 @@ def main(argv=None):
     pyramid = FixedLaplacianPyramid(int(cfg.pyramid.levels))
     dataset = BalancedPairDataset(cfg, args.split, False)
     rng = np.random.default_rng(args.seed)
+    scanners = [str(s) for s in cfg.target_scanners]
+    selections = matched_indices_by_lattice(
+        dataset.records, scanners, args.max_per_scanner, rng
+    )
     model, size, mean, std = load_uni(device)
 
-    scanners = [str(s) for s in cfg.target_scanners]
     baseline = {s: torch.tensor(json.loads(
         (Path(args.baselines) / f"{s}.json").read_text())["affine_matrix_with_bias"],
         dtype=torch.float32) for s in scanners}
-    names = ["raw", "low_corr", "low_oracle", "hi_oracle", "both_oracle"] + \
-            [f"atten{lam:.2f}" for lam in ATTEN]
+    names = [
+        "raw",
+        "low_corr",
+        "low_oracle",
+        "hi_oracle",
+        "corr_low_at2_high",
+        "full_oracle",
+        *(f"atten{lam:.2f}" for lam in ATTEN),
+    ]
 
     def emb(images):
         return embed_uni(model, images, size, mean, std, device,
                          batch_size=args.batch_size).numpy()
 
     store = {s: {n: [] for n in names + ["at2", "loc"]} for s in scanners}
-    loc_ids = {}
-    for scanner in scanners:
-        idx = [i for i, r in enumerate(dataset.records) if r["scanner"] == scanner]
-        if len(idx) > args.max_per_scanner:
-            idx = sorted(rng.choice(idx, args.max_per_scanner, replace=False).tolist())
-        for start in range(0, len(idx), args.batch_size):
-            items = [dataset[i] for i in idx[start:start + args.batch_size]]
-            source = torch.stack([it["source"] for it in items])
-            reference = torch.stack([it["reference"] for it in items])
-            v = variants(pyramid, source, reference, baseline[scanner], args.steps)
-            for n in names:
-                store[scanner][n].append(emb(v[n]))
-            store[scanner]["at2"].append(emb(reference))
-            for it in items:
-                key = (it["slide_id"], int(it["tuple_id"]))
-                loc_ids.setdefault(key, len(loc_ids))
-                store[scanner]["loc"].append(loc_ids[key])
+    range_values = {
+        scanner: {
+            name: {"pixel_fraction": [], "max_excess": []}
+            for name in names
+        }
+        for scanner in scanners
+    }
+    for selection in selections.values():
+        for scanner in selection["scanners"]:
+            idx = selection["indices"][scanner]
+            for start in range(0, len(idx), args.batch_size):
+                items = [dataset[i] for i in idx[start:start + args.batch_size]]
+                source = torch.stack([it["source"] for it in items])
+                reference = torch.stack([it["reference"] for it in items])
+                generated = variants(
+                    pyramid, source, reference, baseline[scanner], args.steps
+                )
+                for name in names:
+                    audit = range_audit(generated[name])
+                    store[scanner][name].append(emb(generated[name]))
+                    for metric, values in audit.items():
+                        range_values[scanner][name][metric].extend(values.tolist())
+                store[scanner]["at2"].append(emb(reference))
+                store[scanner]["loc"].extend(
+                    location_key(item).group_token() for item in items
+                )
 
     for s in scanners:
         for n in names + ["at2"]:
@@ -123,39 +162,87 @@ def main(argv=None):
     paired = {n: {s: paired_cos(store[s][n], store[s]["at2"]) for s in scanners}
               for n in names}
 
-    def probe(name, classes):
-        X, y, g = [], [], []
-        for s in scanners:
-            if s not in classes:
-                continue
-            X.append(store[s][name]); y += [s] * len(store[s][name]); g += store[s]["loc"].tolist()
-        if "at2" in classes:
-            seen, aX, ag = set(), [], []
-            for s in scanners:
-                for e, l in zip(store[s]["at2"], store[s]["loc"]):
-                    if l in seen:
-                        continue
-                    seen.add(l); aX.append(e); ag.append(l)
-            X.append(np.asarray(aX)); y += ["at2"] * len(aX); g += ag
-        return scanner_probe(np.concatenate(X), np.asarray(y), np.asarray(g))
+    def probe(name, lattice_scanners):
+        X, y, groups = [], [], []
+        for scanner in lattice_scanners:
+            X.append(store[scanner][name])
+            y += [scanner] * len(store[scanner][name])
+            groups += store[scanner]["loc"].tolist()
+
+        seen, at2_embedding, at2_groups = set(), [], []
+        for scanner in lattice_scanners:
+            for embedding, group in zip(store[scanner]["at2"], store[scanner]["loc"]):
+                if group in seen:
+                    continue
+                seen.add(group)
+                at2_embedding.append(embedding)
+                at2_groups.append(group)
+        X.append(np.asarray(at2_embedding))
+        y += ["at2"] * len(at2_embedding)
+        groups += at2_groups
+        return scanner_probe(np.concatenate(X), np.asarray(y), np.asarray(groups))
 
     tasks = {}
-    for tname, classes in (("4class", ["at2"] + scanners), ("3class", scanners)):
-        tasks[tname] = {"chance": 1.0 / len(classes),
-                        **{n: probe(n, classes) for n in names}}
+    for lattice_id, selection in selections.items():
+        lattice_scanners = selection["scanners"]
+        task_name = lattice_task_name(lattice_id, lattice_scanners)
+        classes = ["at2", *lattice_scanners]
+        tasks[task_name] = {
+            "lattice_id": lattice_id,
+            "classes": classes,
+            "chance": 1.0 / len(classes),
+            "n_locations": len(selection["keys"]),
+            **{name: probe(name, lattice_scanners) for name in names},
+        }
 
-    report = {"split": args.split, "variants": names,
-              "paired_cosine_to_at2": paired, "probe": tasks}
+    range_report = {}
+    for scanner in scanners:
+        range_report[scanner] = {}
+        for name in names:
+            pixel_fraction = np.asarray(
+                range_values[scanner][name]["pixel_fraction"], dtype=np.float64
+            )
+            max_excess = np.asarray(
+                range_values[scanner][name]["max_excess"], dtype=np.float64
+            )
+            range_report[scanner][name] = {
+                "mean_pixel_fraction_outside": float(pixel_fraction.mean()),
+                "fraction_images_outside": float((pixel_fraction > 0).mean()),
+                "max_excess": float(max_excess.max()),
+            }
+
+    report = {
+        "split": args.split,
+        "variants": names,
+        "sample_identity": {
+            "location_key": ["lattice_id", "slide_id", "tuple_id"],
+            "cross_lattice_joint_probe": False,
+        },
+        "paired_cosine_to_at2": paired,
+        "probe": tasks,
+        "range_audit_pre_embedding_clamp": range_report,
+    }
     print("\n=== UNI scanner separability by band manipulation (lower = invariant) ===")
-    print(f"  {'variant':12s} {'4class':>7s} {'3class':>7s}   {'meanCosAT2':>10s}")
-    for n in names:
-        cos = float(np.mean([paired[n][s] for s in scanners]))
-        print(f"  {n:12s} {tasks['4class'][n]:7.3f} {tasks['3class'][n]:7.3f}   {cos:10.3f}")
-    print(f"  (chance 4class={tasks['4class']['chance']:.3f}  3class={tasks['3class']['chance']:.3f})")
+    header = "  " + "variant".ljust(22)
+    for task_name in tasks:
+        header += f" {task_name:>30s}"
+    header += "   meanCosAT2"
+    print(header)
+    for name in names:
+        row = f"  {name:22s}"
+        for task in tasks.values():
+            row += f" {task[name]:30.3f}"
+        cosine = float(np.mean([paired[name][scanner] for scanner in scanners]))
+        print(f"{row}   {cosine:10.3f}")
+    print("  chance: " + "  ".join(
+        f"{task_name}={task['chance']:.3f}" for task_name, task in tasks.items()
+    ))
 
     out_dir = Path(cfg.paths.repo) / "outputs" / "exp07_stage1"
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "uni_bands.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    (out_dir / "uni_bands.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n"
+    )
     print(f"\n[exp07-uni-bands] wrote {out_dir/'uni_bands.json'}")
 
 

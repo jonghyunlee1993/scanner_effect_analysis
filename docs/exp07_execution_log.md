@@ -1,9 +1,15 @@
 # Exp-07 실행 기록
 
-작성일: 2026-07-15
-현재 판정: **Stage 1B 완료; low-frequency affine 경계와 UNI band-oracle 결과 확보,
-cross-lattice sample identity 수정 후 핵심 probe 재산출 필요**
+작성일: 2026-07-15 (마지막 검증: 2026-07-23)
+현재 판정: **Stage 1B sample-identity 수정 및 lattice별 matched probe 재산출 완료**
 선행 계획: [`exp07_amortized_affine_residual_plan.md`](exp07_amortized_affine_residual_plan.md)
+
+> **2026-07-23 정정:** §6.3, §8.3, §8.5의 기존 joint scanner-probe 수치는
+> internal-v3와 external-S60 lattice를 `(slide_id, tuple_id)`만으로 합친 오류가 있어
+> 최종 근거로 사용하지 않는다. Paired cosine처럼 각 source와 자기 AT2 pair만 비교한 값은
+> 참고 가능하지만, scanner 간 비교는 아래 §9의 lattice별 matched 결과로 대체한다.
+> §8.1–8.2의 3-scanner fingerprint 분류와 그 예측에 의존한 closed-set/LOSO 수치도
+> lattice confounding을 제거하기 전까지 exploratory로만 취급한다.
 
 ## 1. 구현 산출물
 
@@ -156,6 +162,10 @@ scalar-projected corrected로 스캐너 분류 balanced accuracy 측정(slide sp
 | 13527178 | Stage-1B params (fingerprint→scanner) | COMPLETED |
 | 13527179/209 | Stage-1B viz (2-track panel) | COMPLETED (209 = 정규화 재렌더) |
 | 13527180 | Stage-1B UNI embedding | COMPLETED (GPU, HF offline) |
+| 14262927 | Identity-fixed low-band BACC | COMPLETED, lattice별 matched task |
+| 14262930 | Identity-fixed UNI embedding | COMPLETED, lattice별 matched task |
+| 14262931 | Identity-fixed UNI band audit | COMPLETED, full oracle + pre-clamp range |
+| 14262946 | 전체 regression suite | COMPLETED, 64 passed |
 
 ## 8. Stage-1B (2026-07-15, SLURM 13527178/180/209): zero-shot fingerprint + UNI + viz
 
@@ -243,3 +253,119 @@ registered AT2 pair로 **진짜 AT2 detail 밴드를 이식**(hallucination 0) =
 경로는 "두 밴드 동시 near-AT2 재생성" = 이미 no-go였던 최대-hallucination 전면 translation(pix2pix no-go,
 canonicalizer 0.99). 이는 별도 feature-level 영역. ⟹ **경계-규명(A) 논문을 더 강하게 뒷받침**: 이미지 단
 교정이 왜 PFM 불변을 못 사는지를 **주파수 분해 오라클로 정량 증명**.
+
+## 9. Sample identity 정정 및 재검증 (2026-07-23)
+
+### 9.1 오류와 수정
+
+Internal AT2/GT450/VERSA와 external AT2/S60는 서로 다른 물리 sampling
+lattice다. 그러나 기존 Exp-07 probe는 위치 key를 `(slide_id, tuple_id)`로만
+만들어 서로 다른 grid의 같은 정수 tuple을 같은 위치로 취급했다.
+
+실데이터 감사 결과 숫자 key는 train/val/test에서 각각 4,526/988/1,516개
+겹쳤지만, 해당 key의 `(x,y)`가 실제로 같은 경우는 **모든 split에서 0개**였다.
+따라서 joint 3/4-class probe는 scanner effect와 lattice/content sampling을
+분리할 수 없다.
+
+수정한 계약:
+
+- 모든 Exp-06/07 record에 `lattice_id`를 명시
+- location identity를 `(lattice_id, slide_id, tuple_id)`로 고정
+- internal-v3 `{AT2, GT450, VERSA}`와 external-S60 `{AT2, S60}`를 별도 task로 평가
+- 각 task에서 scanner들이 공유하는 물리 location의 교집합만 동일 개수로 선택
+- 이전 JSON은 `archived/2026-07-23_pre_identity_fix_exp07/`에 보존
+
+관련 구현은 `src/prenorm/data/identity.py`와
+`src/eval_exp07_{scanner_bacc,uni,uni_bands}.py`에 반영했다.
+핵심 테스트 14개와 전체 regression 64개가 모두 통과했다.
+
+### 9.2 Low-band scanner separability 재산출
+
+SLURM `14262927`에서 scalar range-safe affine correction을 동일 location에
+적용했다. Train+val은 lattice별 1,600 location, test는 800 location이며 각
+class count가 정확히 같다.
+
+| lattice task | chance | raw BACC | corrected BACC (P1) | transfer (P2) |
+|---|---:|---:|---:|---:|
+| internal-v3 `{AT2, GT450, VERSA}` | 0.333 | 0.813 | **0.556** | 0.396 |
+| external-S60 `{AT2, S60}` | 0.500 | 0.928 | **0.780** | 0.770 |
+
+저주파 affine correction은 두 lattice 모두 scanner separability를 실제로
+낮추지만 chance까지 제거하지는 않는다. Internal에서는 감소 폭이 0.257로
+크고, external S60에서는 0.148에 그친다. 이 S60 결과는 local projection이
+아닌 scalar projection이므로 §6.1에서 확인한 correction suppression을
+포함한 보수적 수치다.
+
+### 9.3 UNI embedding 재산출
+
+SLURM `14262930`에서 test location을 lattice별 300개로 맞추어 재평가했다.
+Scanner 간 sampling content가 같아졌지만 기존 paired-cosine 결론은 거의
+변하지 않았다.
+
+| scanner | raw cosine→AT2 | local low correction | estimated local |
+|---|---:|---:|---:|
+| GT450 | 0.841 | **0.759** | 0.759 |
+| VERSA | 0.874 | 0.871 | 0.871 |
+| S60 | 0.763 | **0.743** | 0.743 |
+
+| lattice task | chance | raw | local | estimated local |
+|---|---:|---:|---:|---:|
+| internal-v3 `{AT2, GT450, VERSA}` | 0.333 | 0.998 | 0.998 | 0.998 |
+| external-S60 `{AT2, S60}` | 0.500 | 0.998 | 1.000 | 1.000 |
+
+따라서 **저주파 교정은 UNI representation alignment를 개선하지 않는다**는
+핵심 결과는 identity 정정 후에도 유지된다. GT450과 S60에서는 오히려 자기
+AT2 pair와의 cosine이 낮아진다. 이 결과는 저주파 이미지 correction의
+실패가 아니라, 저주파 시각 정규화와 PFM invariance가 서로 다른 목적임을
+보여준다.
+
+### 9.4 Band manipulation, exact oracle, range audit
+
+SLURM `14262931`에서 기존 `both_oracle`을
+`corr_low_at2_high`로 정확히 다시 명명하고, paired AT2 원본 자체인
+`full_oracle`을 positive control로 추가했다.
+
+| variant | internal BACC | external BACC | mean cosine→AT2 | 입력 range |
+|---|---:|---:|---:|---|
+| raw | 0.998 | 0.998 | 0.826 | valid |
+| low_corr | 0.998 | 1.000 | 0.791 | valid |
+| low_oracle | 0.998 | 1.000 | 0.803 | **invalid 일부** |
+| hi_oracle | 0.979 | 0.985 | 0.910 | **invalid 다수** |
+| corr_low_at2_high | 0.691 | 0.860 | 0.966 | **invalid 일부** |
+| **full_oracle** | **0.333** | **0.500** | **1.000** | valid |
+| atten0.75 | 0.997 | 1.000 | 0.750 | valid |
+| atten0.50 | 0.998 | 0.998 | 0.670 | valid |
+| atten0.25 | 0.994 | 1.000 | 0.510 | valid |
+| atten0.00 | 0.837 | 1.000 | 0.023 | valid |
+
+Exact full oracle은 두 task에서 각각 chance와 정확히 같고 cosine 1.0이므로
+새 grouping과 probe가 올바르게 작동한다. 동시에 pre-embedding range
+audit가 기존 band-oracle 해석의 중요한 한계를 드러냈다.
+
+- `hi_oracle`은 scanner별 이미지의 99.7–100%가 range를 벗어나며 평균
+  7.99–13.27% pixel이 범위 밖이다.
+- `corr_low_at2_high`도 95.3–100% 이미지가 범위를 벗어난다. 평균 위반
+  pixel은 GT450 0.034%, VERSA 0.249%, S60 2.051%다.
+- UNI evaluator는 입력을 방어적으로 clamp하므로 이 두 score는
+  “정확한 paired coefficient + incompatible band composition + clipping”의
+  결과다. 이를 clean high-frequency causal oracle로 부르면 안 된다.
+- 반대로 attenuation frontier는 전부 range-valid다. Detail을 75→0%로
+  줄이면 AT2 cosine은 0.750→0.023으로 붕괴하지만 scanner BACC는 거의
+  그대로다. 특히 external S60는 detail을 완전히 제거해도 BACC 1.000이다.
+
+정정된 결론은 “고주파만이 scanner signature의 유일한 원인”이 아니다.
+**UNI는 저주파 또는 고주파 중 어느 한쪽에 scanner-specific residual이
+남아 있어도 거의 완벽히 분리하며, 단순 blur는 content만 파괴하고
+alignment를 만들지 못한다.** Paired high band를 다른 low band와 조합하면
+물리 범위 자체가 쉽게 깨진다는 사실은 고주파 복원의 hallucination/validity
+문제를 직접 보여준다.
+
+### 9.5 남은 identity debt
+
+`eval_exp07_scanner_params.py`는 slide-level fingerprint를 GT450/VERSA/S60
+3-class로 분류한다. 직접 location join을 하지는 않지만 S60만 다른 grid에서
+sampling되므로 scanner와 lattice를 분리할 수 없다. 따라서 §8.1의
+sharpness/color BACC와 이를 사용한 §8.2의 predicted-affine 결과는 core
+finding에서 제외한다. 다음 재설계는 internal GT450-vs-VERSA와 external
+AT2-vs-S60를 별도 matched task로 만들고, feature-level correction baseline과
+함께 평가해야 한다.

@@ -9,7 +9,8 @@ of each source tile (only the low band changes; copied detail is identical),
 embed them plus the paired AT2 tile with UNI, and report per rendering variant:
 
   * paired cosine to the tile's OWN registered AT2 (higher = closer),
-  * scanner_probe balanced accuracy (4-class {at2,gt450,versa,s60}, 3-class).
+  * scanner_probe balanced accuracy separately on each physical sampling lattice:
+    internal_v3 {at2,gt450,versa} and external_s60_v1 {at2,s60}.
 
 Variants: raw, local (oracle contract-A affine + local projection), and -- if
 ``--estimated-affines`` is given -- est_local (per-(scanner,slide) fingerprint
@@ -31,6 +32,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from prenorm.exp06.data import BalancedPairDataset
 from prenorm.exp06.frequency import FixedLaplacianPyramid
 from prenorm.exp07.projection import local_range_project
+from prenorm.data.identity import (
+    lattice_task_name,
+    location_key,
+    matched_indices_by_lattice,
+)
 from utils.config import load_config
 from eval_report import load_uni, embed_uni, scanner_probe
 
@@ -70,9 +76,12 @@ def main(argv=None):
     pyramid = FixedLaplacianPyramid(int(cfg.pyramid.levels))
     dataset = BalancedPairDataset(cfg, args.split, False)
     rng = np.random.default_rng(args.seed)
+    scanners = [str(s) for s in cfg.target_scanners]
+    selections = matched_indices_by_lattice(
+        dataset.records, scanners, args.max_per_scanner, rng
+    )
     model, size, mean, std = load_uni(device)
 
-    scanners = [str(s) for s in cfg.target_scanners]
     baseline = {s: torch.tensor(json.loads(
         (Path(args.baselines) / f"{s}.json").read_text())["affine_matrix_with_bias"],
         dtype=torch.float32) for s in scanners}
@@ -89,30 +98,37 @@ def main(argv=None):
     for s in scanners:
         store[s]["at2"] = []
         store[s]["loc"] = []
-    loc_ids = {}
 
-    for scanner in scanners:
-        idx = [i for i, r in enumerate(dataset.records) if r["scanner"] == scanner]
-        if len(idx) > args.max_per_scanner:
-            idx = sorted(rng.choice(idx, args.max_per_scanner, replace=False).tolist())
-        for start in range(0, len(idx), args.batch_size):
-            items = [dataset[i] for i in idx[start:start + args.batch_size]]
-            source = torch.stack([it["source"] for it in items])
-            reference = torch.stack([it["reference"] for it in items])
-            store[scanner]["raw"].append(emb(source))
-            store[scanner]["local"].append(
-                emb(corrected_output(pyramid, source, baseline[scanner], args.steps)))
-            if est:
-                per_item = torch.stack([
-                    torch.tensor(est[scanner][it["slide_id"]], dtype=torch.float32)
-                    for it in items])
-                store[scanner]["est_local"].append(
-                    emb(corrected_output(pyramid, source, per_item, args.steps)))
-            store[scanner]["at2"].append(emb(reference))
-            for it in items:
-                key = (it["slide_id"], int(it["tuple_id"]))
-                loc_ids.setdefault(key, len(loc_ids))
-                store[scanner]["loc"].append(loc_ids[key])
+    for selection in selections.values():
+        for scanner in selection["scanners"]:
+            idx = selection["indices"][scanner]
+            for start in range(0, len(idx), args.batch_size):
+                items = [dataset[i] for i in idx[start:start + args.batch_size]]
+                source = torch.stack([it["source"] for it in items])
+                reference = torch.stack([it["reference"] for it in items])
+                store[scanner]["raw"].append(emb(source))
+                store[scanner]["local"].append(
+                    emb(
+                        corrected_output(
+                            pyramid, source, baseline[scanner], args.steps
+                        )
+                    )
+                )
+                if est:
+                    per_item = torch.stack([
+                        torch.tensor(est[scanner][it["slide_id"]], dtype=torch.float32)
+                        for it in items])
+                    store[scanner]["est_local"].append(
+                        emb(
+                            corrected_output(
+                                pyramid, source, per_item, args.steps
+                            )
+                        )
+                    )
+                store[scanner]["at2"].append(emb(reference))
+                store[scanner]["loc"].extend(
+                    location_key(item).group_token() for item in items
+                )
 
     for s in scanners:
         for v in variants + ["at2"]:
@@ -124,40 +140,68 @@ def main(argv=None):
     paired = {s: {v: paired_cos(store[s][v], store[s]["at2"]) for v in variants}
               for s in scanners}
 
-    def probe(kind, classes):
-        X, y, g = [], [], []
-        for s in scanners:
-            if s not in classes:
-                continue
-            X.append(store[s][kind]); y += [s] * len(store[s][kind]); g += store[s]["loc"].tolist()
-        if "at2" in classes:
-            seen, aX, ag = set(), [], []
-            for s in scanners:
-                for e, l in zip(store[s]["at2"], store[s]["loc"]):
-                    if l in seen:
-                        continue
-                    seen.add(l); aX.append(e); ag.append(l)
-            X.append(np.asarray(aX)); y += ["at2"] * len(aX); g += ag
-        return scanner_probe(np.concatenate(X), np.asarray(y), np.asarray(g))
+    def probe(kind, lattice_scanners):
+        X, y, groups = [], [], []
+        for scanner in lattice_scanners:
+            X.append(store[scanner][kind])
+            y += [scanner] * len(store[scanner][kind])
+            groups += store[scanner]["loc"].tolist()
+
+        seen, at2_embedding, at2_groups = set(), [], []
+        for scanner in lattice_scanners:
+            for embedding, group in zip(store[scanner]["at2"], store[scanner]["loc"]):
+                if group in seen:
+                    continue
+                seen.add(group)
+                at2_embedding.append(embedding)
+                at2_groups.append(group)
+        X.append(np.asarray(at2_embedding))
+        y += ["at2"] * len(at2_embedding)
+        groups += at2_groups
+        return scanner_probe(np.concatenate(X), np.asarray(y), np.asarray(groups))
 
     tasks = {}
-    for name, classes in (("4class", ["at2"] + scanners), ("3class", scanners)):
-        tasks[name] = {"chance": 1.0 / len(classes),
-                       **{v: probe(v, classes) for v in variants}}
+    for lattice_id, selection in selections.items():
+        lattice_scanners = selection["scanners"]
+        task_name = lattice_task_name(lattice_id, lattice_scanners)
+        classes = ["at2", *lattice_scanners]
+        tasks[task_name] = {
+            "lattice_id": lattice_id,
+            "classes": classes,
+            "chance": 1.0 / len(classes),
+            "n_locations": len(selection["keys"]),
+            **{
+                variant: probe(variant, lattice_scanners)
+                for variant in variants
+            },
+        }
 
-    report = {"split": args.split, "variants": variants,
-              "paired_cosine_to_at2": paired, "probe": tasks}
+    report = {
+        "split": args.split,
+        "variants": variants,
+        "sample_identity": {
+            "location_key": ["lattice_id", "slide_id", "tuple_id"],
+            "cross_lattice_joint_probe": False,
+        },
+        "paired_cosine_to_at2": paired,
+        "probe": tasks,
+    }
     print("\n=== UNI paired cosine to own AT2 (higher = closer) ===")
     for s in scanners:
         print(f"  {s:6s}  " + "  ".join(f"{v}={paired[s][v]:.3f}" for v in variants))
     print("\n=== UNI scanner separability (balanced acc; lower = more invariant) ===")
-    for name, t in tasks.items():
-        print(f"  {name} (chance {t['chance']:.3f}): "
-              + "  ".join(f"{v}={t[v]:.3f}" for v in variants))
+    for name, task in tasks.items():
+        values = "  ".join(f"{v}={task[v]:.3f}" for v in variants)
+        print(
+            f"  {name} (n={task['n_locations']}, chance {task['chance']:.3f}): "
+            f"{values}"
+        )
 
     out_dir = Path(cfg.paths.repo) / "outputs" / "exp07_stage1"
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "uni_embedding.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    (out_dir / "uni_embedding.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n"
+    )
     print(f"\n[exp07-uni] wrote {out_dir/'uni_embedding.json'}")
 
 

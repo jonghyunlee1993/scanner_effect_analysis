@@ -1,5 +1,5 @@
 #!/bin/bash
-# Full CPU regression suite for active v4 plus reusable v3/preprocessing code.
+# Full CPU regression suite for the active scanner-spectrum analysis code.
 #SBATCH --job-name=prenorm_tests
 #SBATCH --partition=defq
 #SBATCH --cpus-per-task=2
