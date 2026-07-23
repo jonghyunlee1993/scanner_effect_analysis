@@ -1,0 +1,29 @@
+# Main 10-slide v3 preprocessing experiment.
+_base_: ../_base/phase_0_preprocessing.yaml
+
+paths:
+  output_store: ${paths.repo}/data/prenorm_store_10slide_v3
+  output_index: ${paths.repo}/data/index/index_10slide_v3.parquet
+  qc_dir: ${paths.repo}/data/qc_10slide_v3
+  stain_reference: ${paths.repo}/data/at2_stain_reference_10slide_v3.npz
+
+align:
+  max_pad: 0.01
+  max_residual_shift: 8.0
+
+budget:
+  grid_fraction: 0.30
+  tiles_per_slide: 1500
+  high_ncc_quota: 0.0
+
+# Six train, two validation, and two test slides.  The selection spans all
+# three source slide-id groups represented in the original 50-slide split.
+split:
+  policy: explicit
+  slides:
+    train: ["12.5_4", "12.5_17", "2-8_1", "2-8_14", "8-12_5", "8-12_9"]
+    val: ["12.5_27", "2-8_3"]
+    test: ["8-12_14", "2-8_2"]
+
+runtime:
+  num_workers: 4

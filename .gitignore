@@ -1,0 +1,49 @@
+# Codex / agent-local metadata
+/.agents/
+/.claude/
+/.calude/
+/.codex/
+/.git-data/
+
+# Python and test caches
+__pycache__/
+*.py[cod]
+*.pyo
+/.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Environments and local configuration
+.env
+.env.*
+.venv/
+venv/
+env/
+
+# Large local data and generated artifacts
+/data/
+/outputs/
+/logs/
+/wandb/
+/archived/
+
+# Model and experiment artifacts that may be emitted outside outputs/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+slurm-*.out
+
+# Temporary and editor files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+.idea/
+.vscode/
+.ipynb_checkpoints/

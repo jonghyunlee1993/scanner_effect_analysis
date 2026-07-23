@@ -1,0 +1,29 @@
+# Complete registered cohort: all 109 slides currently present in the data root.
+_base_: ../_base/phase_0_preprocessing.yaml
+
+paths:
+  output_store: ${paths.repo}/data/prenorm_store_109slide_v3
+  output_index: ${paths.repo}/data/index/index_109slide_v3.parquet
+  qc_dir: ${paths.repo}/data/qc_109slide_v3
+  stain_reference: ${paths.repo}/data/at2_stain_reference_109slide_v3.npz
+
+align:
+  max_pad: 0.01
+  max_residual_shift: 8.0
+
+budget:
+  grid_fraction: 0.30
+  tiles_per_slide: 1500
+  high_ncc_quota: 0.0
+
+# Deterministic slide-level 87/11/11 split (nearest exact 8:1:1 allocation for 109 slides).
+split:
+  policy: by_slide
+  train: 0.8
+  val: 0.1
+  test: 0.1
+  seed: 1234
+  slides: null
+
+runtime:
+  num_workers: 4

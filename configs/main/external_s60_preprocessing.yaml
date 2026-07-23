@@ -1,0 +1,39 @@
+# AT2/S60 external-validation store.  This never contributes to training.
+_base_: ../_base/phase_0_preprocessing.yaml
+
+paths:
+  # Unlike the OME-TIFFs in registered_ref_at2, this cohort has S60 warped
+  # into the AT2 canvas.  Coordinates are therefore directly comparable.
+  data_root: /mnt/isilon/oldridge_lab/batch_effects/pan_normal/registered_ref_at2_all
+  registry_csv: ${paths.data_root}/registered_images/qc_registered_eval/registered_pair_summary.csv
+  curated_coords: ${paths.data_root}/registered_curated_features/{scanner}/20x_256px_0px_overlap/patches/{slide_id}_patches.h5
+  output_store: ${paths.repo}/data/external_s60_10slide_store_v1
+  output_index: ${paths.repo}/data/index/external_s60_10slide_index_v1.parquet
+  qc_dir: ${paths.repo}/data/qc_external_s60_10slide_v1
+
+scanners: [at2, s60]
+reference_scanner: at2
+
+# S60 has no curated-coordinate HDF5.  Start from the AT2 lattice and perform
+# the local slide-level offset and patch-level refinement in s03.
+grid:
+  intersect_scanners: false
+
+align:
+  max_pad: 0.01
+  max_residual_shift: 8.0
+
+budget:
+  grid_fraction: null
+  tiles_per_slide: 1500
+  oversample: 2.0
+
+split:
+  policy: explicit
+  slides:
+    train: []
+    val: []
+    test: ["12.5_4", "12.5_17", "2-8_1", "2-8_14", "8-12_5", "8-12_9", "12.5_27", "2-8_3", "8-12_14", "2-8_2"]
+
+runtime:
+  num_workers: 1

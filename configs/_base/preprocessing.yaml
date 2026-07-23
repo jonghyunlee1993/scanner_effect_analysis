@@ -1,0 +1,66 @@
+# Shared registered-RGB preprocessing contract. This intentionally contains no
+# model, loss, trainer, or W&B defaults.
+design_version: 3
+
+paths:
+  repo: /mnt/isilon/oldridge_lab/leej/prenorm
+  data_root: /mnt/isilon/oldridge_lab/batch_effects/pan_normal/registered_ref_at2
+  registry_csv: ${paths.data_root}/registered_images/qc_registered_eval/registered_pair_summary.csv
+  curated_coords: ${paths.data_root}/registered_curated_features/{scanner}/20x_256px_0px_overlap/patches/{slide_id}_patches.h5
+  output_store: ${paths.repo}/data/prenorm_store_50slide_v3
+  output_index: ${paths.repo}/data/index/index_50slide_v3.parquet
+  stain_reference: ${paths.repo}/data/at2_stain_reference_50slide_v3.npz
+  qc_dir: ${paths.repo}/data/qc_50slide_v3
+
+scanners: [at2, gt450, versa, akoya]
+reference_scanner: at2
+
+run:
+  name: phase_0_preprocessing
+
+patch:
+  size: 256
+  level: 0
+  target_mag: 20
+  margin: 64
+
+align:
+  n_probe: 80
+  probe_min_ncc: 0.6
+  refine_radius: 32
+  max_dist: 48
+  max_pad: 0.01
+
+registration:
+  lowpass_sigma: 3.0
+  ncc_low: 0.2
+  ncc_high: 0.8
+  phase_response_low: 0.1
+  phase_response_high: 0.8
+  max_residual_shift: 8.0
+  q_min: 0.25
+
+qc:
+  min_tissue_frac: 0.25
+  min_ncc: 0.5
+  min_ssim: 0.3
+  gate_tiles_per_slide: 200
+
+budget:
+  tiles_per_slide: 1500
+  oversample: 1.3
+  grid_fraction: 0.30
+  high_ncc_quota: 0.0
+  grid_cells: 16
+
+split:
+  policy: by_slide
+  train: 0.7
+  val: 0.15
+  test: 0.15
+  seed: 1234
+  slides: null
+
+runtime:
+  num_workers: 4
+  seed: 1234
