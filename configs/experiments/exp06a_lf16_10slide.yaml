@@ -1,7 +1,0 @@
-_base_: ../_base/exp06.yaml
-
-run:
-  name: exp06a_lf16_10slide
-
-pyramid:
-  levels: 4

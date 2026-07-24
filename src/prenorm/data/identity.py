@@ -10,6 +10,10 @@ import numpy as np
 
 INTERNAL_LATTICE_ID = "internal_v3"
 EXTERNAL_S60_LATTICE_ID = "external_s60_v1"
+# The stored identifier remains unchanged for artifact compatibility. New
+# analyses use the neutral name because this lattice is fitted/evaluated with
+# the same train/test protocol as the internal scanner lattice.
+S60_LATTICE_ID = EXTERNAL_S60_LATTICE_ID
 
 
 @dataclass(frozen=True, order=True)

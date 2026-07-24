@@ -1,0 +1,7 @@
+_base_: ../_base/exp01.yaml
+
+run:
+  name: exp01a_lf16_10slide
+
+pyramid:
+  levels: 4

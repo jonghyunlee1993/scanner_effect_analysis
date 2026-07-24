@@ -1,1 +1,1 @@
-"""Phase 1 registered-tuple data package."""
+"""Registered scanner identity and image-transform utilities."""
