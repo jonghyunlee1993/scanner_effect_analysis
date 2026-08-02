@@ -229,7 +229,7 @@ def make_warped_views(native_image, native_to_registered, registered_shape_rc):
         transformation_dst_shape_rc=registered_shape_rc,
         out_shape_rc=registered_shape_rc,
         interp_method="bicubic",
-        bg_color=[0, 0, 0],
+        bg_color=[0] * native_image.bands,
     )
     singular = np.linalg.svd(native_to_registered[:2, :2], compute_uv=False)
     pre_scale = float(singular.min())
@@ -241,7 +241,7 @@ def make_warped_views(native_image, native_to_registered, registered_shape_rc):
         transformation_dst_shape_rc=registered_shape_rc,
         out_shape_rc=registered_shape_rc,
         interp_method="bicubic",
-        bg_color=[0, 0, 0],
+        bg_color=[0] * antialiased_native.bands,
     )
     return original, antialiased, pre_scale
 
