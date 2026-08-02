@@ -290,26 +290,45 @@ def main():
         registered_path = Path(str(registry.loc[args.slide_id, f"{scanner}_path"]))
         native_image = pyvips.Image.new_from_file(str(native_path), access="random")
         registered_image = pyvips.Image.new_from_file(str(registered_path), access="random")
-        native_thumb, _ = thumbnail(native_image, args.thumbnail_size)
-        registered_thumb, _ = thumbnail(registered_image, args.thumbnail_size)
-        thumbnail_affine, sift_metrics, source_inliers, destination_inliers = recover_similarity(
-            native_thumb, registered_thumb, args.minimum_sift_inliers
-        )
-        full_affine = scale_thumbnail_affine_to_full(
-            thumbnail_affine,
-            (native_image.width, native_image.height),
-            (native_thumb.shape[1], native_thumb.shape[0]),
-            (registered_image.width, registered_image.height),
-            (registered_thumb.shape[1], registered_thumb.shape[0]),
-        )
+        affine_cache = output / f"recovered_affine_{scanner}.npz"
+        metrics_cache = output / f"recovered_affine_{scanner}.json"
+        if affine_cache.exists() and metrics_cache.exists():
+            cached = np.load(affine_cache)
+            full_affine = np.asarray(cached["full_affine"], dtype=float)
+            sift_metrics = json.loads(metrics_cache.read_text())
+            native_thumb = registered_thumb = thumbnail_affine = None
+        else:
+            native_thumb, _ = thumbnail(native_image, args.thumbnail_size)
+            registered_thumb, _ = thumbnail(registered_image, args.thumbnail_size)
+            thumbnail_affine, sift_metrics, source_inliers, destination_inliers = recover_similarity(
+                native_thumb, registered_thumb, args.minimum_sift_inliers
+            )
+            full_affine = scale_thumbnail_affine_to_full(
+                thumbnail_affine,
+                (native_image.width, native_image.height),
+                (native_thumb.shape[1], native_thumb.shape[0]),
+                (registered_image.width, registered_image.height),
+                (registered_thumb.shape[1], registered_thumb.shape[0]),
+            )
+            np.savez_compressed(
+                affine_cache,
+                thumbnail_affine=thumbnail_affine,
+                full_affine=full_affine,
+                native_thumbnail_shape=np.asarray(native_thumb.shape[:2]),
+                registered_thumbnail_shape=np.asarray(registered_thumb.shape[:2]),
+                source_inliers=source_inliers,
+                destination_inliers=destination_inliers,
+            )
+            metrics_cache.write_text(json.dumps(sift_metrics, indent=2) + "\n")
         original_view, aa_view, pre_scale = make_warped_views(
             native_image,
             full_affine,
             np.array([registered_image.height, registered_image.width]),
         )
-        render_thumbnail_overlay(
-            native_thumb, registered_thumb, thumbnail_affine, output, scanner
-        )
+        if native_thumb is not None:
+            render_thumbnail_overlay(
+                native_thumb, registered_thumb, thumbnail_affine, output, scanner
+            )
 
         accepted = 0
         original_power = []
