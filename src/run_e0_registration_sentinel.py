@@ -1,4 +1,4 @@
-"""Run one slide of the frozen E0 registration/ERT sentinel audit.
+"""Run one slide of the frozen E0 registration/ERT audit.
 
 The audit compares three contracts at the exact Exp05 locations:
 
@@ -71,6 +71,12 @@ def parse_args():
     parser.add_argument("--output-root", default="outputs/e0_registration_sentinel/shards")
     parser.add_argument("--patch-size", type=int, default=256)
     parser.add_argument("--bins", type=int, default=72)
+    parser.add_argument(
+        "--route",
+        choices=("both", "current", "valis"),
+        default="both",
+        help="Audit both routes for sentinels or one route for population expansion.",
+    )
     parser.add_argument("--search-margin", type=int, default=THRESHOLDS["search_margin"])
     parser.add_argument("--refine-radius", type=int, default=THRESHOLDS["refine_radius"])
     return parser.parse_args()
@@ -433,11 +439,15 @@ def main():
     all_alignment = []
     all_fits = []
     spectra_rows = []
+    requested_branches = (
+        ("current", "valis") if args.route == "both" else (args.route,)
+    )
     for scanner in SCANNERS:
-        paths = {
+        available_paths = {
             "current": Path(registry_row[f"{scanner}_path"]),
             "valis": valis_path(valis_root, scanner, slide_id),
         }
+        paths = {branch: available_paths[branch] for branch in requested_branches}
         branch_result = {}
         for branch, path in paths.items():
             if not path.exists():
@@ -465,46 +475,60 @@ def main():
             all_fits.append(fit_frame)
             branch_result[branch] = (powers, valid_conditions)
 
-        current_powers, current_valid = branch_result["current"]
-        valis_powers, valis_valid = branch_result["valis"]
-        common = current_valid["corrected"] & valis_valid["corrected"]
-        condition_map = {
-            "current_center": (
-                current_powers["center"],
-                current_valid["center"],
-                current_valid["corrected"],
-            ),
-            "current_old_local16": (
-                current_powers["old_local16"],
-                current_valid["old_local16"],
-                current_valid["corrected"],
-            ),
-            "current_corrected": (
-                current_powers["corrected"],
-                current_valid["corrected"],
-                current_valid["corrected"],
-            ),
-            "valis_center": (
-                valis_powers["center"],
-                valis_valid["center"],
-                valis_valid["corrected"],
-            ),
-            "valis_corrected": (
-                valis_powers["corrected"],
-                valis_valid["corrected"],
-                valis_valid["corrected"],
-            ),
-            "current_corrected_route_common": (
-                current_powers["corrected"],
-                current_valid["corrected"],
-                common,
-            ),
-            "valis_corrected_route_common": (
-                valis_powers["corrected"],
-                valis_valid["corrected"],
-                common,
-            ),
-        }
+        condition_map = {}
+        if "current" in branch_result:
+            current_powers, current_valid = branch_result["current"]
+            condition_map.update(
+                {
+                    "current_center": (
+                        current_powers["center"],
+                        current_valid["center"],
+                        current_valid["corrected"],
+                    ),
+                    "current_old_local16": (
+                        current_powers["old_local16"],
+                        current_valid["old_local16"],
+                        current_valid["corrected"],
+                    ),
+                    "current_corrected": (
+                        current_powers["corrected"],
+                        current_valid["corrected"],
+                        current_valid["corrected"],
+                    ),
+                }
+            )
+        if "valis" in branch_result:
+            valis_powers, valis_valid = branch_result["valis"]
+            condition_map.update(
+                {
+                    "valis_center": (
+                        valis_powers["center"],
+                        valis_valid["center"],
+                        valis_valid["corrected"],
+                    ),
+                    "valis_corrected": (
+                        valis_powers["corrected"],
+                        valis_valid["corrected"],
+                        valis_valid["corrected"],
+                    ),
+                }
+            )
+        if args.route == "both":
+            common = current_valid["corrected"] & valis_valid["corrected"]
+            condition_map.update(
+                {
+                    "current_corrected_route_common": (
+                        current_powers["corrected"],
+                        current_valid["corrected"],
+                        common,
+                    ),
+                    "valis_corrected_route_common": (
+                        valis_powers["corrected"],
+                        valis_valid["corrected"],
+                        common,
+                    ),
+                }
+            )
         for condition, (power, own_valid, comparison_mask) in condition_map.items():
             mask = comparison_mask & own_valid
             if not mask.any():
@@ -575,6 +599,7 @@ def main():
         },
         "integer_alignment_only": True,
         "crossfit_folds": 5,
+        "route": args.route,
         "files": {
             "alignment_patch_metrics": "alignment_patch_metrics.csv",
             "alignment_summary": "alignment_summary.csv",
@@ -584,7 +609,7 @@ def main():
     }
     (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(alignment_summary.to_string(index=False))
-    print(f"wrote E0 sentinel shard -> {output}")
+    print(f"wrote E0 registration audit shard -> {output}")
 
 
 if __name__ == "__main__":

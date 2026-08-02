@@ -213,6 +213,12 @@ family를 제공한다.
   0.01667로 작았으나 current↔VALIS route delta는 median 0.26210 log2로 큼
 - 따라서 existing VALIS를 cohort-wide로 승격하지 않으며, 109-slide candidate-pool
   replacement 후에도 실패하는 scanner–slide cell만 native rigid rerun 대상으로 삼음
+- 109-slide current-route audit에서 slide–scanner cell 458/545 (84.0%)가 90/100 gate를
+  통과함: GT450 93.6%, VERSA 77.1%, AKOYA 58.7%, S60 92.7%, S360 98.2%
+- 원래 100개 중 exact six-scanner location은 slide median 84개(최소 13개)였으나 common
+  coordinate pool은 slide당 1,040–31,892개이므로 outcome-blind replacement를 먼저 감사함
+- 109-slide old→corrected high-band ERT median absolute delta는 scanner별
+  0.00002–0.00384 log2였고 q95는 최대 0.08075(AKOYA)였음
 
 주의:
 
@@ -620,7 +626,7 @@ internal–external effect comparison을 사전 동결 계획에 따라 추가�
 | ID | 실험 | 핵심 질문 | 상태 | 본문 배치 | 완료/통과 조건 |
 |---|---|---|---|---|---|
 | E0a | Common physical grid audit | 모든 scanner pixel이 AT2 물리 좌표를 따르는가? | 부분 확인 | Methods 2.2, Results 3.1 | Transform, scale, MPP source 명시 |
-| E0b | Coarse-to-fine registration | AKOYA 경계 포화가 ERT를 교란하는가? | Sentinel 완료, population 미완 | Methods 2.2, Results 3.1 | 109-slide replacement manifest와 targeted residual QC |
+| E0b | Coarse-to-fine registration | AKOYA 경계 포화가 ERT를 교란하는가? | 109-slide selected-location 완료, replacement 미완 | Methods 2.2, Results 3.1 | 512 px-aware replacement manifest와 targeted residual QC |
 | E0c | 2D aliasing audit | GT450/VERSA downsampling이 high band를 오염하는가? | 미완 | Methods 2.3, Results 3.1 | Mixing matrix와 허용 band 동결 |
 | E0d | Anchor/noise-floor audit | ERT shape가 anchor와 noise에 견고한가? | 부분 완료 | Methods 2.4, Results 3.1/Supplement | Registered-chain sensitivity와 SNR 보고 |
 | E1 | Paired ERT | Scanner별 frequency signature가 재현되는가? | **잠정** | Results 3.2 | E0 통과 후 109-slide 재산출 |

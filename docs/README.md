@@ -8,6 +8,8 @@
   multi-PFM 실험, PLISM 외부 검증, 통계 및 실행 순서
 - [E0 registration sentinel audit](e0_registration_sentinel_audit.md): current registered
   WSI와 existing VALIS rigid의 geometry/ERT 비교, 실패 원인과 population 후속 gate
+- [E0 registration cohort audit](e0_registration_cohort_audit.md): current route의
+  109-slide geometry, six-scanner tuple retention과 ERT sensitivity
 
 `storyline.md`는 현재 논문의 과학적 방향과 claim architecture의 기준이고,
 `final_study_protocol.md`는 세부 데이터·모델·구현 계약을 제공한다. 두 문서가
