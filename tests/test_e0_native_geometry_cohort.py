@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 
+from build_e0_rigid_native_fallback import rigid_branch, truth
 from merge_e0_native_geometry_cohort import audit_merged, expected_keys
 from run_e0_native_geometry_cohort import (
     corners_within_native,
@@ -102,3 +103,16 @@ def test_merge_gate_reports_fully_missing_outputs_without_crashing():
     assert summary["slides_missing"] == 1
     assert summary["missing_location_keys"] == 6
     assert not summary["cohort_gate_pass"]
+
+
+def test_rigid_native_fallback_uses_scanner_specific_preserved_branch():
+    assert rigid_branch("akoya") == "rigid_akoya"
+    for scanner in ("gt450", "versa", "s60", "s360"):
+        assert rigid_branch(scanner) == "rigid_all"
+
+
+def test_rigid_native_fallback_parses_serialized_geometry_gate():
+    assert truth(True)
+    assert truth(" TRUE ")
+    assert not truth(False)
+    assert not truth("false")

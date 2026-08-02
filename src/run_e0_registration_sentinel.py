@@ -72,6 +72,9 @@ def parse_args():
     parser.add_argument("--patch-size", type=int, default=256)
     parser.add_argument("--bins", type=int, default=72)
     parser.add_argument(
+        "--scanners", nargs="+", choices=SCANNERS, default=list(SCANNERS)
+    )
+    parser.add_argument(
         "--route",
         choices=("both", "current", "valis"),
         default="both",
@@ -447,7 +450,7 @@ def main():
     requested_branches = (
         ("current", "valis") if args.route == "both" else (args.route,)
     )
-    for scanner in SCANNERS:
+    for scanner in args.scanners:
         available_paths = {
             "current": Path(registry_row[f"{scanner}_path"]),
             "valis": valis_path(valis_root, scanner, slide_id),
@@ -596,7 +599,7 @@ def main():
         "analysis": "e0_registration_sentinel",
         "slide_id": slide_id,
         "patches": int(len(coords)),
-        "scanners": list(SCANNERS),
+        "scanners": list(args.scanners),
         "thresholds": {
             **THRESHOLDS,
             "search_margin": margin,

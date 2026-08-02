@@ -72,16 +72,35 @@ The merged output must contain exactly:
 - zero duplicate, missing or unexpected keys;
 - zero failed cells and locations after any targeted fallback.
 
-The first merge may fail this promotion gate. Its failure lists define the only
-scanner–slide cells eligible for a native-from-scratch VALIS rigid/affine fallback.
-Non-rigid output remains excluded unless it passes a separate interpolation audit.
+The first merge may fail this promotion gate. Its failure list defines the only
+scanner–slide cells eligible for the following prespecified fallback hierarchy:
+
+1. Audit the preserved VALIS rigid branch at the same frozen 100 centers with the
+   unchanged global, local, boundary and padding gates.
+2. If all 100 centers pass, recover a same-scanner native→rigid transform and use the
+   composed geometry to read pixels directly from the native WSI. The preserved rigid
+   image remains geometry/QC only.
+3. If the preserved rigid output is missing or either audit fails, rerun VALIS
+   rigid/affine from the native WSI for that scanner–slide cell only and apply the same
+   gates.
+4. A location that fails only the strict 512 px native-FOV bound is replaced by the
+   next eligible location in the already ranked common-coordinate candidate pool. The
+   ranking never uses registration outcome, PFM features or tissue labels.
+
+No threshold is relaxed after observing a fallback result. Non-rigid output remains
+excluded unless it passes a separate interpolation audit.
 
 ## Reproducibility
 
 - Slide runner: `src/run_e0_native_geometry_cohort.py`
 - Cohort merger/gate: `src/merge_e0_native_geometry_cohort.py`
+- Targeted rigid-route audit: `src/run_e0_registration_sentinel.py`
+- Native-pixel fallback builder: `src/build_e0_rigid_native_fallback.py`
+- Passing-fallback promoter: `src/promote_e0_native_geometry_fallback.py`
 - Array launcher: `scripts/e0_native_geometry_cohort.sbatch`
 - Merge launcher: `scripts/e0_native_geometry_merge.sbatch`
+- Fallback launchers: `scripts/e0_rigid_alignment_array.sbatch`,
+  `scripts/e0_rigid_native_array.sbatch`, `scripts/e0_native_geometry_promote.sbatch`
 - Unit contract: `tests/test_e0_native_geometry_cohort.py`
 - Shards and matrices: `outputs/e0_native_geometry_cohort/shards/`
 - Merged manifest and failure lists: `outputs/e0_native_geometry_cohort/merged/`
