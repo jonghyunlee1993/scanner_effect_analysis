@@ -189,7 +189,9 @@ def apply_sinusoid_sweep(
         )
         output_centers = (output_edges[:-1] + output_edges[1:]) / 2.0
         angles = np.arange(n_angles) * np.pi / n_angles
-        phases = np.arange(n_phases) * 2.0 * np.pi / n_phases
+        # A sign-flipped sinusoid has identical sampling phase for a power audit.
+        # Span one half-cycle so the default probes cosine and quadrature phases.
+        phases = np.arange(n_phases) * np.pi / n_phases
         axis = (np.arange(source_size) - (source_size - 1) / 2.0) * native_mpp
         yy, xx = np.meshgrid(axis, axis, indexing="ij")
 
