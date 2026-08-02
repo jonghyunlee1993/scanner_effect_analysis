@@ -89,7 +89,7 @@ Part I의 scanner spectrum 분석은 독립적인 characterization story가 아�
 - Scanner dispersion (R)의 정확한 정의와 raw-radius 최소값 \(\epsilon\)
 - Registration, model-FOV bounds와 aliasing audit의 수치 통과 기준
 - 최소 image-space/feature-space comparator 목록
-- Sentinel slide 구성과 `existing corrected crop` 대 `VALIS rigid` 승격 기준
+- 109-slide candidate replacement와 targeted native-rigid rerun의 수치 승격 기준
 
 Self-cosine은 retrieval보다 비순환적인 representation-preservation diagnostic이지만,
 그 자체를 biological fidelity라고 부르지 않는다. 아무 변화도 주지 않는 방법을 선호하고
@@ -207,6 +207,12 @@ family를 제공한다.
 - AKOYA 109 slides 중 61개에서 patch 절반 이상이 ±16 px 경계에 도달
 - 슬라이드별 dominant edge fraction 중앙값: 79.2%
 - 현재 Exp05의 zero-centered ±16 px search는 slide-coherent residual을 포착하지 못함
+- 15-slide/15-tissue sentinel에서 current WSI + integer refinement는 slide–scanner cell
+  64/75 (85.3%), 기존 VALIS rigid는 57/75 (76.0%)로 frozen route gate를 모두 통과하지 못함
+- Current old→corrected high-band ERT의 median absolute delta는 0.00165 log2, q95는
+  0.01667로 작았으나 current↔VALIS route delta는 median 0.26210 log2로 큼
+- 따라서 existing VALIS를 cohort-wide로 승격하지 않으며, 109-slide candidate-pool
+  replacement 후에도 실패하는 scanner–slide cell만 native rigid rerun 대상으로 삼음
 
 주의:
 
@@ -614,7 +620,7 @@ internal–external effect comparison을 사전 동결 계획에 따라 추가�
 | ID | 실험 | 핵심 질문 | 상태 | 본문 배치 | 완료/통과 조건 |
 |---|---|---|---|---|---|
 | E0a | Common physical grid audit | 모든 scanner pixel이 AT2 물리 좌표를 따르는가? | 부분 확인 | Methods 2.2, Results 3.1 | Transform, scale, MPP source 명시 |
-| E0b | Coarse-to-fine registration | AKOYA 경계 포화가 ERT를 교란하는가? | 진단 완료, 재등록 미완 | Methods 2.2, Results 3.1 | Old/new paired sensitivity와 residual QC |
+| E0b | Coarse-to-fine registration | AKOYA 경계 포화가 ERT를 교란하는가? | Sentinel 완료, population 미완 | Methods 2.2, Results 3.1 | 109-slide replacement manifest와 targeted residual QC |
 | E0c | 2D aliasing audit | GT450/VERSA downsampling이 high band를 오염하는가? | 미완 | Methods 2.3, Results 3.1 | Mixing matrix와 허용 band 동결 |
 | E0d | Anchor/noise-floor audit | ERT shape가 anchor와 noise에 견고한가? | 부분 완료 | Methods 2.4, Results 3.1/Supplement | Registered-chain sensitivity와 SNR 보고 |
 | E1 | Paired ERT | Scanner별 frequency signature가 재현되는가? | **잠정** | Results 3.2 | E0 통과 후 109-slide 재산출 |

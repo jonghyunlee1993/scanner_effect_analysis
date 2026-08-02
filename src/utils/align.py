@@ -224,7 +224,7 @@ def stained_mask(ref_rgb, min_sat=0.12, max_gray=220):
     return (sat >= min_sat) & (gray <= max_gray)
 
 
-def pad_frac(crop, ref_crop, min_ref_px=256):
+def pad_frac(crop, ref_crop, min_ref_px=256, flat_thresh=0.25):
     """Padding = FLAT and BRIGHT (or black) in the scanner, where the REFERENCE is stained.
     Returned as a fraction of the reference's stained area. All three clauses are needed:
 
@@ -240,6 +240,12 @@ def pad_frac(crop, ref_crop, min_ref_px=256):
     genuinely padded tiles score 0.31 and 0.56. Padding is a single constant value (RGB
     (220,228,226) -> gray 225 in 12.5_4; gray 240 in 2-8_1) covering 32% / 65% of the tile.
 
+    The flatness threshold is deliberately stricter than :func:`flat_mask`'s general
+    blank-description default. Cohort-wide E0 auditing showed that ``std < 1`` labels broad,
+    weakly stained GT450 tissue as padding even when NCC is ~0.99 and the residual shift is
+    ~0.1 px. Registered padding is locally constant, so ``std < 0.25`` retains that signal
+    without treating scanner-dependent pale tissue as missing.
+
     Tissue-fraction ratios cannot be used instead: gt450 is desaturated (mean HSV S 0.193 vs
     at2's 0.469) so its Otsu tissue fraction is systematically low and a ratio test rejects
     healthy gt450 tiles, while akoya scores up to 6x the reference. Flatness is a texture
@@ -249,7 +255,7 @@ def pad_frac(crop, ref_crop, min_ref_px=256):
     if n < min_ref_px:
         return 0.0
     g = cv2.cvtColor(crop, cv2.COLOR_RGB2GRAY)
-    missing = flat_mask(crop) & ((g >= 200) | (g <= 20))
+    missing = flat_mask(crop, thresh=flat_thresh) & ((g >= 200) | (g <= 20))
     return float((missing & ref_stained).sum() / n)
 
 

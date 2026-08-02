@@ -10,6 +10,7 @@ __pycache__/
 *.py[cod]
 *.pyo
 /.pytest_cache/
+/.mplconfig/
 .mypy_cache/
 .ruff_cache/
 .coverage
