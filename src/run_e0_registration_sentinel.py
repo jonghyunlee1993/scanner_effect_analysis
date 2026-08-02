@@ -403,6 +403,11 @@ def main():
         raise ValueError(f"expected one registry row for {slide_id}, got {len(selected)}")
     registry_row = selected.iloc[0]
     coords = pd.read_csv(args.selected_patches, dtype={"slide_id": str})
+    if "patch_index" not in coords.columns:
+        if "location_id" not in coords.columns:
+            raise ValueError("coordinate manifest needs patch_index or location_id")
+        coords = coords.copy()
+        coords["patch_index"] = coords["location_id"].astype(int)
     coords = coords[coords["slide_id"].eq(slide_id)].sort_values("patch_index")
     if len(coords) != 100 or coords["patch_index"].tolist() != list(range(100)):
         raise ValueError(f"{slide_id}: expected patch_index 0..99, got {len(coords)} rows")
