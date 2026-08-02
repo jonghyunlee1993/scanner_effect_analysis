@@ -224,6 +224,11 @@ family를 제공한다.
   geometry와 shifted 512 px FOV를 통과함; original 8,203개 유지, 2,697개 교체
 - Slide당 replacement 중앙값은 20개, 최대 89개였고 candidate 평가 최대값은 855/3,000으로
   native rigid rerun trigger에 도달한 slide는 없었음
+- 보존된 96-slide VALIS rigid provenance에서 native→AT2 export는 VALIS 1.2.0/
+  libvips 8.15.3 bicubic 단일 affine warp였고 explicit anti-alias prefilter는 없었음
+- GT450/VERSA의 유효 native px/output px 중앙값은 1.922/1.842였으며, moving
+  scanner 출력 TIFF에 native MPP를 다시 써서 AT2 grid metadata가 잘못된 export bug를
+  cohort 수준에서 확인함
 
 주의:
 
@@ -248,6 +253,23 @@ Target grid가 0.5052 µm/px이면 sampling frequency는 1.9794 cycles/µm, Nyqu
 - 0.60–0.90 band의 alias-to-in-band ratio
 - Passband attenuation, ringing 및 angular anisotropy
 - 원 파이프라인과 explicit anti-aliased pipeline 비교
+
+사전 동결 gate는 0.60–0.90 cycles/µm에서 sinusoid mixing과 broadband noise의
+alias/true-in-band power가 모두 5% 이하이며 q05/q50/q95 실제 transform profile 전체가
+통과해야 한다.
+
+현재 audit 결과:
+
+- 원 bicubic의 q50 alias/true-in-band power는 GT450에서 sinusoid 1.555, white noise
+  1.113이고 VERSA에서 1.329, 0.965로 실패함
+- `Lanczos3 reduction → residual bicubic affine`는 같은 값이 GT450 0.0084/0.0101,
+  VERSA 0.0142/0.0154로 q05/q50/q95 모두 5% gate를 통과함
+- 다만 explicit-AA의 high-band amplitude retention 중앙값은 GT450 0.739, VERSA
+  0.806이고 최대 angular anisotropy는 4.081/3.294 dB이므로 이 필터링 비용을 함께
+  보고함
+- 따라서 Phase 0는 `Revise`: native WSI에서 explicit AA common grid를 재생성한 뒤
+  alias gate를 재확인하고, 그 전에는 기존 grid로 E1–E3를 재산출하지 않음
+- 0.60–0.90 band 유지는 AA 재생성 grid의 실제 통과에 조건부로 동결함
 
 Alias term이 무시할 수 없으면 단일 multiplicative transfer 해석이 깨진다.
 
@@ -632,9 +654,9 @@ internal–external effect comparison을 사전 동결 계획에 따라 추가�
 
 | ID | 실험 | 핵심 질문 | 상태 | 본문 배치 | 완료/통과 조건 |
 |---|---|---|---|---|---|
-| E0a | Common physical grid audit | 모든 scanner pixel이 AT2 물리 좌표를 따르는가? | 부분 확인 | Methods 2.2, Results 3.1 | Transform, scale, MPP source 명시 |
+| E0a | Common physical grid audit | 모든 scanner pixel이 AT2 물리 좌표를 따르는가? | **Revise** | Methods 2.2, Results 3.1 | AA grid 재생성 + metadata 수정 |
 | E0b | Coarse-to-fine registration | AKOYA 경계 포화가 ERT를 교란하는가? | **완료** | Methods 2.2, Results 3.1 | 10,900-row six-scanner/512 px manifest 통과 |
-| E0c | 2D aliasing audit | GT450/VERSA downsampling이 high band를 오염하는가? | 미완 | Methods 2.3, Results 3.1 | Mixing matrix와 허용 band 동결 |
+| E0c | 2D aliasing audit | GT450/VERSA downsampling이 high band를 오염하는가? | **진단 완료 · Revise** | Methods 2.3, Results 3.1 | AA grid에서 ≤5% 재통과 |
 | E0d | Anchor/noise-floor audit | ERT shape가 anchor와 noise에 견고한가? | 부분 완료 | Methods 2.4, Results 3.1/Supplement | Registered-chain sensitivity와 SNR 보고 |
 | E1 | Paired ERT | Scanner별 frequency signature가 재현되는가? | **잠정** | Results 3.2 | E0 통과 후 109-slide 재산출 |
 | E2 | Hierarchical decomposition | Signature가 tissue/slide에 의존하는가? | **잠정** | Results 3.3 | Corrected ERT로 재적합 |
@@ -756,17 +778,22 @@ Highlights와 최종 결론에는 audited table만 사용한다.
 
 ### Phase 0 — Data and estimator validity
 
-1. Common grid와 transform/interpolation provenance 회수
+1. ~~Common grid와 transform/interpolation provenance 회수~~ — 96-slide exact rigid provenance,
+   VALIS/libvips bicubic·MPP overwrite 확인
 2. Existing offsets에서 constant 대 affine slide prior 진단
-3. Sentinel 10–20 slides 선정
+3. ~~Sentinel 10–20 slides 선정~~
    - AKOYA registration worst/median/best
    - GT450/VERSA aliasing risk
    - Tissue와 slide strata 균형
-4. 현재 registered WSI의 corrected integer crop과 기존 VALIS rigid output 대조
-5. 109-slide common-pool에서 100-location/512 px manifest 복구
-6. Pool 복구 실패 cell에 한해서만 native WSI에서 rigid registration 재실행
-7. `old/new registration × original/anti-aliased resampling` factorial audit
-8. 2D alias mixing, anchor와 noise-floor sensitivity
+4. ~~현재 registered WSI의 corrected integer crop과 기존 VALIS rigid output 대조~~
+5. ~~109-slide common-pool에서 100-location/512 px manifest 복구~~
+6. ~~Pool 복구 실패 cell에 한해서만 native WSI에서 rigid registration 재실행~~
+   — 실패 cell 0, 기존 grid 기준 trigger 없음
+7. Native WSI에서 anti-aliased rigid common grid를 재생성하고 10,900-location
+   registration/512 px gate를 재실행
+8. `old/new registration × original/anti-aliased resampling` factorial audit
+9. ~~2D alias mixing~~ — original bicubic 실패, explicit-AA 통과; native-AA grid
+   재생성 후 anchor/noise-floor sensitivity
 
 **Stop:** Common physical coordinates가 보장되지 않음.
 

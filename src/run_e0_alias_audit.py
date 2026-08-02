@@ -423,7 +423,7 @@ def summarize(profiles, response, noise, edge, matrices):
 
 
 def render_figure(summary, matrices, output: Path):
-    figure, axes = plt.subplots(2, 3, figsize=(15, 9))
+    figure, axes = plt.subplots(2, 3, figsize=(15, 9), constrained_layout=True)
     for row_index, scanner in enumerate(SCANNERS):
         for column_index, pipeline in enumerate(PIPELINES):
             data = matrices[(scanner, "q50", pipeline)]
@@ -445,7 +445,8 @@ def render_figure(summary, matrices, output: Path):
             )
             axis.axvspan(*PRIMARY_BAND, color="cyan", alpha=0.10)
             axis.axhline(data["target_nyquist"], color="white", linestyle="--", linewidth=1)
-            axis.set_title(f"{scanner.upper()} · {pipeline}")
+            short_pipeline = "original bicubic" if pipeline == PIPELINES[0] else "explicit AA"
+            axis.set_title(f"{scanner.upper()} · {short_pipeline}")
             axis.set_xlabel("Output frequency (cycles/µm)")
             axis.set_ylabel("Input frequency (cycles/µm)")
         subset = summary[summary["scanner"].eq(scanner)]
@@ -465,8 +466,14 @@ def render_figure(summary, matrices, output: Path):
         axis.set_ylabel("Alias / true in-band power")
         axis.set_title(f"{scanner.upper()} broadband validation")
         axis.legend(fontsize=8)
-    figure.colorbar(shown, ax=axes[:, :2], label="log10 output power / input variance")
-    figure.subplots_adjust(left=0.07, right=0.95, bottom=0.08, top=0.94, wspace=0.28, hspace=0.28)
+    figure.colorbar(
+        shown,
+        ax=axes[:, :2],
+        orientation="horizontal",
+        pad=0.07,
+        fraction=0.05,
+        label="log10 output power / input variance",
+    )
     figure.savefig(output / "figure_e0_alias_audit.png", dpi=220)
     figure.savefig(output / "figure_e0_alias_audit.pdf")
     plt.close(figure)
