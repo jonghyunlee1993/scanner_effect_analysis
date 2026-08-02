@@ -72,7 +72,11 @@ def audit_merged(manifest, locations, cells, missing, invalid_summaries):
     expected = expected_keys(manifest)
     key_columns = ["slide_id", "location_id", "scanner"]
     duplicate_location_keys = int(locations.duplicated(key_columns).sum()) if len(locations) else 0
-    observed_keys = locations[key_columns].drop_duplicates() if len(locations) else locations
+    observed_keys = (
+        locations[key_columns].drop_duplicates()
+        if len(locations)
+        else pd.DataFrame(columns=key_columns)
+    )
     key_audit = expected.merge(observed_keys, on=key_columns, how="outer", indicator=True)
     missing_location_keys = int(key_audit["_merge"].eq("left_only").sum())
     unexpected_location_keys = int(key_audit["_merge"].eq("right_only").sum())
@@ -80,7 +84,11 @@ def audit_merged(manifest, locations, cells, missing, invalid_summaries):
     cell_key_columns = ["slide_id", "scanner"]
     duplicate_cell_keys = int(cells.duplicated(cell_key_columns).sum()) if len(cells) else 0
     expected_cells = expected[cell_key_columns].drop_duplicates()
-    observed_cells = cells[cell_key_columns].drop_duplicates() if len(cells) else cells
+    observed_cells = (
+        cells[cell_key_columns].drop_duplicates()
+        if len(cells)
+        else pd.DataFrame(columns=cell_key_columns)
+    )
     cell_audit = expected_cells.merge(
         observed_cells, on=cell_key_columns, how="outer", indicator=True
     )

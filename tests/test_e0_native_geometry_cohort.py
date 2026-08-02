@@ -78,3 +78,15 @@ def test_merge_gate_requires_every_six_scanner_tuple_and_cell():
     _, _, failed = audit_merged(manifest, locations, cells, empty, empty)
     assert not failed["cohort_gate_pass"]
     assert failed["six_scanner_tuples_passing"] == 1
+
+
+def test_merge_gate_reports_fully_missing_outputs_without_crashing():
+    manifest = pd.DataFrame({"slide_id": ["s1"], "location_id": [0]})
+    missing = pd.DataFrame({"slide_id": ["s1"], "missing": ["all"]})
+    _, tuples, summary = audit_merged(
+        manifest, pd.DataFrame(), pd.DataFrame(), missing, pd.DataFrame()
+    )
+    assert tuples.empty
+    assert summary["slides_missing"] == 1
+    assert summary["missing_location_keys"] == 6
+    assert not summary["cohort_gate_pass"]
