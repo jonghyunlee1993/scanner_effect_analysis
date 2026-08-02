@@ -1,5 +1,8 @@
 # Scanner Spectrum experiment index
 
+> Archive snapshot. Active experiment index는 `../../../final_study_protocol.md`에
+> 통합되었다.
+
 The active analysis project restarts experiment numbering at one. Numbers from
 the archived canonicalizer-modeling phase are historical labels and are not
 part of this active sequence.

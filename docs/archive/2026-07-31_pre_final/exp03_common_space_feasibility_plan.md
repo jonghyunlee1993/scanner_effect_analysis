@@ -1,5 +1,7 @@
 # Exp-03: Common image-space feasibility
 
+> Archive snapshot. 이 계획은 최종 confirmatory protocol로 대체되었다.
+
 ## Claim boundary
 
 An experiment cannot prove that a common scanner image space does not exist in

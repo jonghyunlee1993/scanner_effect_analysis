@@ -1,5 +1,8 @@
 # Exp-01 실행 기록
 
+> Archive snapshot. 최종 연구 설계 이전의 실행 provenance이며 active protocol은
+> `../../../final_study_protocol.md`를 따른다.
+
 작성일: 2026-07-15  
 현재 판정: **LF16 hard no-go; LF8/LF4·Akoya·CV 미실행**
 

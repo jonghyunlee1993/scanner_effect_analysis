@@ -1,5 +1,7 @@
 # 종료된 실험과 코드 정리 기록
 
+> Archive snapshot. 종료된 시도의 상세 provenance로만 유지한다.
+
 최종 갱신: 2026-07-24
 
 이 문서는 active repository에서 제거한 실험 코드와 생성물을 결과와 함께

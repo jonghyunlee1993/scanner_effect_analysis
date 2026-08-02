@@ -1,0 +1,1571 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>The Myth of the Standard Image — Jonghyun Lee</title>
+  <style>
+    :root {
+      --penn-blue: #011f5b;
+      --penn-red: #990000;
+      --blue-2: #234a84;
+      --blue-3: #e9eff8;
+      --red-2: #f5e8e7;
+      --paper: #f7f7f3;
+      --white: #ffffff;
+      --ink: #152033;
+      --muted: #617087;
+      --line: #d9e0ea;
+      --green: #168765;
+      --amber: #d78a00;
+      --violet: #7154c7;
+      --shadow: 0 18px 48px rgba(1, 31, 91, 0.12);
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: Arial, Helvetica, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #07152f;
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+
+    body { position: relative; }
+
+    #stage {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1600px;
+      height: 900px;
+      transform-origin: center center;
+      background: var(--paper);
+      box-shadow: 0 26px 90px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+    }
+
+    .slide {
+      display: none;
+      position: absolute;
+      inset: 0;
+      width: 1600px;
+      height: 900px;
+      padding: 70px 86px 58px;
+      background:
+        linear-gradient(90deg, rgba(1,31,91,.025) 1px, transparent 1px),
+        linear-gradient(rgba(1,31,91,.018) 1px, transparent 1px),
+        var(--paper);
+      background-size: 52px 52px;
+      overflow: hidden;
+    }
+
+    .slide.active { display: block; }
+    .slide.dark {
+      color: var(--white);
+      background:
+        radial-gradient(circle at 82% 22%, rgba(153,0,0,.28), transparent 30%),
+        radial-gradient(circle at 16% 76%, rgba(75,111,174,.26), transparent 34%),
+        var(--penn-blue);
+    }
+
+    .slide.soft {
+      background:
+        linear-gradient(120deg, #f9faf8 0%, #eef2f7 100%);
+    }
+
+    .eyebrow {
+      color: var(--penn-red);
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      font-size: 19px;
+      margin-bottom: 14px;
+    }
+
+    .dark .eyebrow { color: #ffb4ad; }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      letter-spacing: -.025em;
+      line-height: 1.02;
+      font-size: 71px;
+      margin-bottom: 22px;
+    }
+    h2 {
+      font-family: var(--serif);
+      color: var(--penn-blue);
+      font-weight: 600;
+      letter-spacing: -.02em;
+      font-size: 48px;
+      line-height: 1.08;
+      margin-bottom: 28px;
+    }
+    .dark h2 { color: var(--white); }
+    h3 {
+      color: var(--penn-blue);
+      font-size: 27px;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    p, li {
+      font-size: 25px;
+      line-height: 1.38;
+    }
+    ul {
+      margin: 8px 0 0;
+      padding-left: 29px;
+    }
+    li { margin: 8px 0; }
+    li::marker { color: var(--penn-red); }
+
+    .lede {
+      max-width: 1150px;
+      font-family: var(--serif);
+      color: var(--penn-blue);
+      font-size: 37px;
+      line-height: 1.25;
+    }
+    .dark .lede { color: #e6edf8; }
+    .muted { color: var(--muted); }
+    .small { font-size: 20px; line-height: 1.35; }
+    .tiny { font-size: 16px; line-height: 1.25; }
+    .red { color: var(--penn-red); }
+    .blue { color: var(--penn-blue); }
+    .green { color: var(--green); }
+    .amber { color: var(--amber); }
+    .violet { color: var(--violet); }
+    .mono { font-family: "SFMono-Regular", Consolas, monospace; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 36px;
+      align-items: stretch;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 26px;
+      align-items: stretch;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 22px;
+      align-items: stretch;
+    }
+    .cols-40-60 { grid-template-columns: .82fr 1.18fr; }
+    .cols-55-45 { grid-template-columns: 1.12fr .88fr; }
+
+    .card {
+      padding: 25px 27px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: rgba(255,255,255,.93);
+      box-shadow: 0 8px 24px rgba(1,31,91,.06);
+    }
+    .card.blue-card {
+      border-top: 7px solid var(--penn-blue);
+    }
+    .card.red-card {
+      border-top: 7px solid var(--penn-red);
+    }
+    .card.green-card {
+      border-top: 7px solid var(--green);
+    }
+    .card.amber-card {
+      border-top: 7px solid var(--amber);
+    }
+    .card h3 { margin-bottom: 10px; }
+    .card p:last-child { margin-bottom: 0; }
+
+    .callout {
+      border-left: 8px solid var(--penn-red);
+      background: var(--white);
+      padding: 19px 25px;
+      border-radius: 0 12px 12px 0;
+      box-shadow: 0 7px 20px rgba(1,31,91,.06);
+      font-family: var(--serif);
+      color: var(--penn-blue);
+      font-size: 31px;
+      line-height: 1.25;
+    }
+
+    .big-number {
+      font-family: var(--serif);
+      color: var(--penn-blue);
+      font-size: 58px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .metric-label {
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.25;
+      margin-top: 9px;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+    }
+    .metric {
+      text-align: center;
+      padding: 22px 16px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 13px;
+    }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin: 24px 0;
+    }
+    .flow.vertical {
+      flex-direction: column;
+      gap: 9px;
+    }
+    .projector-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .projector-grid .flow {
+      min-width: 0;
+      margin: 0;
+    }
+    .projector-grid .node {
+      min-width: 0;
+      width: 100%;
+      padding: 17px 9px;
+      font-size: 20px;
+    }
+    .node {
+      min-width: 205px;
+      padding: 20px 22px;
+      border-radius: 13px;
+      text-align: center;
+      font-size: 23px;
+      font-weight: 700;
+      border: 2px solid var(--penn-blue);
+      color: var(--penn-blue);
+      background: var(--white);
+      box-shadow: 0 7px 18px rgba(1,31,91,.07);
+    }
+    .node.red-node {
+      border-color: var(--penn-red);
+      color: var(--penn-red);
+    }
+    .node.dark-node {
+      background: var(--penn-blue);
+      color: var(--white);
+    }
+    .arrow {
+      color: var(--penn-red);
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .figure {
+      position: relative;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .figure img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .figure.cover img { object-fit: cover; }
+    .figure-caption {
+      position: absolute;
+      left: 12px;
+      bottom: 10px;
+      padding: 7px 10px;
+      background: rgba(1,31,91,.86);
+      color: white;
+      border-radius: 7px;
+      font-size: 15px;
+    }
+
+    .hero-figure {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 48%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .hero-figure img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 14% 48%;
+      filter: saturate(.9) contrast(.95);
+    }
+    .hero-figure::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, var(--penn-blue) 0%, var(--penn-blue) 5%, rgba(1,31,91,0) 14%),
+        linear-gradient(90deg, var(--penn-blue) 0%, rgba(1,31,91,.8) 14%, rgba(1,31,91,.06) 65%);
+    }
+
+    .title-copy {
+      position: relative;
+      z-index: 2;
+      width: 60%;
+      padding-top: 70px;
+    }
+    .title-copy h1 { font-size: 70px; }
+    .title-rule {
+      width: 150px;
+      height: 8px;
+      background: var(--penn-red);
+      margin: 27px 0 24px;
+    }
+    .presenter {
+      margin-top: 47px;
+      font-size: 25px;
+      line-height: 1.5;
+      color: #e7edf7;
+    }
+
+    .section-index {
+      font-family: var(--serif);
+      color: #f3a49d;
+      font-size: 36px;
+      margin-bottom: 24px;
+    }
+    .section-title {
+      max-width: 1200px;
+      font-family: var(--serif);
+      font-size: 78px;
+      line-height: 1.06;
+      letter-spacing: -.03em;
+      margin: 125px 0 22px;
+    }
+    .section-subtitle {
+      max-width: 1060px;
+      color: #d6e1f1;
+      font-size: 31px;
+      line-height: 1.35;
+    }
+
+    .formula {
+      padding: 20px 24px;
+      border-radius: 12px;
+      background: var(--blue-3);
+      color: var(--penn-blue);
+      font-family: var(--serif);
+      font-size: 30px;
+      text-align: center;
+      border: 1px solid #cbd8eb;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 7px 20px rgba(1,31,91,.06);
+    }
+    .table th, .table td {
+      padding: 15px 17px;
+      border-bottom: 1px solid var(--line);
+      font-size: 21px;
+      text-align: right;
+    }
+    .table th:first-child, .table td:first-child { text-align: left; }
+    .table th {
+      background: var(--penn-blue);
+      color: white;
+      font-weight: 700;
+    }
+    .table tr:last-child td { border-bottom: 0; }
+    .table .hot { color: var(--penn-red); font-weight: 800; }
+    .table .good { color: var(--green); font-weight: 800; }
+    .table .subtle { background: #f1f4f8; }
+
+    .bar-chart {
+      display: grid;
+      gap: 16px;
+      margin-top: 22px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 185px 1fr 100px;
+      gap: 16px;
+      align-items: center;
+    }
+    .bar-label { font-size: 20px; font-weight: 700; color: var(--penn-blue); }
+    .bar-track {
+      height: 29px;
+      background: #e3e8ef;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 8px;
+      background: var(--penn-blue);
+    }
+    .bar-fill.red-fill { background: var(--penn-red); }
+    .bar-fill.green-fill { background: var(--green); }
+    .bar-value { font-size: 21px; font-weight: 800; text-align: right; }
+
+    .pyramid {
+      position: relative;
+      height: 555px;
+      margin-top: 12px;
+    }
+    .p-level {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 3px solid var(--penn-blue);
+      background: rgba(255,255,255,.82);
+      color: var(--penn-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(1,31,91,.06);
+    }
+    .p1 { width: 470px; height: 470px; top: 16px; }
+    .p2 { width: 330px; height: 330px; top: 87px; border-color: #365d93; }
+    .p3 { width: 220px; height: 220px; top: 142px; border-color: #617da7; }
+    .p4 { width: 125px; height: 125px; top: 189px; border-color: var(--penn-red); background: #fff4f2; color: var(--penn-red); }
+    .p-label {
+      position: absolute;
+      right: 16px;
+      color: var(--muted);
+      font-size: 19px;
+    }
+
+    .spectrum {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 7px;
+      align-items: end;
+      height: 185px;
+      margin-top: 18px;
+    }
+    .spectrum div {
+      border-radius: 9px 9px 0 0;
+      background: linear-gradient(180deg, #5c7daf, var(--penn-blue));
+      color: white;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 12px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .spectrum div:last-child {
+      background: linear-gradient(180deg, #cb514d, var(--penn-red));
+    }
+
+    .triangle {
+      position: relative;
+      width: 670px;
+      height: 535px;
+      margin: 0 auto;
+    }
+    .triangle svg { width: 100%; height: 100%; }
+    .tri-label {
+      position: absolute;
+      width: 250px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 24px;
+      color: var(--penn-blue);
+    }
+    .tri-top { left: 210px; top: -2px; }
+    .tri-left { left: -18px; bottom: 10px; }
+    .tri-right { right: -18px; bottom: 10px; }
+
+    .step-list {
+      counter-reset: step;
+      display: grid;
+      gap: 15px;
+      margin-top: 22px;
+    }
+    .step {
+      counter-increment: step;
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 15px;
+      align-items: start;
+      padding: 15px 18px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .step::before {
+      content: counter(step);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--penn-blue);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .step strong {
+      display: block;
+      color: var(--penn-blue);
+      font-size: 23px;
+      margin-bottom: 4px;
+    }
+    .step span { color: var(--muted); font-size: 19px; line-height: 1.3; }
+
+    .footer {
+      position: absolute;
+      left: 86px;
+      right: 86px;
+      bottom: 21px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #8190a5;
+      font-size: 14px;
+      letter-spacing: .03em;
+    }
+    .dark .footer { color: #aebdd2; }
+    .slide-number { font-variant-numeric: tabular-nums; }
+
+    #progress {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 0;
+      height: 5px;
+      z-index: 50;
+      background: var(--penn-red);
+      transition: width .18s ease;
+    }
+    #help {
+      display: none;
+    }
+
+    .quote {
+      font-family: var(--serif);
+      font-size: 39px;
+      line-height: 1.28;
+      color: var(--penn-blue);
+      border-left: 9px solid var(--penn-red);
+      padding-left: 27px;
+      max-width: 1250px;
+    }
+
+    .tag {
+      display: inline-block;
+      border-radius: 99px;
+      padding: 7px 12px;
+      background: var(--blue-3);
+      color: var(--penn-blue);
+      font-size: 17px;
+      font-weight: 800;
+      margin: 0 5px 6px 0;
+    }
+    .tag.red-tag { background: var(--red-2); color: var(--penn-red); }
+
+    .two-state {
+      display: grid;
+      grid-template-columns: 1fr 100px 1fr;
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .state {
+      min-height: 300px;
+      padding: 29px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      box-shadow: 0 9px 24px rgba(1,31,91,.07);
+    }
+    .state h3 { font-size: 31px; }
+    .state p { font-size: 23px; }
+
+    .risk-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .risk {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 23px;
+      min-height: 235px;
+    }
+    .risk h3 { font-size: 25px; }
+    .risk p { font-size: 20px; color: var(--muted); margin-bottom: 0; }
+
+    @media print {
+      @page { size: 16in 9in; margin: 0; }
+      html, body { overflow: visible; background: white; }
+      #stage {
+        position: static;
+        width: 1600px;
+        height: auto;
+        transform: none !important;
+        box-shadow: none;
+      }
+      .slide {
+        display: block !important;
+        position: relative;
+        page-break-after: always;
+        break-after: page;
+      }
+      #progress, #help { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="help">← → navigate · F fullscreen · P print</div>
+  <div id="stage">
+
+    <section class="slide dark">
+      <div class="hero-figure">
+        <img src="../../outputs/exp02_hf_trajectory/figures/pairs/reference_mixing/pair_01_reference_mixing.png" alt="Registered and global high-frequency reference mixing across scanners">
+      </div>
+      <div class="title-copy">
+        <div class="eyebrow">Computational Pathology · Scanner Harmonization</div>
+        <h1>The Myth of the Standard Image</h1>
+        <div class="lede">Handling scanner drift in computational pathology</div>
+        <div class="title-rule"></div>
+        <div class="presenter">
+          <strong>Jonghyun Lee</strong><br>
+          Postdoctoral Researcher · Kim Lab<br>
+          July 28, 2026
+        </div>
+      </div>
+      <div class="footer"><span>Kim Lab</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">The puzzle</div>
+      <h2>Why were the best-aligned images the blurriest?</h2>
+      <div class="grid-2 cols-40-60">
+        <div>
+          <p class="lede" style="font-size:34px">The same tissue was scanned by multiple devices.</p>
+          <div class="callout" style="margin-top:31px">
+            Better embedding alignment repeatedly coincided with weaker image detail.
+          </div>
+          <p class="muted" style="margin-top:26px">
+            Was this a training failure—or a shortcut hidden inside the objective?
+          </p>
+        </div>
+        <div class="figure" style="height:620px">
+          <img src="../../outputs/exp02_hf_trajectory/figures/pairs/reference_mixing/pair_01_reference_mixing.png" alt="Scanner images under registered and global high-frequency reference mixing" style="object-fit:cover;object-position:0 46%">
+        </div>
+      </div>
+      <div class="footer"><span>Opening question</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">The problem</div>
+      <h2>Registration removes content mismatch—not scanner identity</h2>
+      <div class="grid-2">
+        <div class="card blue-card">
+          <h3>Internal registered lattice</h3>
+          <p>AT2 · GT450 · VERSA</p>
+          <div class="big-number">0.998</div>
+          <div class="metric-label">UNI scanner balanced accuracy<br>chance = 0.333</div>
+        </div>
+        <div class="card red-card">
+          <h3>Independent S60 lattice</h3>
+          <p>AT2 · S60</p>
+          <div class="big-number red">0.998</div>
+          <div class="metric-label">UNI scanner balanced accuracy<br>chance = 0.500</div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:42px">
+        Same physical location. Same biology. Still almost perfectly separable by scanner.
+      </div>
+      <div class="footer"><span>Scanner drift in frozen UNI</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">First option</div>
+      <h2>Feature-space correction does not scale gracefully</h2>
+      <div class="grid-2 cols-55-45">
+        <div class="card">
+          <div class="projector-grid">
+            <div class="flow vertical">
+              <div class="node">PFM A embedding</div>
+              <div class="arrow">↓</div>
+              <div class="node red-node">Projector A</div>
+            </div>
+            <div class="flow vertical">
+              <div class="node">PFM B embedding</div>
+              <div class="arrow">↓</div>
+              <div class="node red-node">Projector B</div>
+            </div>
+            <div class="flow vertical">
+              <div class="node">PFM C embedding</div>
+              <div class="arrow">↓</div>
+              <div class="node red-node">Projector C</div>
+            </div>
+          </div>
+          <p class="muted" style="margin-top:46px;text-align:center">Model × layer × checkpoint × domain</p>
+        </div>
+        <div class="card red-card">
+          <h3>Operational cost</h3>
+          <ul>
+            <li>Embedding geometry is model-specific</li>
+            <li>Every PFM needs a separate calibration</li>
+            <li>Model upgrades invalidate the projector</li>
+            <li>Downstream pipelines inherit maintenance debt</li>
+          </ul>
+          <p class="small muted" style="margin-top:23px">
+            Feature correction can work. The concern was model dependence, not scientific invalidity.
+          </p>
+        </div>
+      </div>
+      <div class="footer"><span>Motivation</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">The promise</div>
+      <h2>Normalize once, reuse across many models</h2>
+      <div class="flow" style="margin-top:120px">
+        <div class="node" style="min-width:260px">Raw scanner image</div>
+        <div class="arrow">→</div>
+        <div class="node dark-node" style="min-width:300px">One image normalizer</div>
+        <div class="arrow">→</div>
+        <div>
+          <div class="node" style="margin-bottom:13px">UNI</div>
+          <div class="node" style="margin-bottom:13px">Virchow2</div>
+          <div class="node">GigaPath</div>
+        </div>
+      </div>
+      <p class="lede" style="text-align:center;max-width:none;margin-top:90px">
+        A camera-calibration intuition: estimate the device effect upstream of every PFM.
+      </p>
+      <div class="footer"><span>PFM-independent normalization</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Initial hypothesis</div>
+      <h2>Shared biology, detachable scanner style</h2>
+      <div class="two-state">
+        <div class="state">
+          <div class="big-number" style="font-size:45px">B</div>
+          <h3>Canonical biology</h3>
+          <p class="muted">Morphology shared across scanners</p>
+        </div>
+        <div class="arrow" style="text-align:center">→</div>
+        <div class="state">
+          <div class="big-number red" style="font-size:45px">R<sub>s</sub>(B)</div>
+          <h3>Scanner observation</h3>
+          <p class="muted">Color · contrast · focus · device rendering</p>
+        </div>
+      </div>
+      <div class="formula" style="margin-top:32px">
+        I<sub>s</sub> = R<sub>s</sub>(B) &nbsp;&nbsp;·&nbsp;&nbsp;
+        normalization: I<sub>s</sub> → B &nbsp;&nbsp;·&nbsp;&nbsp;
+        rendering: B → I<sub>s</sub>
+      </div>
+      <div class="footer"><span>Canonical image model</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Historical prototype</div>
+      <h2>Bias the encoder toward morphology, not scanner RGB</h2>
+      <div class="grid-2 cols-40-60">
+        <div>
+          <div class="card blue-card">
+            <h3>Eight input channels</h3>
+            <p>
+              RGB + low-pass edge + grayscale + H + E + background
+            </p>
+          </div>
+          <div class="callout" style="margin-top:25px">
+            Structure-biased—not scanner-free.
+          </div>
+          <p class="small muted" style="margin-top:24px">
+            Morphology is shared biology, but its pixel evidence still depends on focus, MTF, sampling, and sharpening.
+          </p>
+        </div>
+        <div class="figure" style="height:630px">
+          <img src="../../archived/2026-07-14_v3/outputs/phase1_v3_10slide_ab18_nuclei_orientation_50ep/eval/input_channels_id.png" alt="RGB and structure-biased model input channels for four scanners">
+        </div>
+      </div>
+      <div class="footer"><span>Exploratory canonicalizer v3</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">Historical method</div>
+      <h2>Registration-supervised canonicalization</h2>
+      <div class="grid-3">
+        <div class="card blue-card">
+          <h3>Architecture</h3>
+          <ul class="small">
+            <li>256-channel content representation</li>
+            <li>64-D style code</li>
+            <li>2 downsampling stages</li>
+            <li>4 residual blocks</li>
+            <li>Canonical RGB + scanner renderer</li>
+          </ul>
+        </div>
+        <div class="card red-card">
+          <h3>Training contract</h3>
+          <ul class="small">
+            <li>10 registered slides</li>
+            <li>6 / 2 / 2 slide split</li>
+            <li>256 px at 20×</li>
+            <li>50 epochs</li>
+            <li>Paired scanner supervision</li>
+          </ul>
+        </div>
+        <div class="card green-card">
+          <h3>Objectives explored</h3>
+          <ul class="small">
+            <li>Canonical consistency</li>
+            <li>Scanner translation</li>
+            <li>Pair consistency</li>
+            <li>Detail and nuclei losses</li>
+            <li>Frequency asymmetry</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:34px">
+        Repeated ablations exposed the same fidelity–invariance tension.
+      </div>
+      <div class="footer"><span>Historical model family</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">The anomaly</div>
+      <h2>The model found a low-detail shortcut</h2>
+      <div class="grid-2 cols-40-60">
+        <div>
+          <div class="step-list">
+            <div class="step"><div><strong>Color converged</strong><span>Scanner appearance became more similar.</span></div></div>
+            <div class="step"><div><strong>Embedding alignment improved</strong><span>Same-location retrieval often increased.</span></div></div>
+            <div class="step"><div><strong>Detail weakened</strong><span>The best-aligned canonical images became smooth.</span></div></div>
+          </div>
+          <div class="callout" style="margin-top:24px">Bug—or optimal shortcut?</div>
+        </div>
+        <div class="figure" style="height:630px">
+          <img src="../../archived/2026-07-14_v3/outputs/phase1_v3_10slide_ab18_nuclei_orientation_50ep/samples/epoch23/grid_loc0.png" alt="Historical canonical image and scanner-specific reconstructions">
+        </div>
+      </div>
+      <div class="footer"><span>Exploratory evidence only</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">Research pivot</div>
+      <h2>Stop optimizing the generator. Interrogate the image.</h2>
+      <div class="grid-2" style="margin-top:48px">
+        <div class="card red-card">
+          <h3>Old question</h3>
+          <p class="lede" style="font-size:32px">
+            How do we train a better canonicalizer?
+          </p>
+        </div>
+        <div class="card blue-card">
+          <h3>New question</h3>
+          <p class="lede" style="font-size:32px">
+            What must change—or disappear—for scanner embeddings to converge?
+          </p>
+        </div>
+      </div>
+      <div class="grid-4" style="margin-top:36px">
+        <div class="card"><h3>01</h3><p class="small">Which frequency is calibratable?</p></div>
+        <div class="card"><h3>02</h3><p class="small">Does appearance predict UNI?</p></div>
+        <div class="card"><h3>03</h3><p class="small">Is blur correction or collapse?</p></div>
+        <div class="card"><h3>04</h3><p class="small">Is scanner style reference-independent?</p></div>
+      </div>
+      <div class="footer"><span>From modeling to mechanism</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide dark">
+      <div class="section-index">PART II · METHODS</div>
+      <div class="section-title">Frequency-resolved interventions on registered tissue</div>
+      <div class="section-subtitle">
+        Separate appearance calibration from high-frequency damage, then evaluate every intervention in the original UNI space.
+      </div>
+      <div class="footer"><span>Experimental design</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Data contract</div>
+      <h2>Every comparison stays within one physical sampling lattice</h2>
+      <div class="grid-2">
+        <div class="card blue-card">
+          <h3>Internal lattice</h3>
+          <p><span class="tag">AT2</span><span class="tag">GT450</span><span class="tag">VERSA</span><span class="tag">AKOYA</span></p>
+          <p class="small muted">All scanners share registered physical locations.</p>
+        </div>
+        <div class="card red-card">
+          <h3>Independent S60 lattice</h3>
+          <p><span class="tag red-tag">AT2</span><span class="tag red-tag">S60</span></p>
+          <p class="small muted">A separate paired lattice—not unseen-scanner validation.</p>
+        </div>
+      </div>
+      <div class="formula" style="margin-top:32px">
+        location identity = (lattice_id, slide_id, tuple_id)
+      </div>
+      <div class="metric-row">
+        <div class="metric"><div class="big-number">6</div><div class="metric-label">train slides</div></div>
+        <div class="metric"><div class="big-number">2</div><div class="metric-label">validation slides</div></div>
+        <div class="metric"><div class="big-number">2</div><div class="metric-label">test slides</div></div>
+        <div class="metric"><div class="big-number red">20×</div><div class="metric-label">256 px patches</div></div>
+      </div>
+      <div class="footer"><span>Matched location identity</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">Operational decomposition</div>
+      <h2>A fixed, exact-reconstruction Laplacian pyramid</h2>
+      <div class="grid-2 cols-40-60">
+        <div class="pyramid">
+          <div class="p-level p1"><span class="p-label">256² · HF</span></div>
+          <div class="p-level p2"><span class="p-label">128² · HF</span></div>
+          <div class="p-level p3"><span class="p-label">64² / 32² · HF</span></div>
+          <div class="p-level p4">16² LF</div>
+        </div>
+        <div>
+          <div class="card blue-card">
+            <h3>Four levels</h3>
+            <p>5-tap binomial low-pass, decimation, bilinear expansion.</p>
+          </div>
+          <div class="formula" style="margin-top:22px">
+            I = R(L<sub>16</sub>, H<sub>32</sub>, H<sub>64</sub>, H<sub>128</sub>, H<sub>256</sub>)
+          </div>
+          <div class="grid-2" style="margin-top:22px">
+            <div class="card red-card">
+              <h3>LF may contain</h3>
+              <p class="small">Color · brightness · stain density · broad structure</p>
+            </div>
+            <div class="card blue-card">
+              <h3>HF may contain</h3>
+              <p class="small">Nuclei · texture · focus · MTF · sharpening</p>
+            </div>
+          </div>
+          <p class="small muted" style="margin-top:21px">
+            Frequency bands are operational—not absolute biological categories.
+          </p>
+        </div>
+      </div>
+      <div class="footer"><span>Fixed pyramid</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Experiment map</div>
+      <h2>Three complementary audits</h2>
+      <div class="grid-3" style="margin-top:45px">
+        <div class="card blue-card">
+          <div class="big-number">A</div>
+          <h3>Pairwise LF calibration</h3>
+          <p>Can a simple affine match scanner appearance?</p>
+          <p class="small muted">14 directed scanner pairs</p>
+        </div>
+        <div class="card red-card">
+          <div class="big-number red">B</div>
+          <h3>Matched HF damage</h3>
+          <p>Does convergence survive a content-preservation audit?</p>
+          <p class="small muted">Five detail-retention levels</p>
+        </div>
+        <div class="card green-card">
+          <div class="big-number green">C</div>
+          <h3>Rotating LF references</h3>
+          <p>Is the HF response independent of LF context?</p>
+          <p class="small muted">AT2 · GT450 · VERSA · AKOYA</p>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:43px">
+        Image appearance, UNI alignment, and content preservation are measured separately.
+      </div>
+      <div class="footer"><span>Exp02 overview</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">Method A</div>
+      <h2>Pairwise low-frequency affine calibration</h2>
+      <div class="grid-2 cols-55-45">
+        <div>
+          <div class="flow">
+            <div class="node">Source LF</div>
+            <div class="arrow">→</div>
+            <div class="node red-node">4×3 RGB affine</div>
+            <div class="arrow">→</div>
+            <div class="node">Target LF</div>
+          </div>
+          <div class="formula">
+            L′ = [L,1]A<sub>s→t</sub> &nbsp;&nbsp;·&nbsp;&nbsp;
+            I′ = clip(R(L′,H<sub>s</sub>), −1, 1)
+          </div>
+          <div class="metric-row" style="grid-template-columns:repeat(3,1fr)">
+            <div class="metric"><div class="big-number">14</div><div class="metric-label">directed pairs</div></div>
+            <div class="metric"><div class="big-number">600</div><div class="metric-label">max train locations / lattice</div></div>
+            <div class="metric"><div class="big-number">160</div><div class="metric-label">test locations / lattice</div></div>
+          </div>
+        </div>
+        <div class="card blue-card">
+          <h3>Audited outcomes</h3>
+          <ul>
+            <li>Requested and operational LF MAE</li>
+            <li>Full-image SSIM</li>
+            <li>Pre-clipping range violation</li>
+            <li>Clipped detail distortion</li>
+            <li>UNI source/output/target cosine</li>
+          </ul>
+          <p class="small muted">Affines are fit on train slides only; UNI is never used for fitting.</p>
+        </div>
+      </div>
+      <div class="footer"><span>Train-only analytic baseline</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Method B</div>
+      <h2>Matched blur separates LF correction from unequal damage</h2>
+      <div class="grid-2">
+        <div class="card blue-card">
+          <h3>Transformed source</h3>
+          <div class="formula" style="font-size:25px">
+            I′<sub>s,λ</sub> = clip(R(A L<sub>s</sub>, λH<sub>s</sub>))
+          </div>
+        </div>
+        <div class="card red-card">
+          <h3>Matched target</h3>
+          <div class="formula" style="font-size:25px;background:#f8efee;border-color:#e5c7c4;color:#7b1515">
+            I<sub>t,λ</sub> = clip(R(L<sub>t</sub>, λH<sub>t</sub>))
+          </div>
+        </div>
+      </div>
+      <div class="spectrum">
+        <div style="height:100%">λ 1.00</div>
+        <div style="height:82%">0.75</div>
+        <div style="height:64%">0.50</div>
+        <div style="height:45%">0.25</div>
+        <div style="height:25%">0.00</div>
+      </div>
+      <div class="formula" style="margin-top:24px">
+        LF gain = cos(E(I′<sub>s,λ</sub>), E(I<sub>t,λ</sub>))
+        − cos(E(I<sub>s,λ</sub>), E(I<sub>t,λ</sub>))
+      </div>
+      <div class="footer"><span>Controlled detail retention</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">Method C</div>
+      <h2>Controlled high-frequency trajectories</h2>
+      <div class="grid-4">
+        <div class="card blue-card"><h3>Raw</h3><p class="small">Original LF and HF</p><div class="big-number">1</div><div class="metric-label">state</div></div>
+        <div class="card red-card"><h3>Blur</h3><p class="small">HF gain 0.75 → 0</p><div class="big-number red">4</div><div class="metric-label">states</div></div>
+        <div class="card amber-card"><h3>Sharpen</h3><p class="small">HF gain 1.25 → 2</p><div class="big-number amber">3</div><div class="metric-label">states</div></div>
+        <div class="card green-card"><h3>HF mixing</h3><p class="small">Registered or global mean</p><div class="big-number green">8</div><div class="metric-label">states</div></div>
+      </div>
+      <div class="metric-row" style="margin-top:32px">
+        <div class="metric"><div class="big-number">3</div><div class="metric-label">QC-selected locations</div></div>
+        <div class="metric"><div class="big-number">4</div><div class="metric-label">internal scanners</div></div>
+        <div class="metric"><div class="big-number">16</div><div class="metric-label">states / image</div></div>
+        <div class="metric"><div class="big-number red">192</div><div class="metric-label">UNI embeddings</div></div>
+      </div>
+      <p class="small muted" style="margin-top:25px;text-align:center">
+        Locations were selected without embedding access; the global HF reference uses 1,024 train images.
+      </p>
+      <div class="footer"><span>Mechanistic three-patch pilot</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Evaluation geometry</div>
+      <h2>Gathering is not enough</h2>
+      <div class="grid-3">
+        <div class="card blue-card"><h3>Self preservation</h3><p class="small">Cosine to the original raw embedding.</p></div>
+        <div class="card blue-card"><h3>LOO consensus gain</h3><p class="small">Progress toward the other scanners at the same location.</p></div>
+        <div class="card blue-card"><h3>Scanner radius</h3><p class="small">Mean cosine distance to the spherical scanner centroid.</p></div>
+        <div class="card red-card"><h3>Content margin</h3><p class="small">Own-location consensus versus the strongest other-location negative.</p></div>
+        <div class="card red-card"><h3>Cross-scanner retrieval</h3><p class="small">Nearest neighbor retains the physical location.</p></div>
+        <div class="card red-card"><h3>Direction cosine</h3><p class="small">Scanner agreement of intervention-induced displacement.</p></div>
+      </div>
+      <div class="callout" style="margin-top:34px">
+        All quantitative geometry is computed in normalized UNI space. UMAP is descriptive.
+      </div>
+      <div class="footer"><span>Multiple preservation gates</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide dark">
+      <div class="section-index">PART III · RESULTS</div>
+      <div class="section-title">Appearance is easy.<br>Representation is not.</div>
+      <div class="section-subtitle">
+        The controlled experiments recover the shortcut seen during model training—and reveal where it breaks.
+      </div>
+      <div class="footer"><span>Exp02 findings</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Result 1</div>
+      <h2>Low-frequency appearance is highly calibratable</h2>
+      <div class="grid-2 cols-55-45">
+        <div class="figure" style="height:650px">
+          <img src="../../outputs/exp02_visualization/figures/figure1_pairwise_image_transform.png" alt="Pairwise low-frequency correction with rotating references">
+        </div>
+        <div>
+          <div class="metric"><div class="big-number">0.253</div><div class="metric-label">raw LF MAE</div></div>
+          <div class="arrow" style="text-align:center">↓</div>
+          <div class="metric"><div class="big-number green">0.030</div><div class="metric-label">requested affine LF MAE</div></div>
+          <div class="arrow" style="text-align:center">↓</div>
+          <div class="metric"><div class="big-number red">0.037</div><div class="metric-label">operational LF MAE after clipping</div></div>
+          <div class="callout" style="margin-top:23px;font-size:26px">
+            A global affine explains most LF scanner appearance.
+          </div>
+        </div>
+      </div>
+      <div class="footer"><span>14 directed scanner pairs</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">LF efficacy</div>
+      <h2>The correction is visible and measurable</h2>
+      <div class="metric-row">
+        <div class="metric"><div class="big-number">88%</div><div class="metric-label">requested LF error reduction</div></div>
+        <div class="metric"><div class="big-number green">0.281→0.433</div><div class="metric-label">full-image SSIM</div></div>
+        <div class="metric"><div class="big-number">0.813→0.556</div><div class="metric-label">internal LF scanner BACC</div></div>
+        <div class="metric"><div class="big-number red">0.928→0.780</div><div class="metric-label">S60-lattice LF BACC</div></div>
+      </div>
+      <div class="grid-2" style="margin-top:42px">
+        <div class="card green-card">
+          <h3>What succeeded</h3>
+          <p>Color and coarse appearance moved substantially toward the requested scanner.</p>
+        </div>
+        <div class="card red-card">
+          <h3>What remained</h3>
+          <p>Residual LF separability stayed above chance in both lattices.</p>
+        </div>
+      </div>
+      <div class="footer"><span>Image-space evidence</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Result 2</div>
+      <h2>UNI does not follow low-frequency appearance</h2>
+      <table class="table">
+        <thead><tr><th>Scanner / task</th><th>Raw</th><th>LF corrected</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td>GT450 cosine → AT2</td><td>0.841</td><td>0.759</td><td class="hot">−0.082</td></tr>
+          <tr><td>VERSA cosine → AT2</td><td>0.874</td><td>0.871</td><td>−0.003</td></tr>
+          <tr><td>S60 cosine → AT2</td><td>0.763</td><td>0.743</td><td class="hot">−0.020</td></tr>
+          <tr class="subtle"><td>Internal UNI scanner BACC</td><td>0.998</td><td>0.998</td><td>0.000</td></tr>
+          <tr class="subtle"><td>S60-lattice UNI scanner BACC</td><td>0.998</td><td>1.000</td><td class="hot">+0.002</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:35px">
+        Strong image correction did not create representation invariance.
+      </div>
+      <div class="footer"><span>Frozen UNI</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">Direction heterogeneity</div>
+      <h2>The average hides scanner- and target-specific motion</h2>
+      <div class="figure" style="height:390px">
+        <img src="../../outputs/exp02_visualization/figures/figure2_uni_low_frequency_response.png" alt="Pairwise low-frequency correction in image and UNI space">
+      </div>
+      <div class="grid-3" style="margin-top:25px">
+        <div class="card red-card"><div class="big-number red">−0.020</div><div class="metric-label">mean target-cosine gain</div></div>
+        <div class="card blue-card"><div class="big-number">7 / 7</div><div class="metric-label">positive / negative directions</div></div>
+        <div class="card amber-card"><div class="big-number amber">6 / 14</div><div class="metric-label">sign changes across two test slides</div></div>
+      </div>
+      <div class="footer"><span>Movement without a common target direction</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Result 3</div>
+      <h2>Blur makes scanner images look aligned in UNI</h2>
+      <table class="table">
+        <thead>
+          <tr><th>HF retention</th><th>Corrected ↔ target</th><th>Raw ↔ target</th><th>LF gain</th><th>Target blur ↔ own sharp</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1.00</td><td>0.686</td><td>0.707</td><td>−0.020</td><td>1.000</td></tr>
+          <tr><td>0.75</td><td>0.715</td><td>0.734</td><td>−0.019</td><td>0.950</td></tr>
+          <tr><td>0.50</td><td>0.761</td><td>0.774</td><td>−0.013</td><td>0.826</td></tr>
+          <tr><td>0.25</td><td>0.826</td><td>0.817</td><td class="good">+0.009</td><td>0.620</td></tr>
+          <tr class="subtle"><td>0.00</td><td class="good">0.990</td><td>0.949</td><td class="good">+0.041</td><td class="hot">0.045</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:31px">
+        Near-perfect cross-scanner similarity emerged only after the sharp representation disappeared.
+      </div>
+      <div class="footer"><span>Matched-blur frontier</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">Collapse audit</div>
+      <h2>Scanner gathering can be information destruction</h2>
+      <div class="figure" style="height:650px">
+        <img src="../../outputs/exp02_hf_trajectory/figures/figure5_hf_trajectory_metrics.png" alt="High-frequency perturbation alignment gains versus content loss">
+      </div>
+      <div class="footer"><span>Original normalized UNI geometry</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Endpoint comparison</div>
+      <h2>Alignment and preservation occupy different axes</h2>
+      <table class="table">
+        <thead><tr><th>Endpoint</th><th>Self cosine</th><th>Consensus gain</th><th>Radius</th><th>Content margin</th><th>Retrieval</th></tr></thead>
+        <tbody>
+          <tr><td>Raw</td><td>1.000</td><td>0.000</td><td>0.095</td><td>0.374</td><td>1.00</td></tr>
+          <tr><td>Blur 1.0</td><td class="hot">0.065</td><td class="hot">−0.781</td><td class="good">0.040</td><td class="hot">≈0</td><td class="hot">0.67</td></tr>
+          <tr><td>Sharpen 1.0</td><td>0.828</td><td>−0.125</td><td class="hot">0.120</td><td>0.302</td><td>1.00</td></tr>
+          <tr class="subtle"><td>Registered HF mean 0.25</td><td class="good">0.957</td><td class="good">+0.028</td><td class="good">0.069</td><td class="good">0.384</td><td class="good">1.00</td></tr>
+          <tr><td>Global HF mean 1.0</td><td class="hot">0.078</td><td class="hot">−0.759</td><td class="good">0.040</td><td class="hot">0.007</td><td>1.00</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:30px">
+        A smaller scanner radius is not sufficient evidence of normalization.
+      </div>
+      <div class="footer"><span>Mechanistic endpoints</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">A useful positive control</div>
+      <h2>Not every high-frequency reference is equivalent</h2>
+      <div class="grid-2 cols-55-45">
+        <div class="figure" style="height:650px">
+          <img src="../../outputs/exp02_hf_trajectory/figures/figure4c_reference_centroid_umap.png" alt="Registered versus global high-frequency reference centroid trajectories">
+        </div>
+        <div>
+          <div class="card red-card">
+            <h3>Global coefficient mean</h3>
+            <div class="big-number red">4.27%</div>
+            <div class="metric-label">of individual HF RMS remains</div>
+            <p class="small muted" style="margin-top:15px">Phase cancellation turns it into a low-pass negative control.</p>
+          </div>
+          <div class="card green-card" style="margin-top:24px">
+            <h3>Registered same-location mean · 25%</h3>
+            <p class="small">
+              Radius <strong>0.095→0.069</strong><br>
+              Consensus gain <strong>+0.028</strong><br>
+              Self cosine <strong>0.957</strong><br>
+              Retrieval <strong>1.00</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="footer"><span>Content- and phase-aligned oracle</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Method extension</div>
+      <h2>Rotate the low-frequency reference, repeat the same HF intervention</h2>
+      <div class="flow" style="margin-top:60px">
+        <div>
+          <div class="node" style="margin-bottom:13px">LF → AT2</div>
+          <div class="node" style="margin-bottom:13px">LF → GT450</div>
+          <div class="node" style="margin-bottom:13px">LF → VERSA</div>
+          <div class="node">LF → AKOYA</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="node red-node" style="min-width:280px">Same source HF<br>blur / sharpen</div>
+        <div class="arrow">→</div>
+        <div class="node dark-node" style="min-width:260px">UNI trajectory</div>
+      </div>
+      <div class="metric-row" style="margin-top:60px">
+        <div class="metric"><div class="big-number">3</div><div class="metric-label">locations</div></div>
+        <div class="metric"><div class="big-number">4</div><div class="metric-label">LF references</div></div>
+        <div class="metric"><div class="big-number">4</div><div class="metric-label">source scanners</div></div>
+        <div class="metric"><div class="big-number red">480</div><div class="metric-label">aligned + unaligned rows</div></div>
+      </div>
+      <div class="footer"><span>Reference interaction audit</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">Result 4</div>
+      <h2>The same sharpening has reference-dependent effects</h2>
+      <div class="figure" style="height:520px">
+        <img src="../../outputs/exp02_lf_aligned_hf_trajectory/figures/figure6e_scanner_radius_after_lf_alignment.png" alt="Scanner radius under blur and sharpen after rotating low-frequency alignment">
+      </div>
+      <div class="grid-2" style="margin-top:16px">
+        <div class="card red-card" style="padding:16px 24px"><p class="small"><strong>LF→AT2 / VERSA / AKOYA:</strong> sharpen increases scanner disagreement.</p></div>
+        <div class="card green-card" style="padding:16px 24px"><p class="small"><strong>LF→GT450:</strong> the same sharpen slightly decreases scanner radius.</p></div>
+      </div>
+      <div class="footer"><span>Scanner × LF context × HF intervention</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Physical validity</div>
+      <h2>LF and HF are not interchangeable Lego blocks</h2>
+      <div class="grid-2 cols-55-45">
+        <div class="figure" style="height:635px">
+          <img src="../../outputs/exp02_lf_aligned_hf_trajectory/figures/pairs/pair_01_lf_aligned_hf_endpoints.png" alt="LF-aligned images under blur and sharpening, showing clipping artifacts">
+        </div>
+        <div>
+          <div class="card green-card">
+            <h3>LF mapping works</h3>
+            <p class="small">Raw MAE 0.161–0.339<br>Affine 0.012–0.048<br>Operational 0.023–0.055</p>
+          </div>
+          <div class="card red-card" style="margin-top:22px">
+            <h3>But composites leave RGB gamut</h3>
+            <p class="small">
+              Akoya LF reference:<br>
+              AT2 source <strong>17.1%</strong><br>
+              GT450 source <strong>9.2%</strong><br>
+              VERSA source <strong>18.5%</strong>
+            </p>
+          </div>
+          <p class="small muted" style="margin-top:20px">
+            Operational clipping is valid input—but not a clean HF-only causal intervention.
+          </p>
+        </div>
+      </div>
+      <div class="footer"><span>Range audit</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide dark">
+      <div class="section-index">PART IV · SYNTHESIS</div>
+      <div class="section-title">The scanner effect is not a detachable style layer</div>
+      <div class="section-subtitle">
+        A universal image normalizer must solve calibration, information recovery, and physical compatibility at the same time.
+      </div>
+      <div class="footer"><span>Revising the hypothesis</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Revised view</div>
+      <h2>Shared biology does not imply scanner-independent pixels</h2>
+      <div class="grid-2">
+        <div class="card red-card">
+          <h3>Initial factorization</h3>
+          <div class="formula" style="font-size:35px">I<sub>s</sub> = R<sub>s</sub>(B)</div>
+          <p class="small muted" style="margin-top:19px">
+            A canonical biology image plus detachable scanner style.
+          </p>
+        </div>
+        <div class="card blue-card">
+          <h3>Evidence-supported view</h3>
+          <div class="formula" style="font-size:28px">
+            z = E<sub>PFM</sub>(L, H, L×H, scanner optics)
+          </div>
+          <p class="small muted" style="margin-top:19px">
+            Color is calibratable; focus/MTF are information-losing; UNI responds nonlinearly to LF–HF context.
+          </p>
+        </div>
+      </div>
+      <div class="quote" style="margin-top:55px">
+        Morphology is shared biology, but its pixel realization is not scanner-independent.
+      </div>
+      <div class="footer"><span>Conceptual update</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">The standard-image dilemma</div>
+      <h2>Every target makes a different compromise</h2>
+      <div class="risk-grid">
+        <div class="risk"><h3>Blurry common denominator</h3><p>All scanners can reach it, but content and representation collapse.</p></div>
+        <div class="risk"><h3>Sharp canonical target</h3><p>Preserves detail, but blurrier scanners must invent missing morphology.</p></div>
+        <div class="risk"><h3>Preserve source HF</h3><p>Keeps observed morphology—and the source scanner's focus/MTF signature.</p></div>
+        <div class="risk"><h3>Synthesize target HF</h3><p>Risks hallucination, LF–HF incompatibility, and out-of-gamut composites.</p></div>
+      </div>
+      <div class="callout" style="margin-top:28px">
+        The data do not prove impossibility. They expose the constraints a common image must satisfy.
+      </div>
+      <div class="footer"><span>No universal no-go claim</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Current limits</div>
+      <h2>What this pilot does—and does not—establish</h2>
+      <div class="grid-2">
+        <div class="card green-card">
+          <h3>Established mechanistically</h3>
+          <ul class="small">
+            <li>LF appearance is strongly calibratable</li>
+            <li>LF alignment does not guarantee UNI alignment</li>
+            <li>Blur can fake convergence through collapse</li>
+            <li>HF response depends on LF reference</li>
+            <li>Some LF–HF combinations violate RGB range</li>
+          </ul>
+        </div>
+        <div class="card red-card">
+          <h3>Not yet established</h3>
+          <ul class="small">
+            <li>Generalization across multiple PFMs</li>
+            <li>Population effect sizes beyond two test slides</li>
+            <li>Nucleus-level biological fidelity</li>
+            <li>Deployment value of the registered HF oracle</li>
+            <li>Mathematical impossibility of a common image</li>
+          </ul>
+        </div>
+      </div>
+      <p class="small muted" style="margin-top:27px;text-align:center">
+        HF trajectories use three artifact-screened registered locations; UMAP is qualitative.
+      </p>
+      <div class="footer"><span>Scope of inference</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide soft">
+      <div class="eyebrow">Next experiments</div>
+      <h2>Turn the mechanistic finding into a confirmatory study</h2>
+      <div class="grid-3">
+        <div class="card blue-card">
+          <h3>Population + multi-PFM</h3>
+          <p class="small">Full registered test population, slide-level bootstrap, UNI, EXAONEPath, Virchow2, GigaPath.</p>
+        </div>
+        <div class="card red-card">
+          <h3>Biology preservation</h3>
+          <p class="small">Nucleus geometry, topology, neighborhood stability, unsupported edge generation.</p>
+        </div>
+        <div class="card green-card">
+          <h3>Common evaluator</h3>
+          <p class="small">Classical image baselines plus feature-space CORAL/Procrustes positive controls.</p>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:33px">
+        Pix2Pix becomes a falsification gate: can nonlinear translation beat affine baselines without paying in biology?
+      </div>
+      <div class="step-list" style="grid-template-columns:repeat(2,1fr)">
+        <div class="step"><div><strong>Sharp → blur</strong><span>Easy to reach; tests information loss.</span></div></div>
+        <div class="step"><div><strong>Blur → sharp</strong><span>Ill-posed; tests hallucination risk.</span></div></div>
+      </div>
+      <div class="footer"><span>Confirmatory path</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">Take-home</div>
+      <h2>Normalization is a three-objective problem</h2>
+      <div class="grid-2 cols-40-60">
+        <div class="triangle">
+          <svg viewBox="0 0 670 535" aria-label="Triangle connecting appearance alignment, UNI alignment, and content preservation">
+            <defs>
+              <linearGradient id="tri" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#011f5b" stop-opacity=".12"/>
+                <stop offset="1" stop-color="#990000" stop-opacity=".12"/>
+              </linearGradient>
+            </defs>
+            <polygon points="335,70 80,455 590,455" fill="url(#tri)" stroke="#011f5b" stroke-width="7"/>
+            <circle cx="335" cy="70" r="21" fill="#990000"/>
+            <circle cx="80" cy="455" r="21" fill="#011f5b"/>
+            <circle cx="590" cy="455" r="21" fill="#168765"/>
+          </svg>
+          <div class="tri-label tri-top">Appearance alignment</div>
+          <div class="tri-label tri-left">UNI alignment</div>
+          <div class="tri-label tri-right">Content preservation</div>
+        </div>
+        <div>
+          <div class="card blue-card"><h3>1</h3><p>Low-frequency scanner appearance is highly correctable.</p></div>
+          <div class="card red-card" style="margin-top:17px"><h3>2</h3><p>Appearance alignment does not guarantee representation alignment.</p></div>
+          <div class="card green-card" style="margin-top:17px"><h3>3</h3><p>Convergence without preservation can be representation collapse.</p></div>
+        </div>
+      </div>
+      <div class="footer"><span>Main conclusion</span><span class="slide-number"></span></div>
+    </section>
+
+    <section class="slide dark">
+      <div class="section-index">DISCUSSION</div>
+      <div class="section-title" style="font-size:64px;max-width:1250px">
+        One image for every PFM remains attractive.<br>
+        Embedding alignment alone may make that image a blur.
+      </div>
+      <div class="title-rule"></div>
+      <div class="section-subtitle">Jonghyun Lee · Kim Lab · July 28, 2026</div>
+      <div class="footer"><span>Thank you</span><span class="slide-number"></span></div>
+    </section>
+
+  </div>
+  <div id="progress"></div>
+  <script>
+    (() => {
+      const stage = document.getElementById("stage");
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const progress = document.getElementById("progress");
+      const help = document.getElementById("help");
+      let current = Math.max(0, Math.min(slides.length - 1, (parseInt(location.hash.slice(1), 10) || 1) - 1));
+
+      slides.forEach((slide, index) => {
+        const number = slide.querySelector(".slide-number");
+        if (number) number.textContent = `${String(index + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}`;
+      });
+
+      function fit() {
+        const scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+        stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+      }
+
+      function show(index, pushHash = true) {
+        current = Math.max(0, Math.min(slides.length - 1, index));
+        slides.forEach((slide, i) => slide.classList.toggle("active", i === current));
+        progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+        if (pushHash) history.replaceState(null, "", `#${current + 1}`);
+      }
+
+      function next() { show(current + 1); }
+      function previous() { show(current - 1); }
+
+      window.addEventListener("resize", fit);
+      window.addEventListener("hashchange", () => {
+        const requested = (parseInt(location.hash.slice(1), 10) || 1) - 1;
+        show(requested, false);
+      });
+      window.addEventListener("keydown", event => {
+        if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(event.key)) {
+          event.preventDefault();
+          next();
+        } else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(event.key)) {
+          event.preventDefault();
+          previous();
+        } else if (event.key.toLowerCase() === "f") {
+          event.preventDefault();
+          if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+          else document.exitFullscreen?.();
+        } else if (event.key.toLowerCase() === "p") {
+          event.preventDefault();
+          window.print();
+        } else if (event.key === "Home") {
+          show(0);
+        } else if (event.key === "End") {
+          show(slides.length - 1);
+        }
+      });
+
+      let touchX = null;
+      window.addEventListener("touchstart", event => { touchX = event.changedTouches[0].clientX; }, { passive: true });
+      window.addEventListener("touchend", event => {
+        if (touchX === null) return;
+        const delta = event.changedTouches[0].clientX - touchX;
+        if (Math.abs(delta) > 50) delta < 0 ? next() : previous();
+        touchX = null;
+      }, { passive: true });
+
+      fit();
+      show(current, false);
+      window.setTimeout(() => help.classList.add("hidden"), 3200);
+    })();
+  </script>
+</body>
+</html>

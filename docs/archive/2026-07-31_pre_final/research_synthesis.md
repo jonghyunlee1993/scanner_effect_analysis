@@ -1,5 +1,8 @@
 # Scanner Spectrum 연구 종합
 
+> Archive snapshot. 2026-07-31 이전의 연구 종합이며 최종 storyline은
+> `../../../final_study_protocol.md`에 정리했다.
+
 최종 갱신: 2026-07-24
 
 ## 1. 연구 질문

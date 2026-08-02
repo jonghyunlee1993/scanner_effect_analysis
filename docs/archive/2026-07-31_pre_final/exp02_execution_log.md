@@ -1,5 +1,8 @@
 # Exp-02 실행 기록
 
+> Archive snapshot. 최종 연구 설계 이전의 실행 provenance이며 active protocol은
+> `../../../final_study_protocol.md`를 따른다.
+
 작성일: 2026-07-15 (마지막 검증: 2026-07-23)
 현재 판정: **Stage 1B sample-identity 수정 및 lattice별 matched probe 재산출 완료**
 선행 설계는 완료 후 정리했으며 핵심 계약은 이 실행 기록에 보존한다.
