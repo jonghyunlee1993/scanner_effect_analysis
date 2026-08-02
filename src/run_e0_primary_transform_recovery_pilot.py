@@ -119,14 +119,21 @@ def scale_thumbnail_affine_to_full(
 
 
 def recover_similarity(native_rgb, registered_rgb, minimum_inliers):
-    sift = cv2.SIFT_create(nfeatures=20_000, contrastThreshold=0.01, edgeThreshold=15)
+    cv2.setRNGSeed(20260802)
+    sift = cv2.SIFT_create(nfeatures=12_000, contrastThreshold=0.01, edgeThreshold=15)
     key_native, descriptor_native = sift.detectAndCompute(gray_features(native_rgb), None)
     key_registered, descriptor_registered = sift.detectAndCompute(
         gray_features(registered_rgb), None
     )
     if descriptor_native is None or descriptor_registered is None:
         raise RuntimeError("SIFT found no descriptors")
-    matcher = cv2.BFMatcher(cv2.NORM_L2)
+    # Exact 20k×20k brute-force matching dominates this otherwise lightweight
+    # recovery.  KD-tree FLANN is deterministic enough for candidate generation;
+    # the final geometry still has to pass the same strict RANSAC inlier gate.
+    matcher = cv2.FlannBasedMatcher(
+        dict(algorithm=1, trees=8),
+        dict(checks=96),
+    )
     pairs = matcher.knnMatch(descriptor_native, descriptor_registered, k=2)
     accepted = [first for first, second in pairs if first.distance < 0.72 * second.distance]
     if len(accepted) < minimum_inliers:
