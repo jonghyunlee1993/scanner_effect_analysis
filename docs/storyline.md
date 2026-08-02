@@ -806,7 +806,9 @@ Highlights와 최종 결론에는 audited table만 사용한다.
    — local residual 후 NCC median 0.996, boundary failure 0/80; global transform 단독은 GT450에서
    불충분하므로 per-location residual 유지
 8. 109 slides × 100 locations에서 scanner별 native transform과 local residual manifest를
-   구축하고 512 px/six-scanner QC를 통과
+   구축하고 512 px/six-scanner QC를 통과 — global inlier/scale/reprojection gate와 ±120 px
+   local NCC/boundary/native-bounds gate를 결과 전에 동결; 최종 65,400 scanner-location
+   rows와 10,900 complete tuples 필요
 9. Frozen native geometry로 anti-aliased patch/grid를 생성하고 historical-original 대비
    `geometry × resampling` sensitivity를 감사
 10. ~~2D alias mixing~~ — original bicubic 실패, explicit-AA 통과; native-AA grid

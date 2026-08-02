@@ -232,7 +232,9 @@ def make_warped_views(native_image, native_to_registered, registered_shape_rc):
         bg_color=[0] * native_image.bands,
     )
     singular = np.linalg.svd(native_to_registered[:2, :2], compute_uv=False)
-    pre_scale = float(singular.min())
+    # Anti-alias only for genuine reduction. A recovered scale slightly above
+    # one is an upsampling path and must not introduce an unnecessary pre-enlarge.
+    pre_scale = float(min(1.0, singular.min()))
     antialiased_native = native_image.resize(pre_scale, kernel="lanczos3")
     antialiased = warp_tools.warp_img(
         antialiased_native,

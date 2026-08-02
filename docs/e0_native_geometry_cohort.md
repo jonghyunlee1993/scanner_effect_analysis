@@ -1,0 +1,90 @@
+# E0 native geometry cohort contract
+
+**Status:** gate frozen before the 109-slide cohort run
+
+**Manifest version:** `e0_native_geometry_v1`
+
+## Purpose
+
+The frozen `e0_integer_512_v1` manifest identifies 109 slides × 100 canonical
+biological centers, but its RGB pixels live in historical registered TIFFs. Those
+TIFFs are unsuitable as the primary pixel source because GT450/VERSA were downsampled
+without explicit anti-aliasing and moving-scanner MPP tags were overwritten
+incorrectly.
+
+This stage maps every frozen center back to the scanner-native WSI. Historical
+registered pixels are used only for same-scanner geometry recovery and reconstruction
+QC. Final image and PFM inputs must be generated from native WSI pixels.
+
+## Frozen recovery route
+
+For each physical slide and moving scanner:
+
+1. Recover a native→historical-target global similarity from 4,096-pixel thumbnails
+   using 12,000-feature SIFT, deterministic FLANN matching and RANSAC.
+2. Start each local match at the already frozen scanner offset in
+   `e0_integer_512_v1`.
+3. Match a 256 px low-pass patch within ±120 target pixels and store the residual
+   integer displacement, NCC and RGB reconstruction error.
+4. Recenter the maximum 512 px model FOV using `legacy offset + native residual`.
+5. Map all four target-FOV corners through the inverse native→target matrix and verify
+   native bounds with a four-pixel interpolation margin.
+6. Store the complete affine matrix and explicit-AA pre-scale in every long-manifest
+   row. The later DataLoader applies `Lanczos3 reduction → residual bicubic affine`
+   directly to the native WSI.
+
+AT2 uses an identity native→target matrix only if raw and historical target dimensions
+match and all 100 deterministic 256 px checks have RGB MAE ≤0.5. Its final RGB also
+comes from the native WSI.
+
+The ±120 local range was fixed after the five-moving-scanner `12.5_11` sentinel. It is
+larger than the Akoya residual q95 observed with the earlier ±64 pilot and remains
+inside the ±128 geometric support implied by the already frozen 512 px FOV around a
+256 px center.
+
+## Frozen gates
+
+Global transform gates, applied to every moving scanner–slide cell:
+
+- SIFT RANSAC inliers ≥80;
+- thumbnail inlier reprojection q95 ≤4 px;
+- affine anisotropy ratio ≤1.02;
+- recovered native-px/target-px scale within 5% of scanner MPP expectation.
+
+Location gates:
+
+- low-pass same-scanner NCC ≥0.75;
+- residual optimum does not touch the ±120 search boundary;
+- shifted 512 px FOV is inside the target canvas;
+- all mapped FOV corners are inside the native WSI with interpolation margin.
+
+A scanner–slide cell passes only when its global transform passes and all 100 frozen
+locations pass. No outcome, PFM feature or tissue label is used for this decision.
+
+## Cohort completeness gate
+
+The merged output must contain exactly:
+
+- 109 slide shards;
+- 654 scanner–slide cells (`109 × 6`);
+- 65,400 unique scanner-location rows (`109 × 100 × 6`);
+- 10,900 complete six-scanner tuples;
+- zero duplicate, missing or unexpected keys;
+- zero failed cells and locations after any targeted fallback.
+
+The first merge may fail this promotion gate. Its failure lists define the only
+scanner–slide cells eligible for a native-from-scratch VALIS rigid/affine fallback.
+Non-rigid output remains excluded unless it passes a separate interpolation audit.
+
+## Reproducibility
+
+- Slide runner: `src/run_e0_native_geometry_cohort.py`
+- Cohort merger/gate: `src/merge_e0_native_geometry_cohort.py`
+- Array launcher: `scripts/e0_native_geometry_cohort.sbatch`
+- Merge launcher: `scripts/e0_native_geometry_merge.sbatch`
+- Unit contract: `tests/test_e0_native_geometry_cohort.py`
+- Shards and matrices: `outputs/e0_native_geometry_cohort/shards/`
+- Merged manifest and failure lists: `outputs/e0_native_geometry_cohort/merged/`
+
+Generated outputs remain ignored. Code, frozen gates, tests and launchers are tracked
+in Git before the full array is submitted.

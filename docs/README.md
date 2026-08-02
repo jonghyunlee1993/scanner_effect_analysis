@@ -16,6 +16,8 @@
   interpolation/MPP provenance, frozen 2D alias gate와 native explicit-AA 결정
 - [E0 primary native-AA pilot](e0_primary_native_aa_pilot.md): same-scanner native geometry
   recovery, per-location residual QC와 cohort 확장 gate
+- [E0 native geometry cohort contract](e0_native_geometry_cohort.md): 65,400-row
+  native-WSI manifest schema, frozen recovery gate와 targeted VALIS fallback 기준
 
 `storyline.md`는 현재 논문의 과학적 방향과 claim architecture의 기준이고,
 `final_study_protocol.md`는 세부 데이터·모델·구현 계약을 제공한다. 두 문서가
