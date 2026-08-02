@@ -15,5 +15,5 @@ export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 export MKL_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 export PYTHONNOUSERSITE=1
 
-VALIS_PYTHON="/mnt/isilon/oldridge_lab/irinaz/anaconda3/envs/valis310/bin/python"
-"$VALIS_PYTHON" src/run_e0_registration_sentinel.py "$@"
+REGISTRATION_PYTHON="/home/leej70/miniconda3/envs/cpath/bin/python"
+"$REGISTRATION_PYTHON" src/run_e0_registration_sentinel.py "$@"
