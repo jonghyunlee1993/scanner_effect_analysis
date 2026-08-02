@@ -196,10 +196,11 @@ family를 제공한다.
    사용해 paired crop을 다시 만든다.
 2. Sentinel slide에서 이 결과를 이미 생성된 VALIS rigid output과 동일 좌표·동일 FOV로
    대조한다.
-3. 두 경로가 사전 동결한 residual/padding/paired-similarity 기준을 만족하지 못할 때만
-   native WSI에서 VALIS rigid registration을 다시 수행한다. Non-rigid 결과는 interpolation
-   자체가 spectrum과 PFM feature에 미치는 영향을 별도로 통과하기 전에는 primary로 쓰지
-   않는다.
+3. Original 100-location route gate가 실패하면 기존 common coordinate pool에서 512 px-aware
+   deterministic replacement로 slide당 100개를 복구할 수 있는지 먼저 확인한다.
+4. 이 pool에서도 100개를 공급하지 못하는 scanner–slide cell에 한해서만 native WSI에서
+   rigid registration을 다시 수행한다. Non-rigid 결과는 interpolation 자체가 spectrum과
+   PFM feature에 미치는 영향을 별도로 통과하기 전에는 primary로 쓰지 않는다.
 
 현재 확인된 진단:
 
@@ -219,6 +220,10 @@ family를 제공한다.
   coordinate pool은 slide당 1,040–31,892개이므로 outcome-blind replacement를 먼저 감사함
 - 109-slide old→corrected high-band ERT median absolute delta는 scanner별
   0.00002–0.00384 log2였고 q95는 최대 0.08075(AKOYA)였음
+- Common-pool replacement 후 109 slides × 100 = 10,900 locations 모두 six-scanner
+  geometry와 shifted 512 px FOV를 통과함; original 8,203개 유지, 2,697개 교체
+- Slide당 replacement 중앙값은 20개, 최대 89개였고 candidate 평가 최대값은 855/3,000으로
+  native rigid rerun trigger에 도달한 slide는 없었음
 
 주의:
 
@@ -361,6 +366,8 @@ Patch/feature extraction contract:
   넓으며, 결과는 모델 안의 raw-relative effect를 먼저 계산한 뒤 계층적으로 종합한다.
 - 512 px FOV의 bounds, tissue coverage와 padding을 feature를 보기 전에 감사하고, 실패 위치는
   기존 common coordinate pool에서 결정론적으로 대체한다.
+- 이 감사로 생성된 `e0_integer_512_v1` manifest를 모든 PFM/condition의 유일한 location
+  source로 사용하고 legacy `selected_patches.csv`를 직접 읽지 않는다.
 - TRIDENT의 slide segmentation/patch sampling을 다시 돌리지 않는다. 연구 DataLoader가
   corrected RGB crop을 만들고 TRIDENT encoder factory와 공식 eval transform을 호출한다.
 - Embedding row는 `slide_id, tissue_type, scanner, location_id, replicate_id, center, FOV,
@@ -626,7 +633,7 @@ internal–external effect comparison을 사전 동결 계획에 따라 추가�
 | ID | 실험 | 핵심 질문 | 상태 | 본문 배치 | 완료/통과 조건 |
 |---|---|---|---|---|---|
 | E0a | Common physical grid audit | 모든 scanner pixel이 AT2 물리 좌표를 따르는가? | 부분 확인 | Methods 2.2, Results 3.1 | Transform, scale, MPP source 명시 |
-| E0b | Coarse-to-fine registration | AKOYA 경계 포화가 ERT를 교란하는가? | 109-slide selected-location 완료, replacement 미완 | Methods 2.2, Results 3.1 | 512 px-aware replacement manifest와 targeted residual QC |
+| E0b | Coarse-to-fine registration | AKOYA 경계 포화가 ERT를 교란하는가? | **완료** | Methods 2.2, Results 3.1 | 10,900-row six-scanner/512 px manifest 통과 |
 | E0c | 2D aliasing audit | GT450/VERSA downsampling이 high band를 오염하는가? | 미완 | Methods 2.3, Results 3.1 | Mixing matrix와 허용 band 동결 |
 | E0d | Anchor/noise-floor audit | ERT shape가 anchor와 noise에 견고한가? | 부분 완료 | Methods 2.4, Results 3.1/Supplement | Registered-chain sensitivity와 SNR 보고 |
 | E1 | Paired ERT | Scanner별 frequency signature가 재현되는가? | **잠정** | Results 3.2 | E0 통과 후 109-slide 재산출 |
@@ -756,9 +763,10 @@ Highlights와 최종 결론에는 audited table만 사용한다.
    - GT450/VERSA aliasing risk
    - Tissue와 slide strata 균형
 4. 현재 registered WSI의 corrected integer crop과 기존 VALIS rigid output 대조
-5. 두 경로가 모두 기준 미달일 때만 native WSI에서 VALIS rigid 재실행
-6. `old/new registration × original/anti-aliased resampling` factorial audit
-7. 2D alias mixing, anchor와 noise-floor sensitivity
+5. 109-slide common-pool에서 100-location/512 px manifest 복구
+6. Pool 복구 실패 cell에 한해서만 native WSI에서 rigid registration 재실행
+7. `old/new registration × original/anti-aliased resampling` factorial audit
+8. 2D alias mixing, anchor와 noise-floor sensitivity
 
 **Stop:** Common physical coordinates가 보장되지 않음.
 
