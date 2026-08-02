@@ -6,6 +6,7 @@ import pandas as pd
 from merge_e0_native_geometry_cohort import audit_merged, expected_keys
 from run_e0_native_geometry_cohort import (
     corners_within_native,
+    matrix_manifest_fields,
     resolve_slide_id,
     target_square_native_corners,
     transform_gate,
@@ -44,6 +45,17 @@ def test_transform_gate_uses_scale_anisotropy_and_reprojection_contract():
     failing = transform_gate(metrics, bad, "gt450", args)
     assert not failing["global_transform_pass"]
     assert not failing["global_transform_checks"]["maximum_affine_anisotropy"]
+
+
+def test_matrix_manifest_fields_preserve_nonidentity_transform(tmp_path):
+    affine = np.array(
+        [[0.5, -0.01, 123.0], [0.01, 0.5, -45.0], [0.0, 0.0, 1.0]]
+    )
+    fields = matrix_manifest_fields(affine, tmp_path / "matrix.npz")
+    assert fields["native_to_target_m00"] == 0.5
+    assert fields["native_to_target_m02"] == 123.0
+    assert fields["native_to_target_m12"] == -45.0
+    assert fields["explicit_aa_pre_scale"] < 1.0
 
 
 def test_slide_resolution_requires_exactly_one_selector():

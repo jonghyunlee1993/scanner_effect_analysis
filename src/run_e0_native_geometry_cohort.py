@@ -138,6 +138,20 @@ def corners_within_native(corners, width: int, height: int, interpolation_margin
     )
 
 
+def matrix_manifest_fields(affine: np.ndarray, matrix_path: Path):
+    singular = np.linalg.svd(affine[:2, :2], compute_uv=False)
+    return {
+        "native_to_target_m00": float(affine[0, 0]),
+        "native_to_target_m01": float(affine[0, 1]),
+        "native_to_target_m02": float(affine[0, 2]),
+        "native_to_target_m10": float(affine[1, 0]),
+        "native_to_target_m11": float(affine[1, 1]),
+        "native_to_target_m12": float(affine[1, 2]),
+        "explicit_aa_pre_scale": float(min(1.0, singular.min())),
+        "native_to_target_path": str(matrix_path.resolve()),
+    }
+
+
 def transform_gate(metrics, affine, scanner: str, args):
     singular = np.linalg.svd(affine[:2, :2], compute_uv=False)
     recovered_scale = float(1.0 / np.sqrt(np.prod(singular)))
@@ -613,7 +627,7 @@ def main():
                 )
                 np.savez_compressed(output / "native_to_target_at2.npz", native_to_target=affine)
             else:
-                rows, cell, _ = process_moving(
+                rows, cell, affine = process_moving(
                     locations,
                     scanner,
                     native_path,
@@ -624,17 +638,7 @@ def main():
                     args,
                 )
             matrix_path = (output / f"native_to_target_{scanner}.npz").resolve()
-            singular = np.linalg.svd(affine[:2, :2], compute_uv=False)
-            matrix_fields = {
-                "native_to_target_m00": float(affine[0, 0]),
-                "native_to_target_m01": float(affine[0, 1]),
-                "native_to_target_m02": float(affine[0, 2]),
-                "native_to_target_m10": float(affine[1, 0]),
-                "native_to_target_m11": float(affine[1, 1]),
-                "native_to_target_m12": float(affine[1, 2]),
-                "explicit_aa_pre_scale": float(min(1.0, singular.min())),
-                "native_to_target_path": str(matrix_path),
-            }
+            matrix_fields = matrix_manifest_fields(affine, matrix_path)
             for row in rows:
                 row.update(matrix_fields)
             cell.update(matrix_fields)
