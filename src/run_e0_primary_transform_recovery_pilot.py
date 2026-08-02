@@ -492,7 +492,14 @@ def main():
     axes[1].set_title("B  ERT-shape sensitivity")
     figure.tight_layout()
     figure.savefig(output / "figure_native_aa_patch_pilot.png", dpi=220)
-    figure.savefig(output / "figure_native_aa_patch_pilot.pdf")
+    try:
+        figure.savefig(output / "figure_native_aa_patch_pilot.pdf")
+        pdf_written = True
+    except ImportError:
+        # The historical registration environment does not include fontTools.
+        # PNG is the required artifact, so keep the numerical run successful
+        # when this optional vector-export dependency is unavailable.
+        pdf_written = False
     plt.close(figure)
 
     summary = {
@@ -504,6 +511,7 @@ def main():
         "historical_registered_pixels_used_for": "geometry recovery and reconstruction QC only",
         "explicit_aa": "Lanczos3 reduction at min affine singular value then residual bicubic affine",
         "scanner_summary": scanner_summaries,
+        "figure_pdf_written": pdf_written,
     }
     (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(summary_frame.to_string(index=False))

@@ -190,17 +190,21 @@ family를 제공한다.
 - Registration audit가 Part I과 Part II에 미치는 영향 구분
 - Old vs corrected registration의 paired sensitivity
 
-정합 의사결정은 다음 세 단계로 동결한다.
+정합 의사결정은 다음 순서로 동결한다.
 
-1. 현재 registered WSI에서 slide-level constant/affine prior와 local integer refinement를
-   사용해 paired crop을 다시 만든다.
-2. Sentinel slide에서 이 결과를 이미 생성된 VALIS rigid output과 동일 좌표·동일 FOV로
-   대조한다.
-3. Original 100-location route gate가 실패하면 기존 common coordinate pool에서 512 px-aware
-   deterministic replacement로 slide당 100개를 복구할 수 있는지 먼저 확인한다.
-4. 이 pool에서도 100개를 공급하지 못하는 scanner–slide cell에 한해서만 native WSI에서
-   rigid registration을 다시 수행한다. Non-rigid 결과는 interpolation 자체가 spectrum과
-   PFM feature에 미치는 영향을 별도로 통과하기 전에는 primary로 쓰지 않는다.
+1. 기존 registered WSI와 offset은 canonical center 후보, native→target geometry 복구와 QC에
+   사용하되 primary RGB pixel source로 사용하지 않는다.
+2. Original 100-location route gate가 실패하면 기존 common coordinate pool에서 512 px-aware
+   deterministic replacement로 slide당 100개를 복구한다.
+3. 각 scanner의 native WSI와 same-scanner historical output 사이의 global similarity/affine
+   transform을 복구하고, frozen center마다 low-pass local residual을 추정한다.
+4. 최종 crop은 native WSI에서만 읽어 `Lanczos3 reduction → residual bicubic affine`으로
+   AT2 0.5052 µm/px grid에 직접 투영한다. Historical registered pixel은 reconstruction QC에만
+   사용한다.
+5. Global inlier, local NCC, search-boundary, 512 px bounds 또는 six-scanner completeness gate가
+   실패한 scanner–slide cell에 한해서만 VALIS rigid/affine를 native WSI부터 다시 수행한다.
+   Non-rigid 결과는 interpolation 자체가 spectrum과 PFM feature에 미치는 영향을 별도로
+   통과하기 전에는 primary로 쓰지 않는다.
 
 현재 확인된 진단:
 
@@ -229,6 +233,15 @@ family를 제공한다.
 - GT450/VERSA의 유효 native px/output px 중앙값은 1.922/1.842였으며, moving
   scanner 출력 TIFF에 native MPP를 다시 써서 AT2 grid metadata가 잘못된 export bug를
   cohort 수준에서 확인함
+- Same-scanner native geometry recovery pilot에서 global SIFT similarity의 thumbnail reprojection
+  median은 GT450 0.94 px, VERSA 0.19 px였고, frozen center별 local residual 적용 후 40개
+  patch의 NCC median은 각각 0.9960/0.9962였음
+- 단 GT450의 target-grid local residual magnitude q95가 51.1 px여서 global similarity 하나만
+  primary transform으로 사용하는 것은 기각함. Per-location residual을 manifest에 저장하고
+  boundary 실패 cell만 from-scratch VALIS로 승격함
+- Native explicit-AA real-tissue pilot에서 historical bicubic 대비 high-band amplitude retention은
+  GT450 0.773, VERSA 0.776이었고 low–mid는 0.998로 거의 유지됨. 이는 synthetic audit의
+  alias 억제 비용과 방향이 일치하지만, 실제 cohort alias gate를 대신하지는 않음
 
 주의:
 
@@ -789,10 +802,14 @@ Highlights와 최종 결론에는 audited table만 사용한다.
 5. ~~109-slide common-pool에서 100-location/512 px manifest 복구~~
 6. ~~Pool 복구 실패 cell에 한해서만 native WSI에서 rigid registration 재실행~~
    — 실패 cell 0, 기존 grid 기준 trigger 없음
-7. Native WSI에서 anti-aliased rigid common grid를 재생성하고 10,900-location
-   registration/512 px gate를 재실행
-8. `old/new registration × original/anti-aliased resampling` factorial audit
-9. ~~2D alias mixing~~ — original bicubic 실패, explicit-AA 통과; native-AA grid
+7. ~~GT450/VERSA 한-slide same-scanner geometry recovery + native explicit-AA patch pilot~~
+   — local residual 후 NCC median 0.996, boundary failure 0/80; global transform 단독은 GT450에서
+   불충분하므로 per-location residual 유지
+8. 109 slides × 100 locations에서 scanner별 native transform과 local residual manifest를
+   구축하고 512 px/six-scanner QC를 통과
+9. Frozen native geometry로 anti-aliased patch/grid를 생성하고 historical-original 대비
+   `geometry × resampling` sensitivity를 감사
+10. ~~2D alias mixing~~ — original bicubic 실패, explicit-AA 통과; native-AA grid
    재생성 후 anchor/noise-floor sensitivity
 
 **Stop:** Common physical coordinates가 보장되지 않음.
@@ -814,11 +831,12 @@ Highlights와 최종 결론에는 audited table만 사용한다.
 ### Phase 2 — Evaluation protocol population test
 
 1. 4개 core PFM의 TRIDENT commit/checkpoint/preprocessing contract 동결
-2. 109 × 100 canonical-center manifest와 모델별 native-FOV bounds audit
-3. E4 control population 실행
-4. Primary content endpoint, margin과 collapse guardrail 확정
-5. Minimal E5 image+feature benchmark
-6. FC-RR 및 frontier 산출
+2. Frozen 109 × 100 canonical-center manifest에서 모델별 native FOV crop을 직접 생성
+3. TRIDENT sampling을 재실행하지 않고 동일 RGB crop에 네 encoder feature를 추출
+4. E4 control population 실행
+5. Primary content endpoint, margin과 collapse guardrail 확정
+6. Minimal E5 image+feature benchmark
+7. FC-RR 및 frontier 산출
 
 **Go:** 실제 correction에서 invariance와 fidelity를 함께 판정할 수 있음. E4만으로 논문을
 완결하지 않는다.

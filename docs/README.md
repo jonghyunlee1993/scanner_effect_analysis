@@ -12,6 +12,10 @@
   109-slide geometry, six-scanner tuple retention과 ERT sensitivity
 - [E0 six-scanner feature manifest](e0_feature_manifest.md): 109 × 100 corrected centers,
   deterministic replacement, per-scanner integer offsets와 512 px FOV gate
+- [E0 resampling provenance and alias audit](e0_resampling_alias_audit.md): historical
+  interpolation/MPP provenance, frozen 2D alias gate와 native explicit-AA 결정
+- [E0 primary native-AA pilot](e0_primary_native_aa_pilot.md): same-scanner native geometry
+  recovery, per-location residual QC와 cohort 확장 gate
 
 `storyline.md`는 현재 논문의 과학적 방향과 claim architecture의 기준이고,
 `final_study_protocol.md`는 세부 데이터·모델·구현 계약을 제공한다. 두 문서가
