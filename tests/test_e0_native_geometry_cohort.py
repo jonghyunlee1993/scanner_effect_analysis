@@ -3,7 +3,11 @@ from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 
-from build_e0_rigid_native_fallback import rigid_branch, truth
+from build_e0_rigid_native_fallback import (
+    fallback_location_checks,
+    rigid_branch,
+    truth,
+)
 from merge_e0_native_geometry_cohort import audit_merged, expected_keys
 from run_e0_native_geometry_cohort import (
     corners_within_native,
@@ -116,3 +120,24 @@ def test_rigid_native_fallback_parses_serialized_geometry_gate():
     assert truth(" TRUE ")
     assert not truth(False)
     assert not truth("false")
+
+
+def test_rigid_native_fallback_requires_same_scanner_local_gate():
+    passing = dict(
+        global_transform_pass=True,
+        cross_scanner_geometry_pass=True,
+        search_in_bounds=True,
+        same_scanner_ncc=0.80,
+        same_scanner_boundary=False,
+        target_bounds=True,
+        native_bounds=True,
+        minimum_location_ncc=0.75,
+    )
+    assert all(fallback_location_checks(**passing).values())
+
+    low_ncc = fallback_location_checks(**{**passing, "same_scanner_ncc": 0.74})
+    assert not low_ncc["same_scanner_low_ncc"]
+    missing = fallback_location_checks(**{**passing, "same_scanner_ncc": np.nan})
+    assert not missing["same_scanner_low_ncc"]
+    boundary = fallback_location_checks(**{**passing, "same_scanner_boundary": True})
+    assert not boundary["same_scanner_search_boundary"]

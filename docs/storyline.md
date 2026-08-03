@@ -204,7 +204,8 @@ family를 제공한다.
 5. Global inlier, local NCC, search-boundary, 512 px bounds 또는 six-scanner completeness gate가
    실패한 scanner–slide cell만 fallback 대상으로 삼는다. 먼저 보존된 VALIS rigid geometry를
    같은 100개 center와 동일 gate로 감사하고, 전부 통과한 cell은 native→rigid transform을
-   합성하되 RGB는 native WSI에서 직접 읽는다. 이 감사가 실패하거나 output이 없을 때만 해당
+   복구한 뒤 reconstructed-native↔rigid same-scanner local residual(NCC ≥0.75, ±120
+   non-boundary)을 합성하되 RGB는 native WSI에서 직접 읽는다. 이 감사가 실패하거나 output이 없을 때만 해당
    cell의 VALIS rigid/affine를 native WSI부터 다시 수행한다. Strict native-FOV bound만 실패한
    location은 outcome-blind common-pool 순위의 다음 후보로 교체한다. Non-rigid 결과는
    interpolation 자체가 spectrum과 PFM feature에 미치는 영향을 별도로 통과하기 전에는

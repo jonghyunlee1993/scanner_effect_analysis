@@ -19,11 +19,13 @@ from run_e0_native_geometry_cohort import (
     base_location_record,
     corners_within_native,
     find_raw_path,
+    make_reconstructed_view,
     matrix_manifest_fields,
     recover_or_load_transform,
     target_square_native_corners,
     transform_gate,
 )
+from run_e0_primary_transform_recovery_pilot import extract_rgb, residual_integer_offset
 
 
 MOVING_SCANNERS = ("gt450", "versa", "akoya", "s60", "s360")
@@ -62,6 +64,9 @@ def parse_args():
     parser.add_argument("--maximum-thumbnail-q95-px", type=float, default=4.0)
     parser.add_argument("--maximum-affine-anisotropy", type=float, default=1.02)
     parser.add_argument("--maximum-scale-relative-error", type=float, default=0.05)
+    parser.add_argument("--match-patch-size", type=int, default=256)
+    parser.add_argument("--search-margin", type=int, default=120)
+    parser.add_argument("--minimum-location-ncc", type=float, default=0.75)
     parser.add_argument("--max-model-fov", type=int, default=512)
     return parser.parse_args()
 
@@ -72,13 +77,40 @@ def truth(value):
     return str(value).strip().lower() == "true"
 
 
+def fallback_location_checks(
+    *,
+    global_transform_pass: bool,
+    cross_scanner_geometry_pass: bool,
+    search_in_bounds: bool,
+    same_scanner_ncc: float,
+    same_scanner_boundary: bool,
+    target_bounds: bool,
+    native_bounds: bool,
+    minimum_location_ncc: float,
+):
+    """Evaluate the prespecified per-location fallback gate."""
+
+    return {
+        "global_transform_gate": bool(global_transform_pass),
+        "rigid_cross_scanner_geometry": bool(cross_scanner_geometry_pass),
+        "same_scanner_local_search_out_of_bounds": bool(search_in_bounds),
+        "same_scanner_low_ncc": bool(
+            np.isfinite(same_scanner_ncc)
+            and same_scanner_ncc >= minimum_location_ncc
+        ),
+        "same_scanner_search_boundary": not bool(same_scanner_boundary),
+        "target_fov_bounds": bool(target_bounds),
+        "native_fov_bounds": bool(native_bounds),
+    }
+
+
 def main():
     import pyvips
 
     args = parse_args()
     slide_id = str(args.slide_id)
     scanner = str(args.scanner)
-    fallback_version = f"valis_rigid_{scanner}_native_local_integer_v1"
+    fallback_version = f"valis_rigid_{scanner}_native_local_integer_v2"
     manifest = pd.read_csv(args.manifest, dtype={"slide_id": str})
     locations = (
         manifest[manifest["slide_id"].eq(slide_id)]
@@ -123,15 +155,62 @@ def main():
         args,
     )
     gate = transform_gate(sift_metrics, affine, scanner, args)
+    reconstructed = make_reconstructed_view(
+        native_image,
+        affine,
+        np.array([rigid_image.height, rigid_image.width]),
+    )
     matrix_path = output / f"native_to_target_{scanner}.npz"
     matrix_fields = matrix_manifest_fields(affine, matrix_path)
 
     rows = []
     for row in joined.itertuples(index=False):
-        dx = int(row.corrected_dx)
-        dy = int(row.corrected_dy)
-        top_left_x = int(row.center_x - args.max_model_fov // 2 + dx)
-        top_left_y = int(row.center_y - args.max_model_fov // 2 + dy)
+        cross_dx = int(row.corrected_dx)
+        cross_dy = int(row.corrected_dy)
+        match_x = int(row.center_x - args.match_patch_size // 2 + cross_dx)
+        match_y = int(row.center_y - args.match_patch_size // 2 + cross_dy)
+        margin = int(args.search_margin)
+        size = int(args.match_patch_size)
+        search_in_bounds = bool(
+            match_x >= 0
+            and match_y >= 0
+            and match_x + size <= rigid_image.width
+            and match_y + size <= rigid_image.height
+            and match_x - margin >= 0
+            and match_y - margin >= 0
+            and match_x + size + margin <= reconstructed.width
+            and match_y + size + margin <= reconstructed.height
+        )
+        if search_in_bounds:
+            rigid_patch = extract_rgb(rigid_image, match_x, match_y, size)
+            reconstructed_ext = extract_rgb(
+                reconstructed,
+                match_x - margin,
+                match_y - margin,
+                size + 2 * margin,
+            )
+            residual_dy, residual_dx, same_scanner_ncc = residual_integer_offset(
+                reconstructed_ext, rigid_patch, margin
+            )
+            reconstruction = reconstructed_ext[
+                margin + residual_dy : margin + residual_dy + size,
+                margin + residual_dx : margin + residual_dx + size,
+            ]
+            reconstruction_mae = float(
+                np.mean(np.abs(reconstruction.astype(float) - rigid_patch.astype(float)))
+            )
+            same_scanner_boundary = bool(
+                abs(residual_dx) >= margin or abs(residual_dy) >= margin
+            )
+        else:
+            residual_dx = residual_dy = 0
+            same_scanner_ncc = np.nan
+            reconstruction_mae = np.nan
+            same_scanner_boundary = True
+        total_dx = cross_dx + residual_dx
+        total_dy = cross_dy + residual_dy
+        top_left_x = int(row.center_x - args.max_model_fov // 2 + total_dx)
+        top_left_y = int(row.center_y - args.max_model_fov // 2 + total_dy)
         target_bounds = bool(
             top_left_x >= 0
             and top_left_y >= 0
@@ -145,40 +224,42 @@ def main():
             corners, native_image.width, native_image.height
         )
         alignment_pass = truth(row.geometry_pass)
-        location_pass = bool(
-            gate["global_transform_pass"]
-            and alignment_pass
-            and target_bounds
-            and native_bounds
+        checks = fallback_location_checks(
+            global_transform_pass=gate["global_transform_pass"],
+            cross_scanner_geometry_pass=alignment_pass,
+            search_in_bounds=search_in_bounds,
+            same_scanner_ncc=same_scanner_ncc,
+            same_scanner_boundary=same_scanner_boundary,
+            target_bounds=target_bounds,
+            native_bounds=native_bounds,
+            minimum_location_ncc=args.minimum_location_ncc,
         )
-        failures = []
-        if not gate["global_transform_pass"]:
-            failures.append("global_transform_gate")
-        if not alignment_pass:
-            failures.append("rigid_cross_scanner_geometry")
-        if not target_bounds:
-            failures.append("target_fov_bounds")
-        if not native_bounds:
-            failures.append("native_fov_bounds")
+        location_pass = bool(all(checks.values()))
+        failures = [reason for reason, passed in checks.items() if not passed]
         record = base_location_record(row, scanner, native_path, rigid_path)
         record.update(
             {
                 "manifest_version": "e0_native_geometry_v1",
                 "alignment_version": fallback_version,
-                "legacy_dx": 0,
-                "legacy_dy": 0,
-                "native_recovery_dx": dx,
-                "native_recovery_dy": dy,
-                "total_target_dx": dx,
-                "total_target_dy": dy,
-                "native_recovery_ncc": float(row.corrected_ncc),
-                "reconstruction_rgb_mae": np.nan,
+                "legacy_dx": cross_dx,
+                "legacy_dy": cross_dy,
+                "cross_scanner_dx": cross_dx,
+                "cross_scanner_dy": cross_dy,
+                "cross_scanner_ncc": float(row.corrected_ncc),
+                "cross_scanner_search_boundary": truth(row.corrected_boundary),
+                "cross_scanner_geometry_pass": alignment_pass,
+                "native_recovery_dx": residual_dx if search_in_bounds else np.nan,
+                "native_recovery_dy": residual_dy if search_in_bounds else np.nan,
+                "total_target_dx": total_dx,
+                "total_target_dy": total_dy,
+                "native_recovery_ncc": same_scanner_ncc,
+                "reconstruction_rgb_mae": reconstruction_mae,
                 "q_reg": float(row.q_reg),
                 "ncc_lp": float(row.ncc_lp),
                 "phase_response": float(row.phase_response),
                 "residual_shift": float(row.residual_shift),
                 "pad_fraction": float(row.pad_fraction),
-                "search_boundary": truth(row.corrected_boundary),
+                "search_boundary": same_scanner_boundary,
                 "target_fov_top_left_x": top_left_x,
                 "target_fov_top_left_y": top_left_y,
                 **{

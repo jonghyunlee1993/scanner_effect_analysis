@@ -78,8 +78,10 @@ scanner–slide cells eligible for the following prespecified fallback hierarchy
 1. Audit the preserved VALIS rigid branch at the same frozen 100 centers with the
    unchanged global, local, boundary and padding gates.
 2. If all 100 centers pass, recover a same-scanner native→rigid transform and use the
-   composed geometry to read pixels directly from the native WSI. The preserved rigid
-   image remains geometry/QC only.
+   reconstructed-native↔rigid patches to estimate the same ±120 local integer
+   residual used by the primary route. Require same-scanner NCC ≥0.75 and a non-boundary
+   optimum, then use the composed geometry to read pixels directly from the native WSI.
+   The preserved rigid image remains geometry/QC only.
 3. If the preserved rigid output is missing or either audit fails, rerun VALIS
    rigid/affine from the native WSI for that scanner–slide cell only and apply the same
    gates.
