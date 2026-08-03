@@ -35,7 +35,7 @@ def build_trial(base: pd.DataFrame, reserve: pd.DataFrame, mapping: dict[int, in
     ):
         raise ValueError("location IDs and reserve ranks must be unique")
 
-    trial = base.copy()
+    trial = base.copy().astype(object)
     audit_rows = []
     for location_id, reserve_rank in sorted(mapping.items()):
         base_match = trial["location_id"].eq(location_id)
@@ -56,9 +56,11 @@ def build_trial(base: pd.DataFrame, reserve: pd.DataFrame, mapping: dict[int, in
         candidate["alignment_version"] = (
             f"{candidate['alignment_version']}+{TRIAL_VERSION}"
         )
-        trial = pd.concat(
-            [trial.loc[~base_match], candidate.to_frame().T], ignore_index=True
-        )
+        for column in candidate.index:
+            if column not in trial.columns:
+                trial[column] = None
+        candidate = candidate.reindex(trial.columns)
+        trial.loc[base_match, trial.columns] = candidate.to_numpy()
         audit_rows.append(
             {
                 "slide_id": str(previous["slide_id"]),
