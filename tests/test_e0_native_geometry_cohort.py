@@ -17,7 +17,7 @@ from run_e0_native_geometry_cohort import (
     transform_output_for_slide,
     transform_gate,
 )
-from run_e0_valis_rigid_from_scratch import stage_link
+from run_e0_valis_rigid_from_scratch import stage_link, transform_contract
 
 
 def test_target_square_native_corners_inverts_native_to_target():
@@ -171,3 +171,9 @@ def test_valis_from_scratch_staging_link_is_idempotent(tmp_path):
     stage_link(source, destination)
     assert destination.is_symlink()
     assert destination.resolve() == source.resolve()
+
+
+def test_valis_affine_contract_disables_incompatible_intensity_optimizer():
+    contract = transform_contract("affine")
+    assert contract["transformer"] == "AffineTransform"
+    assert contract["affine_optimizer"] is None

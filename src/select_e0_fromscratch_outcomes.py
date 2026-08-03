@@ -20,12 +20,56 @@ def parse_args():
         "--fromscratch-root", default="outputs/e0_valis_from_scratch_native_full"
     )
     parser.add_argument(
+        "--primary-root", default="outputs/e0_native_geometry_cohort/merged"
+    )
+    parser.add_argument(
         "--output", default="outputs/e0_native_fromscratch_outcomes"
     )
     return parser.parse_args()
 
 
-def classify_fromscratch(slide_id: str, scanner: str, root: Path):
+def primary_candidate_if_not_worse(
+    slide_id: str,
+    scanner: str,
+    fromscratch_failures: int,
+    primary_locations: pd.DataFrame | None,
+    primary_cells: pd.DataFrame | None,
+):
+    if primary_locations is None or primary_cells is None:
+        return None
+    locations = primary_locations[
+        primary_locations["slide_id"].eq(slide_id)
+        & primary_locations["scanner"].eq(scanner)
+    ].copy()
+    cells = primary_cells[
+        primary_cells["slide_id"].eq(slide_id)
+        & primary_cells["scanner"].eq(scanner)
+    ].copy()
+    if len(locations) != 100 or locations["location_id"].nunique() != 100 or len(cells) != 1:
+        return None
+    if "global_transform_pass" not in cells or not truth(
+        cells.iloc[0]["global_transform_pass"]
+    ):
+        return None
+    failed = locations[~locations["geometry_pass"].map(truth)].copy()
+    if failed.empty or len(failed) > fromscratch_failures:
+        return None
+    return {
+        "action": "candidate_primary_route",
+        "reason": "primary_valid_global_has_no_more_failures_than_fromscratch",
+        "failed_location_ids": ";".join(
+            str(value) for value in sorted(failed["location_id"].astype(int))
+        ),
+    }
+
+
+def classify_fromscratch(
+    slide_id: str,
+    scanner: str,
+    root: Path,
+    primary_locations: pd.DataFrame | None = None,
+    primary_cells: pd.DataFrame | None = None,
+):
     shard = root / scanner / "shards" / slide_id
     location_path = shard / "native_geometry_locations.csv"
     cell_path = shard / "native_geometry_cells.csv"
@@ -62,6 +106,15 @@ def classify_fromscratch(slide_id: str, scanner: str, root: Path):
     failed_ids = ";".join(
         str(value) for value in sorted(failed["location_id"].astype(int))
     )
+    primary = primary_candidate_if_not_worse(
+        slide_id,
+        scanner,
+        len(failed),
+        primary_locations,
+        primary_cells,
+    )
+    if primary is not None:
+        return primary
     if len(failed) and bounds_only(failed["failure_reason"]):
         return {
             "action": "candidate_fromscratch_route",
@@ -89,6 +142,13 @@ def classify_fromscratch(slide_id: str, scanner: str, root: Path):
 def main():
     args = parse_args()
     cells = pd.read_csv(args.cells, dtype={"slide_id": str})
+    primary_root = Path(args.primary_root)
+    primary_locations = pd.read_csv(
+        primary_root / "native_geometry_manifest.csv", dtype={"slide_id": str}
+    )
+    primary_cells = pd.read_csv(
+        primary_root / "cell_qc.csv", dtype={"slide_id": str}
+    )
     keys = sorted(set(zip(cells["slide_id"], cells["scanner"])))
     rows = []
     for slide_id, scanner in keys:
@@ -97,7 +157,11 @@ def main():
                 "slide_id": str(slide_id),
                 "scanner": str(scanner),
                 **classify_fromscratch(
-                    str(slide_id), str(scanner), Path(args.fromscratch_root)
+                    str(slide_id),
+                    str(scanner),
+                    Path(args.fromscratch_root),
+                    primary_locations,
+                    primary_cells,
                 ),
             }
         )

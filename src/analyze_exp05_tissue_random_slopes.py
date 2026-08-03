@@ -227,7 +227,8 @@ def fit_nested_reml(frame: pd.DataFrame):
         )
         for initial in starts
     ]
-    fit = min(fits, key=lambda result: result.fun)
+    converged_fits = [result for result in fits if result.success]
+    fit = min(converged_fits or fits, key=lambda result: result.fun)
     variances = np.exp(fit.x)
     full = evaluate_reml(blocks, variances, return_details=True)
 
@@ -239,13 +240,28 @@ def fit_nested_reml(frame: pd.DataFrame):
             blocks, reduced_variances, include_tissue=False
         )["negative_log_likelihood"]
 
-    reduced_start = np.log(np.maximum(variances[1:], 1e-8))
-    reduced_fit = optimize.minimize(
-        reduced_objective,
-        reduced_start,
-        method="L-BFGS-B",
-        bounds=bounds[1:],
-        options={"maxiter": 500, "ftol": 1e-11, "gtol": 1e-8},
+    reduced_start = np.maximum(variances[1:], 1e-8)
+    reduced_starts = [
+        np.log(reduced_start),
+        np.log(np.maximum(reduced_start * np.asarray([0.25, 2.0]), 1e-8)),
+        np.log(np.maximum(reduced_start * np.asarray([2.0, 0.25]), 1e-8)),
+    ]
+    reduced_fits = [
+        optimize.minimize(
+            reduced_objective,
+            initial,
+            method="L-BFGS-B",
+            bounds=bounds[1:],
+            options={"maxiter": 500, "ftol": 1e-11, "gtol": 1e-8},
+        )
+        for initial in reduced_starts
+    ]
+    converged_reduced_fits = [
+        result for result in reduced_fits if result.success
+    ]
+    reduced_fit = min(
+        converged_reduced_fits or reduced_fits,
+        key=lambda result: result.fun,
     )
     likelihood_ratio = max(0.0, 2.0 * (reduced_fit.fun - fit.fun))
     tissue_variance_p = (

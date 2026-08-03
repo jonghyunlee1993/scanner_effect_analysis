@@ -35,3 +35,20 @@ def test_missing_preserved_route_requests_from_scratch(tmp_path):
     )
     action = classify_cell("s1", "akoya", primary, tmp_path)
     assert action["action"] == "from_scratch_valis"
+
+
+def test_existing_preserved_wsi_without_audit_requests_audit(tmp_path):
+    primary = pd.DataFrame(
+        {
+            "slide_id": ["s1"],
+            "scanner": ["akoya"],
+            "location_id": [7],
+            "failure_reason": ["low_ncc"],
+        }
+    )
+    rigid = tmp_path / "rigid"
+    path = rigid / "rigid_akoya" / "akoya" / "s1.ome.tiff"
+    path.parent.mkdir(parents=True)
+    path.touch()
+    action = classify_cell("s1", "akoya", primary, tmp_path / "audit", rigid)
+    assert action["action"] == "audit_preserved_rigid"

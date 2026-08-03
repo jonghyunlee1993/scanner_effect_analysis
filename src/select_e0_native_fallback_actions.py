@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from build_e0_rigid_native_fallback import rigid_branch
+
 
 STRICT_BOUNDS_REASONS = {"target_fov_bounds", "native_fov_bounds"}
 
@@ -23,6 +25,13 @@ def parse_args():
         default="outputs/e0_native_geometry_cohort/merged/failure_locations.csv",
     )
     parser.add_argument("--fallback-root", default="outputs/e0_rigid_native_fallback")
+    parser.add_argument(
+        "--rigid-root",
+        default=(
+            "/mnt/isilon/oldridge_lab/batch_effects/pan_normal/"
+            "registered_ref_at2_all/registered_images"
+        ),
+    )
     parser.add_argument("--output", default="outputs/e0_native_fallback_actions")
     return parser.parse_args()
 
@@ -50,6 +59,7 @@ def classify_cell(
     scanner: str,
     primary_locations: pd.DataFrame,
     fallback_root: Path,
+    rigid_root: Path | None = None,
 ):
     primary_failed = primary_locations[
         primary_locations["slide_id"].eq(slide_id)
@@ -69,9 +79,24 @@ def classify_cell(
     location_path = shard / "native_geometry_locations.csv"
     cell_path = shard / "native_geometry_cells.csv"
     if not location_path.exists() or not cell_path.exists():
+        preserved_path = (
+            rigid_root
+            / rigid_branch(scanner)
+            / scanner
+            / f"{slide_id}.ome.tiff"
+            if rigid_root is not None
+            else None
+        )
+        if preserved_path is not None and preserved_path.exists():
+            return {
+                "action": "audit_preserved_rigid",
+                "reason": "preserved_rigid_exists_but_native_audit_missing",
+                "route_after_action": "preserved_rigid_pending",
+                "failed_location_ids": "",
+            }
         return {
             "action": "from_scratch_valis",
-            "reason": "preserved_rigid_output_or_audit_missing",
+            "reason": "preserved_rigid_output_missing",
             "route_after_action": "from_scratch_pending",
             "failed_location_ids": "",
         }
@@ -137,7 +162,11 @@ def main():
     rows = []
     for slide_id, scanner in cells:
         action = classify_cell(
-            str(slide_id), str(scanner), failure_locations, Path(args.fallback_root)
+            str(slide_id),
+            str(scanner),
+            failure_locations,
+            Path(args.fallback_root),
+            Path(args.rigid_root),
         )
         rows.append({"slide_id": str(slide_id), "scanner": str(scanner), **action})
     actions = pd.DataFrame(rows).sort_values(["slide_id", "scanner"]).reset_index(drop=True)
@@ -149,6 +178,7 @@ def main():
         ("promote_preserved_rigid", "promoted_cells.csv"),
         ("candidate_primary_route", "candidate_primary_cells.csv"),
         ("candidate_preserved_rigid_route", "candidate_preserved_cells.csv"),
+        ("audit_preserved_rigid", "audit_preserved_cells.csv"),
     ):
         actions[actions["action"].eq(action)].to_csv(output / filename, index=False)
     counts = actions["action"].value_counts().sort_index().to_dict()

@@ -1,6 +1,28 @@
 import pandas as pd
 
-from select_e0_fromscratch_outcomes import classify_fromscratch
+from select_e0_fromscratch_outcomes import (
+    classify_fromscratch,
+    primary_candidate_if_not_worse,
+)
+
+
+def test_valid_primary_with_fewer_failures_is_preferred_for_candidates():
+    locations = pd.DataFrame(
+        {
+            "slide_id": ["s1"] * 100,
+            "scanner": ["akoya"] * 100,
+            "location_id": range(100),
+            "geometry_pass": [False, False] + [True] * 98,
+        }
+    )
+    cells = pd.DataFrame(
+        {"slide_id": ["s1"], "scanner": ["akoya"], "global_transform_pass": [True]}
+    )
+    result = primary_candidate_if_not_worse(
+        "s1", "akoya", 80, locations, cells
+    )
+    assert result["action"] == "candidate_primary_route"
+    assert result["failed_location_ids"] == "0;1"
 
 
 def write_route(root, failure_reason="pass", cell_pass=True, global_transform_pass=True):

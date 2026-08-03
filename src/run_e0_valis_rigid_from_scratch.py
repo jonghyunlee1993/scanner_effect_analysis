@@ -19,6 +19,7 @@ from run_e0_native_geometry_cohort import file_fingerprint, find_raw_path
 
 
 ALGORITHM_VERSION = "valis_1.2.0_pairwise_native_rigid_reference_crop_v2"
+AFFINE_ALGORITHM_VERSION = "valis_1.2.0_pairwise_native_affine_reference_crop_v1"
 EXPECTED_VALIS_VERSION = "1.2.0"
 
 
@@ -31,7 +32,34 @@ def parse_args():
         default="/mnt/isilon/oldridge_lab/batch_effects/pan_normal/raw/raw_images",
     )
     parser.add_argument("--output", default="outputs/e0_valis_from_scratch")
+    parser.add_argument(
+        "--transform-family",
+        choices=("similarity", "affine"),
+        default="similarity",
+        help="Cross-scanner VALIS feature-transform family; non-rigid remains disabled.",
+    )
     return parser.parse_args()
+
+
+def transform_contract(family: str):
+    if family == "similarity":
+        return {
+            "algorithm_version": ALGORITHM_VERSION,
+            "transformer": "SimilarityTransform",
+            "affine_optimizer": "VALIS default AffineOptimizerMattesMI",
+            "summary": "VALIS default SimilarityTransform; rigid only",
+        }
+    if family == "affine":
+        return {
+            "algorithm_version": AFFINE_ALGORITHM_VERSION,
+            "transformer": "AffineTransform",
+            "affine_optimizer": None,
+            "summary": (
+                "VALIS feature-matched AffineTransform; intensity optimizer disabled; "
+                "non-rigid disabled"
+            ),
+        }
+    raise ValueError(f"unsupported transform family: {family}")
 
 
 def json_value(value):
@@ -60,6 +88,7 @@ def main():
     from valis import registration, slide_io
 
     args = parse_args()
+    transform = transform_contract(args.transform_family)
     valis_version = importlib.metadata.version("valis-wsi")
     if valis_version != EXPECTED_VALIS_VERSION:
         raise RuntimeError(
@@ -85,6 +114,11 @@ def main():
     if summary_path.exists() and registered_path.exists():
         summary = json.loads(summary_path.read_text())
         if summary.get("complete") is True:
+            if summary.get("transform_family") != transform["summary"]:
+                raise RuntimeError(
+                    "completed VALIS output uses a different transform family: "
+                    f"{summary.get('transform_family')}"
+                )
             print(json.dumps(summary, indent=2))
             return
 
@@ -104,6 +138,14 @@ def main():
     registered_path.parent.mkdir(parents=True, exist_ok=True)
     registrar = None
     try:
+        registration_kwargs = {}
+        if args.transform_family == "affine":
+            from skimage import transform as skimage_transform
+
+            registration_kwargs = {
+                "transformer_cls": skimage_transform.AffineTransform,
+                "affine_optimizer_cls": None,
+            }
         registrar = registration.Valis(
             str(stage),
             str(valis_output),
@@ -114,6 +156,7 @@ def main():
             align_to_reference=True,
             non_rigid_registrar_cls=None,
             crop="reference",
+            **registration_kwargs,
         )
         # VALIS 1.2.0 only creates this dictionary when a non-rigid registrar is
         # enabled, but cleanup() dereferences it unconditionally. Keep the
@@ -156,13 +199,15 @@ def main():
             )
         summary = {
             "analysis": "e0_valis_rigid_from_scratch",
-            "algorithm_version": ALGORITHM_VERSION,
+            "algorithm_version": transform["algorithm_version"],
             "slide_id": slide_id,
             "scanner": scanner,
             "complete": True,
             "pixel_source": "native_wsi",
             "registered_pixels_used_for": "geometry and QC only",
-            "transform_family": "VALIS default SimilarityTransform; rigid only",
+            "transform_family": transform["summary"],
+            "transformer": transform["transformer"],
+            "affine_optimizer": transform["affine_optimizer"],
             "reference_crop": True,
             "non_rigid": False,
             "valis_1_2_rigid_only_cleanup_workaround": True,
