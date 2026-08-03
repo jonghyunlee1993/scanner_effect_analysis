@@ -16,6 +16,7 @@ from run_e0_native_geometry_cohort import (
     target_square_native_corners,
     transform_gate,
 )
+from run_e0_valis_rigid_from_scratch import stage_link
 
 
 def test_target_square_native_corners_inverts_native_to_target():
@@ -141,3 +142,14 @@ def test_rigid_native_fallback_requires_same_scanner_local_gate():
     assert not missing["same_scanner_low_ncc"]
     boundary = fallback_location_checks(**{**passing, "same_scanner_boundary": True})
     assert not boundary["same_scanner_search_boundary"]
+
+
+def test_valis_from_scratch_staging_link_is_idempotent(tmp_path):
+    source = tmp_path / "source.svs"
+    source.write_bytes(b"slide")
+    destination = tmp_path / "stage" / "slide_at2.svs"
+    destination.parent.mkdir()
+    stage_link(source, destination)
+    stage_link(source, destination)
+    assert destination.is_symlink()
+    assert destination.resolve() == source.resolve()

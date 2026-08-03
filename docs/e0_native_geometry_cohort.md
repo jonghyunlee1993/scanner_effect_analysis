@@ -99,10 +99,12 @@ excluded unless it passes a separate interpolation audit.
 - Targeted rigid-route audit: `src/run_e0_registration_sentinel.py`
 - Native-pixel fallback builder: `src/build_e0_rigid_native_fallback.py`
 - Passing-fallback promoter: `src/promote_e0_native_geometry_fallback.py`
+- Native from-scratch rigid runner: `src/run_e0_valis_rigid_from_scratch.py`
 - Array launcher: `scripts/e0_native_geometry_cohort.sbatch`
 - Merge launcher: `scripts/e0_native_geometry_merge.sbatch`
 - Fallback launchers: `scripts/e0_rigid_alignment_array.sbatch`,
-  `scripts/e0_rigid_native_array.sbatch`, `scripts/e0_native_geometry_promote.sbatch`
+  `scripts/e0_rigid_native_array.sbatch`, `scripts/e0_native_geometry_promote.sbatch`,
+  `scripts/e0_valis_rigid_from_scratch.sbatch`
 - Unit contract: `tests/test_e0_native_geometry_cohort.py`
 - Shards and matrices: `outputs/e0_native_geometry_cohort/shards/`
 - Merged manifest and failure lists: `outputs/e0_native_geometry_cohort/merged/`
