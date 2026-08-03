@@ -1,6 +1,7 @@
 # E0/E4 core PFM execution contract
 
-Status: frozen before PFM outcome extraction on 2026-08-02.
+Status: frozen and four-model A100 smoke gate passed before PFM outcome extraction on
+2026-08-02.
 
 TRIDENT is pinned to commit `a6305acfef68d4c6da65e837dde1e0d1870d60e1` and is
 used only for encoder construction, checkpoint loading and official evaluation transforms.
@@ -27,3 +28,8 @@ feature extraction. No TRIDENT sampling or slide segmentation is run.
 encoder/transform source file differs from the pinned commit. It loads each local checkpoint,
 applies the exposed official eval transform to a deterministic model-sized RGB image and
 requires the expected feature dimension, finite output and bit-identical repeated eval.
+
+Observed checkpoint SHA-256 prefixes are ResNet50 `065b941a`, UNI v1 `56ef09b4`,
+CONCH v1 `40a9644b` and Virchow2 `14244fba`. The official transforms produced
+224, 224, 448 and 224 px tensors respectively, and all expected feature dimensions passed
+on an NVIDIA A100-SXM4-40GB under PyTorch 2.5.1+cu124.
