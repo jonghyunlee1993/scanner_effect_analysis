@@ -83,7 +83,9 @@ Part I의 scanner spectrum 분석은 독립적인 characterization story가 아�
 
 ### 3.2 결과를 보기 전에 추가로 동결할 선택
 
-- TRIDENT commit, 모델별 정확한 checkpoint revision/hash, preprocessing 및 feature layer
+- ~~TRIDENT commit과 모델별 checkpoint revision/feature layer 동결~~ — commit
+  `a6305acf`, ResNet50 `78f3ecfd`, UNI v1 `b55a5ec6`, CONCH v1 `f9ca9f87`,
+  Virchow2 `31586458`; 다운로드 후 파일 SHA-256/실행 smoke test는 E0와 병행
 - Primary content-fidelity endpoint 하나와 collapse guardrail의 계층
 - Endpoint별 허용 margin과 slide-clustered uncertainty 기준
 - Scanner dispersion (R)의 정확한 정의와 raw-radius 최소값 \(\epsilon\)
