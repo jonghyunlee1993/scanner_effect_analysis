@@ -18,7 +18,7 @@ from build_e0_rigid_native_fallback import MOVING_SCANNERS, rigid_branch
 from run_e0_native_geometry_cohort import file_fingerprint, find_raw_path
 
 
-ALGORITHM_VERSION = "valis_1.2.0_pairwise_native_rigid_reference_crop_v1"
+ALGORITHM_VERSION = "valis_1.2.0_pairwise_native_rigid_reference_crop_v2"
 EXPECTED_VALIS_VERSION = "1.2.0"
 
 
@@ -57,7 +57,7 @@ def stage_link(source: Path, destination: Path):
 def main():
     import pyvips
     import torch
-    from valis import registration
+    from valis import registration, slide_io
 
     args = parse_args()
     valis_version = importlib.metadata.version("valis-wsi")
@@ -115,7 +115,20 @@ def main():
             non_rigid_registrar_cls=None,
             crop="reference",
         )
-        rigid_registrar, non_rigid_registrar, error_frame = registrar.register()
+        # VALIS 1.2.0 only creates this dictionary when a non-rigid registrar is
+        # enabled, but cleanup() dereferences it unconditionally. Keep the
+        # rigid-only public configuration while supplying the missing cleanup key.
+        if not hasattr(registrar, "non_rigid_reg_kwargs"):
+            registrar.non_rigid_reg_kwargs = {
+                registration.NON_RIGID_REG_CLASS_KEY: None
+            }
+        reader_dict = {
+            str(reference_link): [slide_io.VipsSlideReader],
+            str(moving_link): [slide_io.VipsSlideReader],
+        }
+        rigid_registrar, non_rigid_registrar, error_frame = registrar.register(
+            reader_dict=reader_dict
+        )
         if rigid_registrar is None or non_rigid_registrar is not None:
             raise RuntimeError("VALIS did not return the requested rigid-only registration")
         moving_slide = registrar.get_slide(str(moving_link))
@@ -152,6 +165,8 @@ def main():
             "transform_family": "VALIS default SimilarityTransform; rigid only",
             "reference_crop": True,
             "non_rigid": False,
+            "valis_1_2_rigid_only_cleanup_workaround": True,
+            "slide_reader": "valis.slide_io.VipsSlideReader",
             "reference_native_path": str(reference_path.resolve()),
             "moving_native_path": str(moving_path.resolve()),
             "registered_path": str(registered_path.resolve()),
