@@ -68,9 +68,20 @@ def classify_fromscratch(slide_id: str, scanner: str, root: Path):
             "reason": "fromscratch_failure_is_strict_bounds_only",
             "failed_location_ids": failed_ids,
         }
+    global_transform_pass = (
+        truth(cells.iloc[0]["global_transform_pass"])
+        if "global_transform_pass" in cells.columns
+        else False
+    )
+    if len(failed) and global_transform_pass:
+        return {
+            "action": "candidate_fromscratch_route",
+            "reason": "fromscratch_location_geometry_failure_with_valid_global_transform",
+            "failed_location_ids": failed_ids,
+        }
     return {
         "action": "unresolved_fromscratch_geometry",
-        "reason": "fromscratch_non_bounds_geometry_failure",
+        "reason": "fromscratch_global_or_unclassified_geometry_failure",
         "failed_location_ids": failed_ids,
     }
 

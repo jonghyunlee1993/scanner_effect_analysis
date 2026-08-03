@@ -3,7 +3,7 @@ import pandas as pd
 from select_e0_fromscratch_outcomes import classify_fromscratch
 
 
-def write_route(root, failure_reason="pass", cell_pass=True):
+def write_route(root, failure_reason="pass", cell_pass=True, global_transform_pass=True):
     shard = root / "akoya" / "shards" / "s1"
     shard.mkdir(parents=True)
     locations = pd.DataFrame(
@@ -17,7 +17,12 @@ def write_route(root, failure_reason="pass", cell_pass=True):
     )
     locations.to_csv(shard / "native_geometry_locations.csv", index=False)
     pd.DataFrame(
-        {"slide_id": ["s1"], "scanner": ["akoya"], "cell_pass": [cell_pass]}
+        {
+            "slide_id": ["s1"],
+            "scanner": ["akoya"],
+            "cell_pass": [cell_pass],
+            "global_transform_pass": [global_transform_pass],
+        }
     ).to_csv(shard / "native_geometry_cells.csv", index=False)
 
 
@@ -32,9 +37,23 @@ def test_fromscratch_pass_promotes_and_bounds_failure_uses_candidate(tmp_path):
     assert action["failed_location_ids"] == "0"
 
 
-def test_fromscratch_non_bounds_failure_stays_unresolved(tmp_path):
+def test_fromscratch_local_non_bounds_failure_uses_candidate(tmp_path):
     root = tmp_path / "bad"
     write_route(root, "same_scanner_low_ncc", cell_pass=False)
+    assert (
+        classify_fromscratch("s1", "akoya", root)["action"]
+        == "candidate_fromscratch_route"
+    )
+
+
+def test_fromscratch_failed_global_transform_stays_unresolved(tmp_path):
+    root = tmp_path / "global"
+    write_route(
+        root,
+        "global_transform_gate;same_scanner_low_ncc",
+        cell_pass=False,
+        global_transform_pass=False,
+    )
     assert (
         classify_fromscratch("s1", "akoya", root)["action"]
         == "unresolved_fromscratch_geometry"

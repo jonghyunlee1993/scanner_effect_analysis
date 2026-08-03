@@ -106,9 +106,10 @@ six-scanner tuples pass with native WSI marked as the pixel source.
 target/native bounds failures go directly to deterministic candidates, complete preserved
 rigid cells are promoted, and only missing or non-bounds geometry failures request a
 from-scratch pairwise native VALIS rigid run.
-`select_e0_fromscratch_outcomes.py` then promotes complete from-scratch cells, sends only
-strict residual bounds failures to candidates, and leaves any remaining non-bounds geometry
-failure explicitly unresolved instead of recursively rerunning or relaxing a gate.
+`select_e0_fromscratch_outcomes.py` then promotes complete from-scratch cells and sends
+remaining location-specific geometry failures to deterministic candidates only when the
+global native-to-rigid transform gate passed. A failed global transform remains explicitly
+unresolved instead of recursively rerunning or relaxing a gate.
 Finalization is plan-driven: `finalize_e0_native_geometry.py` replaces only explicitly
 listed candidate slide manifests and scanner-cell geometry routes, verifies that every
 route's canonical centers match the final candidate coordinates, and reruns the complete
