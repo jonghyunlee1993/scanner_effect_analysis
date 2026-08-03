@@ -94,6 +94,8 @@ the last candidate needed by `e0_integer_512_v1`; they do not restart or rerank 
 Failed location IDs are processed in ascending order and receive the first reserve rank
 that passes the complete six-scanner route gate. A rejected reserve remains recorded and
 is never reconsidered for another slot.
+Candidate trials reuse only fingerprint-matched global transform matrices from the frozen
+cohort shard; all location residual, NCC, boundary and FOV checks are recomputed.
 
 No threshold is relaxed after observing a fallback result. Non-rigid output remains
 excluded unless it passes a separate interpolation audit.

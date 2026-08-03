@@ -14,6 +14,7 @@ from run_e0_native_geometry_cohort import (
     matrix_manifest_fields,
     resolve_slide_id,
     target_square_native_corners,
+    transform_output_for_slide,
     transform_gate,
 )
 from run_e0_valis_rigid_from_scratch import stage_link
@@ -69,6 +70,18 @@ def test_slide_resolution_requires_exactly_one_selector():
     slide, order = resolve_slide_id(manifest, None, 0)
     assert slide == "a"
     assert order == ["a", "b"]
+
+
+def test_candidate_trial_can_reuse_frozen_transform_cache(tmp_path):
+    output = tmp_path / "trial" / "shards" / "s1"
+    default = transform_output_for_slide(
+        SimpleNamespace(transform_cache_root=None), output, "s1"
+    )
+    cached = transform_output_for_slide(
+        SimpleNamespace(transform_cache_root=str(tmp_path / "frozen")), output, "s1"
+    )
+    assert default == output
+    assert cached == tmp_path / "frozen" / "shards" / "s1"
 
 
 def test_merge_gate_requires_every_six_scanner_tuple_and_cell():

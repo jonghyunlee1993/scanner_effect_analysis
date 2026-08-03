@@ -59,6 +59,10 @@ def parse_args():
         "--manifest", default="outputs/e0_feature_manifest_109/feature_manifest.csv"
     )
     parser.add_argument("--output", default="outputs/e0_native_geometry_cohort")
+    parser.add_argument(
+        "--transform-cache-root",
+        help="Reuse frozen native-to-target transforms from ROOT/shards/<slide>.",
+    )
     parser.add_argument("--thumbnail-size", type=int, default=4096)
     parser.add_argument("--match-patch-size", type=int, default=256)
     parser.add_argument("--max-model-fov", type=int, default=512)
@@ -83,6 +87,12 @@ def resolve_slide_id(manifest: pd.DataFrame, slide_id: str | None, slide_index: 
     if str(slide_id) not in slides:
         raise KeyError(f"slide {slide_id} absent from frozen manifest")
     return str(slide_id), slides
+
+
+def transform_output_for_slide(args, output: Path, slide_id: str):
+    if args.transform_cache_root:
+        return Path(args.transform_cache_root) / "shards" / slide_id
+    return output
 
 
 def file_fingerprint(path: Path):
@@ -186,6 +196,7 @@ def recover_or_load_transform(
     scanner: str,
     output: Path,
     args,
+    require_cache=False,
 ):
     matrix_path = output / f"native_to_target_{scanner}.npz"
     metrics_path = output / f"native_to_target_{scanner}.json"
@@ -200,6 +211,11 @@ def recover_or_load_transform(
         if cached_metrics.get("fingerprint") == fingerprint:
             matrix = np.asarray(np.load(matrix_path)["native_to_target"], dtype=float)
             return matrix, cached_metrics["sift_metrics"], True
+
+    if require_cache:
+        raise FileNotFoundError(
+            f"missing or fingerprint-mismatched frozen transform cache: {matrix_path}"
+        )
 
     native_thumb, _ = thumbnail(native_image, args.thumbnail_size)
     registered_thumb, _ = thumbnail(registered_image, args.thumbnail_size)
@@ -413,6 +429,7 @@ def process_moving(
         scanner,
         output,
         args,
+        require_cache=bool(args.transform_cache_root),
     )
     gate = transform_gate(sift_metrics, affine, scanner, args)
     reconstructed = make_reconstructed_view(
@@ -604,6 +621,12 @@ def main():
 
     output = Path(args.output) / "shards" / slide_id
     output.mkdir(parents=True, exist_ok=True)
+    transform_output = transform_output_for_slide(args, output, slide_id)
+    if args.transform_cache_root:
+        if not transform_output.is_dir():
+            raise FileNotFoundError(transform_output)
+    else:
+        transform_output.mkdir(parents=True, exist_ok=True)
     raw_root = Path(args.raw_root)
     location_rows = []
     cell_rows = []
@@ -634,10 +657,11 @@ def main():
                     registered_path,
                     native_image,
                     registered_image,
-                    output,
+                    transform_output,
                     args,
                 )
-            matrix_path = (output / f"native_to_target_{scanner}.npz").resolve()
+            matrix_root = output if scanner == "at2" else transform_output
+            matrix_path = (matrix_root / f"native_to_target_{scanner}.npz").resolve()
             matrix_fields = matrix_manifest_fields(affine, matrix_path)
             for row in rows:
                 row.update(matrix_fields)
@@ -673,6 +697,9 @@ def main():
         "slide_id": slide_id,
         "slide_index": slide_order.index(slide_id),
         "slide_count": len(slide_order),
+        "transform_cache_root": str(Path(args.transform_cache_root).resolve())
+        if args.transform_cache_root
+        else None,
         "thresholds": {
             "thumbnail_size": args.thumbnail_size,
             "minimum_sift_inliers": args.minimum_sift_inliers,
