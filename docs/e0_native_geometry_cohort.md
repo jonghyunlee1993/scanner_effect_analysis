@@ -97,6 +97,13 @@ is never reconsidered for another slot.
 Candidate trials reuse only fingerprint-matched global transform matrices from the frozen
 cohort shard; all location residual, NCC, boundary and FOV checks are recomputed.
 
+After the six-scanner gate passes, `render_e0_native_aa_shard.py` renders one 512 px
+target-grid RGB patch per scanner and location directly from the native WSI. It applies
+libvips Lanczos3 reduction at the smallest native-to-target affine singular value followed
+by the residual bicubic affine. The stored 512 px grid is center-cropped to the frozen
+model FOVs (ResNet50/UNI v1 256 px, CONCH v1 512 px, Virchow2 224 px); historical
+registered RGB is never opened by this renderer.
+
 No threshold is relaxed after observing a fallback result. Non-rigid output remains
 excluded unless it passes a separate interpolation audit.
 
