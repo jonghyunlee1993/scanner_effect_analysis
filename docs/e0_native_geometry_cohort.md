@@ -91,6 +91,9 @@ scanner–slide cells eligible for the following prespecified fallback hierarchy
 
 Reserve candidates continue the original `SELECTION_SEED=20260802` permutation after
 the last candidate needed by `e0_integer_512_v1`; they do not restart or rerank the pool.
+Failed location IDs are processed in ascending order and receive the first reserve rank
+that passes the complete six-scanner route gate. A rejected reserve remains recorded and
+is never reconsidered for another slot.
 
 No threshold is relaxed after observing a fallback result. Non-rigid output remains
 excluded unless it passes a separate interpolation audit.
