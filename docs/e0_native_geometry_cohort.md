@@ -99,6 +99,10 @@ cohort shard; all location residual, NCC, boundary and FOV checks are recomputed
 `audit_e0_native_candidate_trial.py` then composes an explicit scanner-to-route map and
 accepts a trial only when all 600 scanner-location keys, all six cell gates and all 100
 six-scanner tuples pass with native WSI marked as the pixel source.
+`select_e0_native_fallback_actions.py` freezes the next action per failed cell: strict
+target/native bounds failures go directly to deterministic candidates, complete preserved
+rigid cells are promoted, and only missing or non-bounds geometry failures request a
+from-scratch pairwise native VALIS rigid run.
 
 After the six-scanner gate passes, `render_e0_native_aa_shard.py` renders one 512 px
 target-grid RGB patch per scanner and location directly from the native WSI. It applies
