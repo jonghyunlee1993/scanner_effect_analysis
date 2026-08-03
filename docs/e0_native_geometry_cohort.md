@@ -89,6 +89,9 @@ scanner–slide cells eligible for the following prespecified fallback hierarchy
    next eligible location in the already ranked common-coordinate candidate pool. The
    ranking never uses registration outcome, PFM features or tissue labels.
 
+Reserve candidates continue the original `SELECTION_SEED=20260802` permutation after
+the last candidate needed by `e0_integer_512_v1`; they do not restart or rerank the pool.
+
 No threshold is relaxed after observing a fallback result. Non-rigid output remains
 excluded unless it passes a separate interpolation audit.
 

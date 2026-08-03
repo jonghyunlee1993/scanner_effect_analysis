@@ -66,6 +66,7 @@ def parse_args():
         default="outputs/e0_feature_manifest_109/shards",
     )
     parser.add_argument("--target-locations", type=int, default=100)
+    parser.add_argument("--reserve-locations", type=int, default=0)
     parser.add_argument("--max-candidates", type=int, default=3000)
     return parser.parse_args()
 
@@ -321,6 +322,8 @@ def evaluate_candidate(x, y, candidate_rank, priors, handles, width, height):
 
 def main():
     args = parse_args()
+    if args.reserve_locations < 0:
+        raise ValueError("--reserve-locations must be non-negative")
     slide_id = str(args.slide_id)
     registry = pd.read_csv(args.registry, dtype={"slide_id": str})
     selected_registry = registry[registry["slide_id"].eq(slide_id)]
@@ -384,9 +387,13 @@ def main():
         )
         order = stable_rng(slide_id).permutation(len(candidates))
         replacements = []
+        reserves = []
         evaluated_candidates = 0
         for candidate_rank, index_candidate in enumerate(order):
-            if len(replacements) == len(failed_slots):
+            if (
+                len(replacements) == len(failed_slots)
+                and len(reserves) == args.reserve_locations
+            ):
                 break
             if evaluated_candidates >= args.max_candidates:
                 break
@@ -409,11 +416,16 @@ def main():
             )
             audit_rows.append(record)
             if passed:
-                slot = failed_slots[len(replacements)]
-                record["location_id"] = slot
-                record["replicate_id"] = slot % 5
-                record["retained_original"] = False
-                replacements.append(record.copy())
+                if len(replacements) < len(failed_slots):
+                    slot = failed_slots[len(replacements)]
+                    record["location_id"] = slot
+                    record["replicate_id"] = slot % 5
+                    record["retained_original"] = False
+                    replacements.append(record.copy())
+                else:
+                    record["reserve_rank"] = len(reserves)
+                    record["retained_original"] = False
+                    reserves.append(record.copy())
     finally:
         for handle in handles.values():
             handle.close()
@@ -426,9 +438,11 @@ def main():
     audit.to_csv(output / "candidate_audit.csv", index=False)
     prior_frame.insert(0, "slide_id", slide_id)
     prior_frame.to_csv(output / "prior_fit.csv", index=False)
-    complete = len(final) == args.target_locations
+    base_complete = len(final) == args.target_locations
+    reserve_complete = len(reserves) == args.reserve_locations
+    complete = bool(base_complete and reserve_complete)
     manifest_path = output / "feature_manifest.csv"
-    if complete:
+    if base_complete:
         final.insert(0, "manifest_version", "e0_integer_512_v1")
         final.insert(1, "tissue_type", "")
         final["center_x"] = final["x"].astype(int) + PATCH_SIZE // 2
@@ -438,6 +452,18 @@ def main():
         final.to_csv(manifest_path, index=False)
     else:
         manifest_path.unlink(missing_ok=True)
+    reserve_path = output / "reserve_candidates.csv"
+    if reserves:
+        reserve = pd.DataFrame(reserves).sort_values("reserve_rank")
+        reserve.insert(0, "manifest_version", "e0_integer_512_reserve_v1")
+        reserve.insert(1, "tissue_type", "")
+        reserve["center_x"] = reserve["x"].astype(int) + PATCH_SIZE // 2
+        reserve["center_y"] = reserve["y"].astype(int) + PATCH_SIZE // 2
+        reserve["max_model_fov_px"] = MAX_FOV
+        reserve["alignment_version"] = "current_global_first_integer_v1"
+        reserve.to_csv(reserve_path, index=False)
+    else:
+        reserve_path.unlink(missing_ok=True)
     summary = {
         "analysis": "e0_six_scanner_feature_manifest_slide",
         "slide_id": slide_id,
@@ -446,6 +472,10 @@ def main():
         "retained_original": int(len(retained)),
         "replacements_needed": int(len(failed_slots)),
         "replacements_found": int(len(replacements)),
+        "reserve_locations_requested": int(args.reserve_locations),
+        "reserve_locations_found": int(len(reserves)),
+        "base_manifest_complete": bool(base_complete),
+        "reserve_complete": bool(reserve_complete),
         "common_coordinate_pool": int(len(common)),
         "replacement_candidates_evaluated": int(evaluated_candidates),
         "max_candidates": int(args.max_candidates),
@@ -464,7 +494,8 @@ def main():
     print(json.dumps(summary, indent=2))
     if not complete:
         raise RuntimeError(
-            f"{slide_id}: found {len(final)}/{args.target_locations} valid 512 px-aware locations"
+            f"{slide_id}: found {len(final)}/{args.target_locations} primary and "
+            f"{len(reserves)}/{args.reserve_locations} reserve locations"
         )
 
 
