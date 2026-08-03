@@ -73,6 +73,38 @@ def validate_route(locations, cells, manifest, slide_id, scanner, root):
         errors.append("invalid_location_keys")
     if observed_ids != expected_ids:
         errors.append("location_ids_do_not_match_trial")
+    if observed_ids == expected_ids and len(locations) == 100:
+        expected = manifest[
+            ["location_id", "replicate_id", "center_x", "center_y"]
+        ].rename(
+            columns={
+                "replicate_id": "expected_replicate_id",
+                "center_x": "expected_center_x",
+                "center_y": "expected_center_y",
+            }
+        )
+        observed = locations[
+            ["location_id", "replicate_id", "canonical_center_x", "canonical_center_y"]
+        ]
+        coordinate_audit = expected.merge(
+            observed, on="location_id", how="outer", validate="one_to_one"
+        )
+        coordinates_match = bool(
+            coordinate_audit["expected_replicate_id"]
+            .astype(int)
+            .eq(coordinate_audit["replicate_id"].astype(int))
+            .all()
+            and coordinate_audit["expected_center_x"]
+            .astype(int)
+            .eq(coordinate_audit["canonical_center_x"].astype(int))
+            .all()
+            and coordinate_audit["expected_center_y"]
+            .astype(int)
+            .eq(coordinate_audit["canonical_center_y"].astype(int))
+            .all()
+        )
+        if not coordinates_match:
+            errors.append("canonical_centers_do_not_match_trial")
     if len(cells) != 1:
         errors.append("invalid_cell_key")
     if len(locations) and not as_bool(locations["geometry_pass"]).all():
