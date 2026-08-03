@@ -18,3 +18,8 @@ image-condition construction.
 cache and writes byte size and SHA-256 for every checkpoint. A later GPU smoke test must
 verify output shape, dtype, finite values and deterministic repeated inference before cohort
 feature extraction. No TRIDENT sampling or slide segmentation is run.
+
+`smoke_e0_pfm_encoders.py` additionally refuses to run if TRIDENT HEAD or any tracked
+encoder/transform source file differs from the pinned commit. It loads each local checkpoint,
+applies the exposed official eval transform to a deterministic model-sized RGB image and
+requires the expected feature dimension, finite output and bit-identical repeated eval.
