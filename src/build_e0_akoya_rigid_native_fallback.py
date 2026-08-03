@@ -59,6 +59,10 @@ def parse_args():
         ),
     )
     parser.add_argument("--output", default="outputs/e0_rigid_native_fallback")
+    parser.add_argument(
+        "--transform-cache-root",
+        help="Reuse frozen native-to-rigid transforms from ROOT/<scanner>/shards/<slide>.",
+    )
     parser.add_argument("--thumbnail-size", type=int, default=4096)
     parser.add_argument("--minimum-sift-inliers", type=int, default=80)
     parser.add_argument("--maximum-thumbnail-q95-px", type=float, default=4.0)
@@ -145,14 +149,22 @@ def main():
     rigid_image = pyvips.Image.new_from_file(str(rigid_path), access="random")
     output = Path(args.output) / scanner / "shards" / slide_id
     output.mkdir(parents=True, exist_ok=True)
+    transform_output = (
+        Path(args.transform_cache_root) / scanner / "shards" / slide_id
+        if args.transform_cache_root
+        else output
+    )
+    if args.transform_cache_root and not transform_output.is_dir():
+        raise FileNotFoundError(transform_output)
     affine, sift_metrics, cache_hit = recover_or_load_transform(
         native_image,
         rigid_image,
         native_path,
         rigid_path,
         scanner,
-        output,
+        transform_output,
         args,
+        require_cache=bool(args.transform_cache_root),
     )
     gate = transform_gate(sift_metrics, affine, scanner, args)
     reconstructed = make_reconstructed_view(
@@ -160,7 +172,7 @@ def main():
         affine,
         np.array([rigid_image.height, rigid_image.width]),
     )
-    matrix_path = output / f"native_to_target_{scanner}.npz"
+    matrix_path = transform_output / f"native_to_target_{scanner}.npz"
     matrix_fields = matrix_manifest_fields(affine, matrix_path)
 
     rows = []
@@ -317,6 +329,9 @@ def main():
         "native_fov_bounds_failures": int((~frame["native_fov_bounds_pass"].astype(bool)).sum()),
         "location_geometry_failures": int(len(failures)),
         "cell_pass": cell_pass,
+        "transform_cache_root": str(Path(args.transform_cache_root).resolve())
+        if args.transform_cache_root
+        else None,
         "failure_reason": ";".join(failure_reasons) if failure_reasons else "pass",
     }
     frame.to_csv(output / "native_geometry_locations.csv", index=False)
@@ -329,6 +344,9 @@ def main():
         "locations_written": int(len(frame)),
         "locations_passing": int(frame["geometry_pass"].astype(bool).sum()),
         "cell_pass": cell_pass,
+        "transform_cache_root": str(Path(args.transform_cache_root).resolve())
+        if args.transform_cache_root
+        else None,
         "pixel_source": "native_wsi",
         "historical_rigid_pixels_used_for": "geometry and QC only",
     }

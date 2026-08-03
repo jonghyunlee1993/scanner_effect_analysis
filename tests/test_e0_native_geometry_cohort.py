@@ -84,6 +84,11 @@ def test_candidate_trial_can_reuse_frozen_transform_cache(tmp_path):
     assert cached == tmp_path / "frozen" / "shards" / "s1"
 
 
+def test_rigid_branch_is_stable_for_candidate_transform_cache_layout():
+    assert rigid_branch("akoya") == "rigid_akoya"
+    assert rigid_branch("gt450") == "rigid_all"
+
+
 def test_merge_gate_requires_every_six_scanner_tuple_and_cell():
     manifest = pd.DataFrame(
         {
