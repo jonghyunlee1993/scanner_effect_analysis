@@ -1,6 +1,6 @@
 # E0 native geometry cohort contract
 
-**Status:** gate frozen before the 109-slide cohort run
+**Status:** native geometry and native-AA gates passed; final E0--E3 result lock complete
 
 **Manifest version:** `e0_native_geometry_v1`
 
@@ -106,6 +106,9 @@ six-scanner tuples pass with native WSI marked as the pixel source.
 target/native bounds failures go directly to deterministic candidates, complete preserved
 rigid cells are promoted, and only missing or non-bounds geometry failures request a
 from-scratch pairwise native VALIS rigid run.
+An absent audit shard is not treated as an absent preserved route: if the expected rigid WSI
+exists, the cell is first labeled `audit_preserved_rigid`; only a genuinely absent preserved
+WSI proceeds directly to from-scratch registration.
 `select_e0_fromscratch_outcomes.py` then promotes complete from-scratch cells and sends
 remaining location-specific geometry failures to deterministic candidates only when the
 global native-to-rigid transform gate passed. A failed global transform remains explicitly
@@ -114,6 +117,35 @@ Finalization is plan-driven: `finalize_e0_native_geometry.py` replaces only expl
 listed candidate slide manifests and scanner-cell geometry routes, verifies that every
 route's canonical centers match the final candidate coordinates, and reruns the complete
 65,400-row/10,900-tuple cohort gate.
+`build_e0_candidate_execution_plan.py` derives scanner route kinds and the union of failed
+location IDs directly from frozen action/outcome CSVs, reuses already accepted trials, and
+materializes deterministic trial manifests plus primary and rigid-route execution lists.
+The three `e0_candidate_*_array.sbatch` launchers consume those lists without reconstructing
+route decisions in shell: primary routes reuse frozen global transforms, while each preserved
+or from-scratch cell reruns cross-scanner and same-scanner local gates against the trial centers.
+`audit_e0_candidate_execution_plan.py` composes those scanner roots, rewrites each trial's
+accepted geometry artifact, and reports the exact remaining location IDs for deterministic
+reserve advancement when trial 0 does not yet pass.
+`advance_e0_candidate_execution_plan.py` retains every passing replacement, assigns each
+failed or newly failing slot the next globally unused reserve rank, records the rejected
+rank lineage, and materializes the next versioned trial without reranking any candidate.
+Plan rebuilding selects the newest passing versioned trial only when its audited six-scanner
+route kinds exactly match the current frozen route plan; a stale accepted route is not reused.
+`build_e0_native_finalization_plan.py` then expands every accepted candidate slide to six
+explicit scanner-cell overrides and adds only the promoted preserved/from-scratch cells for
+noncandidate slides, so no original-coordinate primary shard leaks into a candidate manifest.
+Candidate execution may be sharded with `--only-slides`; this limits materialization and
+launch rows only, while retaining the full frozen scanner route plan for every audit.
+The same execution-subset contract applies to candidate advancement, allowing a stalled
+registration route to pause without blocking independent slides whose reserves are converging.
+When a from-scratch similarity registration shows cohort-wide low cross-scanner NCC and
+search-boundary saturation rather than isolated location failures, a separate feature-matched
+VALIS `AffineTransform` diagnostic is permitted with the intensity optimizer and non-rigid
+registration disabled. It must pass the unchanged 100-location gate before promotion.
+If neither primary nor from-scratch passes all 100 locations, a primary route with a valid
+global transform is retained when it has no more failed locations than from-scratch VALIS.
+Only that route's failed slots enter the deterministic candidate loop, minimizing
+registration-conditioned replacement without changing any gate.
 
 After the six-scanner gate passes, `render_e0_native_aa_shard.py` renders one 512 px
 target-grid RGB patch per scanner and location directly from the native WSI. It applies
@@ -122,19 +154,81 @@ by the residual bicubic affine. The stored 512 px grid is center-cropped to the 
 model FOVs (ResNet50/UNI v1 256 px, CONCH v1 512 px, Virchow2 224 px); historical
 registered RGB is never opened by this renderer.
 
+## Observed cohort outcome
+
+The primary native recovery produced 65,400 expected rows, of which 10,644/10,900
+six-scanner tuples and 593/654 scanner–slide cells passed. The frozen fallback selector
+therefore reviewed 61 failed cells. Preserved-route audit, targeted from-scratch VALIS and
+the route-min rule reduced the final candidate burden to 22 slides and 44 location slots.
+The first candidate trial passed 21/22 slides; one additional deterministic reserve for
+`12.5_30` location 78 completed the last route without changing any threshold.
+
+The plan-driven finalization then passed all required counts: 109 slides, 654/654 cells,
+65,400/65,400 scanner-location rows and 10,900/10,900 six-scanner tuples, with zero failed,
+missing, duplicate or unexpected keys. It used 22 candidate manifests and 161 explicit
+scanner-cell geometry overrides. Every final row is marked `native_wsi_only`.
+
+Native-AA rendering subsequently produced 109/109 HDF5 shards containing all
+65,400 scanner-location patches. The full audit recomputed every shard SHA-256, matched
+scanner/location/center/affine/native-path identity back to the final geometry, and read
+every 512 px RGB patch to exclude fully black or fully white renders. All 109 shards and
+65,400 patches passed; the frozen grid occupies 47,493,295,240 bytes and contains no
+missing, unexpected or temporary files.
+
+The post-finalization alias audit selected q05/q50/q95 transforms from all 109 GT450
+and 109 VERSA final cells. The explicit-AA chain passed the frozen 5% sinusoid and
+broadband-noise ratios for all six profiles; its worst ratios were 0.0154 and 0.0190.
+The corresponding original single-pass bicubic q50 ratios were 1.545/1.115 for GT450
+and 1.319/0.960 for VERSA. This closes E0c for the final geometry rather than relying
+on the earlier historical-VALIS transform distribution.
+
 No threshold is relaxed after observing a fallback result. Non-rigid output remains
 excluded unless it passes a separate interpolation audit.
+
+## Same-chain operational background floor
+
+E0d reuses all 65,400 outcome-blind native glass coordinates accepted by Exp07. Each
+coordinate is rendered from its native WSI with the final scanner-slide affine and the
+same `Lanczos3 reduction -> residual bicubic affine` chain used for E1 tissue patches.
+No coordinate is removed after post-render QC. The spectral estimator is also identical
+to E1: natural-log mean optical density, per-patch mean removal, a 2D Hann window and
+72-bin radial power at 0.5052 micrometres/pixel.
+
+All 109 slide shards passed the frozen identity gate. The aggregate contains 47,088
+background spectra rows, 235,440 five-by-20 replicate rows, and 65,400 coordinate/QC
+rows. Post-render glass QC retained 98.34% of patches (slide range 90.33--100%), while
+the maximum black-pixel fraction in any patch was 0.001404. QC failures remain included
+to avoid outcome-dependent reselection.
+
+Background subtraction was positive in every one of the 47,088 tissue spectrum bins.
+In the 0.60--0.90 cycles/micrometre band, median background/tissue power ranged from
+0.00048 for AT2 to 0.00569 for AKOYA. The median change in anchor-normalized ERT was
+-0.0014 to -0.0039 log2 across non-reference scanners. At SNR >= 10, the high-band
+eligible counts were 109/109 for AT2, GT450 and S60; 108/109 for VERSA and S360; and
+106/109 for AKOYA. This is an operational glass/background floor after the analysis
+chain, not detector NPS, DQE or absolute MTF.
 
 ## Reproducibility
 
 - Slide runner: `src/run_e0_native_geometry_cohort.py`
 - Cohort merger/gate: `src/merge_e0_native_geometry_cohort.py`
+- Final cohort composer: `src/finalize_e0_native_geometry.py`
+- Finalization plan builder: `src/build_e0_native_finalization_plan.py`
 - Targeted rigid-route audit: `src/run_e0_registration_sentinel.py`
 - Native-pixel fallback builder: `src/build_e0_rigid_native_fallback.py`
 - Passing-fallback promoter: `src/promote_e0_native_geometry_fallback.py`
 - Native from-scratch rigid runner: `src/run_e0_valis_rigid_from_scratch.py`
 - Array launcher: `scripts/e0_native_geometry_cohort.sbatch`
 - Merge launcher: `scripts/e0_native_geometry_merge.sbatch`
+- Native-AA renderer/audit: `src/render_e0_native_aa_shard.py`,
+  `src/audit_e0_native_aa_grid.py`
+- Native-AA launchers: `scripts/e0_native_aa_grid_array.sbatch`,
+  `scripts/e0_native_aa_audit.sbatch`
+- Same-chain background renderer/analysis:
+  `src/render_e0d_same_chain_background_slide.py`,
+  `src/analyze_e0d_same_chain_noise_floor.py`
+- Same-chain background launchers: `scripts/e0d_same_chain_background_array.sbatch`,
+  `scripts/e0d_same_chain_background_aggregate.sbatch`
 - Fallback launchers: `scripts/e0_rigid_alignment_array.sbatch`,
   `scripts/e0_rigid_native_array.sbatch`, `scripts/e0_native_geometry_promote.sbatch`,
   `scripts/e0_valis_rigid_from_scratch.sbatch`

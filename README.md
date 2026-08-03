@@ -18,21 +18,23 @@ variation을 물리적 주파수 전달과 pathology foundation model(PFM) 표�
 않는다. 반대로 고주파를 제거해 scanner 분류가 어려워지는 것은 진정한 invariance가
 아니라 생물학적 정보까지 사라진 representation collapse일 수 있다.
 
-109개 내부 슬라이드의 예비 분석은 scanner main effect가 크면서도 tissue 및 slide별
-상호작용이 남고, white-space background 정보는 tissue-domain transfer의 추가 설명력을
-거의 제공하지 않는다는 방향을 지지한다. 최종 연구는 이 기전을 동결된 네 PFM에서
-검증한다. PLISM은 PanNormal core 분석 완료 후의 후속 extension으로 보류한다.
+109개 내부 슬라이드의 PanNormal E0--E7 분석은 scanner main effect와 tissue/slide별
+상호작용, four-PFM invariance--fidelity frontier, exact LOTO와 grouped tissue probe를
+완료했다. White-space background는 tissue-domain transfer의 추가 설명력을 거의 제공하지
+않았다. 여덟 result lock과 Main Figure 1--6은 통합 artifact audit을 통과했다. PLISM은
+후속 extension으로 보류한다.
 
 ## 문서
 
 - [최종 논문 스토리라인과 실행 청사진](docs/storyline.md)
 - [최종 연구 프로토콜과 논문 스토리라인](docs/final_study_protocol.md)
+- [RF1 improvement handoff](docs/2026-08-03_rf1_improvement_handoff.md)
 - [문서 인덱스](docs/README.md)
-- [최종 단계 이전 문서 아카이브](docs/archive/2026-07-31_pre_final/README.md)
 
 현재 논문 주장과 서사는 `storyline.md`, 세부 실험 계약은
 `final_study_protocol.md`를 기준으로 한다. 충돌하는 과학적 방향은 최신
-`storyline.md`를 우선하며, 아카이브의 계획·로그는 provenance 용도다.
+`storyline.md`를 우선한다. superseded 문서와 manuscript working draft는 active tree에서
+제거했으며 삭제 전 Git bundle에서만 조회한다.
 
 ## 활성 분석 코드
 
@@ -67,7 +69,6 @@ validation, bootstrap split은 tile이 아니라 physical slide 단위로 수행
 
 ## 현재 단계
 
-탐색적 LF/HF, 109-slide spectrum, tissue random-slope, background 분석은 완료됐다.
-다음 단계는 E0 registration/resampling validity gate를 통과하고 공통 PFM 추출·평가
-파이프라인을 구축한 뒤 내부 population experiment를 실행하는 것이다. PLISM은 이 core
-분석의 완료 조건이 아니다.
+PanNormal core E0--E7, Main Figure 1--6 및 결과 artifact 잠금은 완료됐다. 현재 작업은
+저자·윤리·acquisition-record 정보와 공개 repository/release 정보를 채우는 원고 마감
+단계다. 추가 PFM과 PLISM은 core 결론과 분리된 post-core extension이다.

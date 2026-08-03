@@ -1,8 +1,9 @@
 # Fidelity-constrained scanner harmonization: manuscript storyline
 
-**Status:** active storyline and execution blueprint
+**Status:** PanNormal core E0--E7 completed and result-locked; manuscript working draft
+synchronized
 
-**Updated:** 2026-08-02
+**Updated:** 2026-08-03
 
 **Target journal:** *Medical Image Analysis*
 **Working title:** *Fidelity-constrained evaluation of scanner harmonization in computational pathology: a paired frequency-resolved framework*
@@ -61,7 +62,9 @@ Part I의 scanner spectrum 분석은 독립적인 characterization story가 아�
 4. 추론, bootstrap, cross-validation과 split의 기본 단위는 physical slide다.
 5. Registration, resampling, aliasing과 noise floor는 nuisance appendix가 아니라 ERT
    해석의 validity gate다.
-6. 현재 ERT 수치와 85.5% variance fraction은 validity gate 재검증 전까지 잠정값이다.
+6. Native-AA ERT와 nested tissue/slide variance 결과는 E0 validity gate 이후의 audited
+   primary 값으로 사용한다. Historical ERT와 85.5% descriptive fraction은 legacy
+   provenance로만 보존한다.
 7. 실제 correction benchmark에는 image-space와 feature-space 방법을 모두 포함한다.
 8. Protocol의 유용성은 separability-only 결론과 fidelity-constrained decision의
    불일치로 평가한다. 특정 rank reversal을 사후에 찾지 않는다.
@@ -83,18 +86,25 @@ Part I의 scanner spectrum 분석은 독립적인 characterization story가 아�
 
 ### 3.2 결과를 보기 전에 추가로 동결할 선택
 
+아래 항목의 수식, 집계 단위, threshold와 leakage 방지 규칙은
+[`e4_e7_decision_record.md`](e4_e7_decision_record.md)에 모았으며, 2026-08-03 사용자의
+`전부 승인`으로 outcome 확인 전에 동결했다.
+
 - ~~TRIDENT commit과 모델별 checkpoint revision/feature layer 동결~~ — commit
   `a6305acf`, ResNet50 `78f3ecfd`, UNI v1 `b55a5ec6`, CONCH v1 `f9ca9f87`,
   Virchow2 `31586458`; checkpoint SHA-256은 각각 `065b941a`, `56ef09b4`,
   `40a9644b`, `14244fba`. Pinned runtime의 A100 smoke test에서 공식 transform
   출력 224/224/448/224 px, feature 1,024/1,024/512/2,560-D와 bit-identical
   repeated eval을 모두 통과
-- Primary content-fidelity endpoint 하나와 collapse guardrail의 계층
-- Endpoint별 허용 margin과 slide-clustered uncertainty 기준
-- Scanner dispersion (R)의 정확한 정의와 raw-radius 최소값 \(\epsilon\)
-- Registration, model-FOV bounds와 aliasing audit의 수치 통과 기준
-- 최소 image-space/feature-space comparator 목록
-- 109-slide candidate replacement와 targeted native-rigid rerun의 수치 승격 기준
+- ~~Primary content-fidelity endpoint 하나와 collapse guardrail의 계층~~
+- ~~Endpoint별 허용 margin과 slide-clustered uncertainty 기준~~
+- ~~Scanner dispersion (R)의 정확한 정의와 raw-radius 최소값 \(\epsilon\)~~
+- ~~Registration, model-FOV bounds와 aliasing audit의 수치 통과 기준~~ — SIFT inlier,
+  reprojection, anisotropy, scale, NCC, ±120 boundary, strict 512 px native bounds와
+  q05/q50/q95 alias ≤5% gate를 동결한 채 전수 통과
+- ~~최소 image-space/feature-space comparator 목록~~
+- ~~109-slide candidate replacement와 targeted native-rigid rerun의 수치 승격 기준~~ —
+  geometry-only route-min, deterministic reserve와 unchanged all-100 gate로 완료
 
 Self-cosine은 retrieval보다 비순환적인 representation-preservation diagnostic이지만,
 그 자체를 biological fidelity라고 부르지 않는다. 아무 변화도 주지 않는 방법을 선호하고
@@ -283,16 +293,17 @@ alias/true-in-band power가 모두 5% 이하이며 q05/q50/q95 실제 transform 
 
 현재 audit 결과:
 
-- 원 bicubic의 q50 alias/true-in-band power는 GT450에서 sinusoid 1.555, white noise
-  1.113이고 VERSA에서 1.329, 0.965로 실패함
-- `Lanczos3 reduction → residual bicubic affine`는 같은 값이 GT450 0.0084/0.0101,
-  VERSA 0.0142/0.0154로 q05/q50/q95 모두 5% gate를 통과함
-- 다만 explicit-AA의 high-band amplitude retention 중앙값은 GT450 0.739, VERSA
-  0.806이고 최대 angular anisotropy는 4.081/3.294 dB이므로 이 필터링 비용을 함께
-  보고함
-- 따라서 Phase 0는 `Revise`: native WSI에서 explicit AA common grid를 재생성한 뒤
-  alias gate를 재확인하고, 그 전에는 기존 grid로 E1–E3를 재산출하지 않음
-- 0.60–0.90 band 유지는 AA 재생성 grid의 실제 통과에 조건부로 동결함
+- 최종 native geometry 218개 GT450/VERSA transform의 q05/q50/q95 profile을 다시
+  감사했다. 원 bicubic의 q50 alias/true-in-band power는 GT450에서 sinusoid
+  1.545/white noise 1.115, VERSA에서 1.319/0.960으로 실패함
+- `Lanczos3 reduction → residual bicubic affine`의 q50은 GT450 0.0148/0.0173,
+  VERSA 0.0154/0.0169였고, 전체 q05/q50/q95의 최악값도 sinusoid 0.0154,
+  white noise 0.0190으로 5% gate를 통과함
+- Explicit-AA의 q50 high-band amplitude retention 중앙값은 GT450 0.775, VERSA
+  0.766이고 전체 profile 최대 angular anisotropy는 3.639 dB이므로 이 필터링 비용을
+  함께 보고함
+- 따라서 native-AA common grid와 0.60–0.90 cycles/µm primary band는 E0c gate를
+  통과했다. E1–E3는 이 grid에서만 재산출함
 
 Alias term이 무시할 수 없으면 단일 multiplicative transfer 해석이 깨진다.
 
@@ -319,12 +330,19 @@ P_Y(\mathbf f) \approx
 - 2D/angular spectrum을 resampling/compression audit에 보고
 - Anchor-band sensitivity와 background/noise-floor sensitivity
 
-0.297과 1.595는 anchor-normalized amplitude transfer이며 절대 HF power ratio가 아니다.
-`amplification`, `attenuation`은 anchor 대비 spectral shape를 뜻한다고 명시한다.
+Audited native-AA high-band fold 0.335와 1.478을 포함한 ERT는 anchor-normalized amplitude
+transfer이며 절대 HF power ratio가 아니다. `amplification`, `attenuation`은 anchor 대비
+spectral shape를 뜻한다고 명시한다. Historical 0.297과 1.595는 primary 결과로 사용하지 않는다.
 
 기존 raw background NPS는 tissue registration과 다른 interpolation 경로를 사용했으므로
 registered tissue power에서 직접 빼지 않는다. Noise correction은 동일한 processing chain의
 background를 사용하고, subtraction 후 음수값과 SNR threshold sensitivity를 보고한다.
+
+현재 E0d에서는 Exp07의 outcome-blind accepted native glass 좌표 65,400개를 사후 재선별 없이
+최종 `Lanczos3 reduction → residual bicubic affine` 체인으로 다시 렌더링하고 E1과 동일한
+natural-log mean OD/Hann/radial periodogram을 적용했다. 전체 47,088 radial bin에서 subtraction
+후 음수는 0개였다. SNR threshold 1/2/5/10을 모두 보고하며, 이 결과는 detector NPS가 아니라
+동일 전처리 이후의 operational background floor로만 해석한다.
 
 #### 2.5 Scanner, tissue, slide와 sampling 분해
 
@@ -369,23 +387,16 @@ Sharpening은 content-fidelity endpoint를 통과하기 전까지 `content-prese
 
 최소 benchmark:
 
-**Image-space**
+**Image-space primary:** Reinhard, paired OD affine, frozen frequency calibration
 
-- Reinhard/Macenko
-- RGB 또는 OD affine
-- Paired LF affine
-- 주파수 기반 attenuation/calibration 방법 1개
-- 가능하면 학습 기반 normalization 1개
+**Image-space Supplement:** Macenko
 
-**Feature-space**
+**Feature-space primary:** CORAL, orthogonal Procrustes
 
-- CORAL
-- Orthogonal Procrustes 또는 ComBat
-- 접근 가능하고 공정한 조건이면 FEATMAP
-
-전체 방법을 무리하게 늘리기보다 동결된 4개 PFM에서 image 1–2개, feature 1–2개의
-최소 완결 benchmark를 먼저 수행한다. 모든 방법은 train slide에서만 적합하고 held-out
-slide와 tissue에서 평가한다.
+이 범위는 outcome 확인 전 decision record에서 동결했다. Learned normalization과 FEATMAP은
+동일 paired-data/FOV/CV 조건을 공정하게 재현하는 별도 extension으로 남기고 core 결과에
+사후 추가하지 않았다. 모든 core 방법은 train slide에서만 적합하고 held-out slide에서
+평가했으며, exact LOTO sensitivity에서는 held-out tissue 전체를 fit에서 제외했다.
 
 #### 2.9 PFM panel과 endpoint
 
@@ -472,7 +483,8 @@ E2의 scanner × content와 E5의 benchmark를 연결하는 핵심 절이다.
 - `scanner × correction × tissue` interaction
 - Tissue에 대한 correction effect의 random slope
 - Slide 안 paired contrast
-- Tissue morphology 또는 baseline spectrum이 correction benefit을 예측하는지 분석
+- 독립 morphology annotation은 없으므로 사전 고정한 baseline spectrum 변수만 correction
+  benefit의 exact tissue-held-out predictor로 분석
 - Mean effect가 유사해도 tissue별 부호가 바뀌는지 보고
 
 #### 2.12 Content fidelity와 제한된 tissue-type validation
@@ -480,13 +492,14 @@ E2의 scanner × content와 E5의 benchmark를 연결하는 핵심 절이다.
 PanNormal에는 normal tissue type 외의 독립 biological/downstream label이 없다. 따라서
 현재 연구에서 직접 판정할 범위를 다음과 같이 제한한다.
 
-1. **Primary representation/content endpoint:** same-location retrieval/content margin,
-   raw→corrected geometry preservation 후보 중 하나를 결과 확인 전에 동결한다.
-2. **Collapse guardrail:** embedding variance, effective rank와 pairwise-distance 유지.
-3. **Secondary coarse biology:** tissue-type retrieval 또는 grouped linear probe와
-   scanner별 tissue-neighborhood agreement.
-4. **Optional structural sensitivity:** 사전 QC를 통과한 nucleus segmentation/count/boundary
-   agreement. 이는 독립 biological ground truth로 승격하지 않는다.
+1. **Primary representation/content endpoint:** same-location content margin을 outcome 확인
+   전에 동결해 완료했다.
+2. **Collapse guardrail:** embedding variance, effective rank와 pairwise-distance를 모든
+   source scanner에서 평가했다.
+3. **Secondary coarse content:** held-out-slide tissue-centroid probe와 scanner별
+   tissue-neighborhood agreement를 완료했다.
+4. **Structural sensitivity:** 독립 annotation/QC 계약이 없어 nucleus endpoint를 core에서
+   생략했다.
 
 37개 tissue class 중 상당수의 slide 수가 적으므로 patch를 독립 표본으로 세지 않는다.
 Split과 bootstrap의 단위는 physical slide이며, tissue endpoint는 class imbalance와
@@ -539,6 +552,12 @@ alignment contract와 correction benchmark를 먼저 동결하고 완료한 뒤 
 - Coarse-to-fine 후 residual, failure와 padding 변화
 - GT450/VERSA의 alias mixing과 anti-aliased pipeline 비교
 - Anchor와 noise-floor sensitivity
+- Same-chain high-band background/tissue power 중앙값은 AT2 0.00048, GT450 0.00534,
+  VERSA 0.00250, AKOYA 0.00569, S60 0.00378, S360 0.00238이었다. Noise subtraction의
+  high-band ERT 변화 중앙값은 비참조 scanner에서 -0.0014~-0.0039 log2였고 5,000회
+  slide bootstrap CI도 모두 0.006 log2 이내였다
+- SNR≥10에서 high-band eligible slide는 GT450/S60/AT2 109/109, VERSA/S360 108/109,
+  AKOYA 106/109였으며, 47,088개 전체 bin에서 음수 subtraction은 없었다
 
 결론 형식:
 
@@ -552,7 +571,14 @@ effective signature로 제한한다.
 
 - Unnormalized power와 anchor-normalized ERT를 나란히 제시
 - Scanner별 curve, CI와 slide spread
-- 현재 GT450 1.595, AKOYA 0.297 등의 수치는 재등록·alias audit 후 갱신
+- Native-AA high-band fixed fold ERT는 GT450 1.478 (log2 0.563), VERSA 0.938
+  (-0.092), AKOYA 0.335 (-1.578), S60 1.044 (0.062), S360 0.842 (-0.248)
+- Historical→native-AA high-band median absolute delta는 scanner별 0.073–0.134 log2였고
+  q95는 AKOYA에서 0.430으로 가장 컸다. Low–mid median absolute delta는 모두
+  0.016 log2 이하였으므로 resampling revision은 주로 고주파 해석을 갱신함
+- Anchor 변경의 high-band median absolute delta는 GT450 0.008, VERSA 0.018,
+  S60 0.037, S360 0.012 log2 이하였으나 AKOYA는 upper anchor에서 0.117
+  (q95 0.290)이므로 scanner별 민감도를 함께 보고함
 - Optical MTF가 아니라 effective relative spectrum이라는 제한을 반복
 
 핵심 질문:
@@ -565,7 +591,12 @@ effective signature로 제한한다.
 - Scanner fixed mean
 - Scanner × tissue, scanner × slide와 sampling variation
 - AKOYA 포함/제외 sensitivity
-- 현재 85.5%는 잠정 descriptive value로만 유지
+- High band의 tissue-between-slide variance fraction은 GT450 20.5%, AKOYA 31.3%,
+  S60 27.6%, VERSA 6.5%, S360 3.3%였다. Tissue variance의 BH q-value는 각각
+  0.0499, 0.0059, 0.0145, 0.3510, 0.4607이므로 모든 scanner에 동일한 tissue effect를
+  주장하지 않음
+- 기존 85.5% scanner fraction은 폐기하고 현재 nested model의 scanner별 variance
+  component를 사용함
 
 핵심 결론:
 
@@ -577,49 +608,116 @@ effective signature로 제한한다.
 - Nearest equivalent HF gain
 - Cross-validated off-axis lack-of-fit와 CI
 - 어떤 frequency region과 scanner에서 residual이 남는지
+- Leave-one-slide-out manifold와 matched-gain held-out scalar null을 사용했을 때 모든
+  scanner의 median excess off-axis RMS 95% bootstrap CI가 0보다 컸다: GT450
+  0.081–0.116, VERSA 0.095–0.107, AKOYA 0.256–0.316, S60 0.093–0.111,
+  S360 0.093–0.107 log2
+- GT450은 equivalent gain이 상한 2.0에 도달한 slide가 90.8%이므로 off-axis residual과
+  함께 사전 정의한 gain 범위 부족도 별도로 보고함
 
 이 결과는 frequency control family가 단일 retention scalar가 아니라 attenuation,
 boost, phase-cancellation과 paired consensus를 포함해야 하는 이유를 제공한다.
 
 #### 3.5 Controls가 attainable invariance–fidelity region을 정의한다 — E4
 
-- Complete blur와 global mean이 낮은 radius와 collapse를 함께 만드는지
-- Partial paired oracle이 fidelity를 유지하며 radius를 줄이는지
-- Sharpening이 nuisance divergence quadrant를 채우는지
-- 동결된 4개 PFM에서 slide-bootstrap frontier와 CI
+- 436/436 model--slide shard와 2,354,400/2,354,400 control embedding이 population audit을
+  통과했다. 추론은 109 physical slide equal weight와 동결된 5,000 bootstrap을 사용했다.
+- Complete HF attenuation은 PFM별 scanner radius를 26.8--51.1% 줄였지만 Δ content margin이
+  −0.2805--−0.7425였고 네 PFM 모두 fidelity decision에 실패했다.
+- LOSO global training HF mean 완전 치환도 radius를 26.2--46.7% 줄였지만 Δ content margin
+  −0.2721--−0.7331과 collapse-ratio lower CI 최저 0.166--0.377로 네 PFM 모두 실패했다.
+- Registered same-location leave-one-scanner-out HF mean 25% oracle은 ResNet50, UNI v1,
+  CONCH v1, Virchow2에서 각각 RR 12.5%, 9.5%, 14.0%, 10.7%였고, content와 모든 source-scanner
+  collapse gate를 통과하면서 네 모델 모두 invariance CI 하한이 0보다 컸다.
+- HF retention 0.75는 네 모델 모두 invariance를 개선했지만 UNI v1의 content lower CI
+  −0.0292와 CONCH v1의 −0.0205가 frozen −0.0200 margin을 넘지 못해 common-safe가 아니었다.
+- Paired oracle 외 simple attenuation/boost의 safe-and-improved 조건은 model-specific이었다:
+  ResNet50은 retention 0.75와 boost 1.25/1.50, Virchow2는 retention 0.75와 boost 1.25를
+  통과했으나 UNI v1과 CONCH v1에는 해당 조건이 없었다.
 
-이 절이 논문의 evaluation principle을 경험적으로 입증한다.
+따라서 낮은 scanner radius는 content loss/collapse와 진짜 paired alignment 양쪽에서 모두
+나올 수 있다. E4는 evaluation principle과 attainable safe region을 population 수준에서
+입증하지만 paired oracle은 deployable correction이 아니며 실제 방법 선택은 E5에 남는다.
+전체 결과와 provenance는 [`e4_control_population_results.md`](e4_control_population_results.md)에
+잠갔다.
 
-#### 3.6 실제 correction의 평가는 separability-only 결론을 바꾼다 — E5
+#### 3.6 실제 correction은 common-safe region과 method-specific rejection을 함께 보인다 — E5
 
-- Image-space 및 feature-space correction의 frontier
-- Raw 대비 FC-RR와 fidelity pass/fail
-- Separability ranking과 fidelity-constrained decision의 일치/불일치
-- 특정 rank reversal을 선택적으로 강조하지 않고 전체 method grid를 보고
+- Input-only audit에서 CORAL shrinkage `0.05`와 frequency gain cap `1.03`을 고정한 뒤,
+  Reinhard, paired OD affine, frequency calibration, CORAL와 orthogonal Procrustes를
+  109-fold LOSO로 적합했다.
+- 436/436 image shard의 784,800 embedding과 436/436 feature shard의 523,200 embedding,
+  총 1,308,000개가 identity, raw-AT2 equality, finite norm와 source/statistic/hash audit을
+  통과했다.
+- Reinhard, CORAL와 orthogonal Procrustes는 네 PFM 모두 content/collapse gate를 통과하면서
+  invariance CI 하한이 0보다 큰 four-of-four common-safe + improved 방법이었다.
+- Orthogonal Procrustes는 네 PFM 모두에서 가장 큰 safe RR을 보였다: ResNet50 43.9%,
+  UNI v1 22.5%, CONCH v1 23.9%, Virchow2 20.0%. CORAL은 34.9%, 16.3%, 22.0%, 17.6%,
+  Reinhard는 27.6%, 6.0%, 11.9%, 3.7%였다.
+- Frequency calibration은 four-of-four fidelity-safe였지만 보수적 cap 아래 UNI v1과
+  CONCH v1의 invariance를 개선하지 못했다.
+- UNI v1 paired OD affine은 RR +8.9%와 positive invariance CI를 보였지만 VERSA
+  variance-trace point ratio 0.8865가 collapse point gate 0.90에 미달했다. 따라서
+  `invariance-positive but fidelity-unsafe`인 실제 method/PFM cell이 하나 존재했다.
+- 반면 최고 방법 자체는 네 PFM 모두 separability-only와 fidelity-constrained ranking에서
+  orthogonal Procrustes로 일치했다. 특정 rank reversal을 사후 선택하지 않는 원칙에 따라
+  이 null top-rank disagreement도 그대로 보고한다.
 
-최소 성공 조건:
-
-- 적어도 하나의 실제 correction이 population 수준으로 평가됨
-- Separability improvement와 fidelity 결과가 함께 보고됨
-- Protocol을 적용했을 때 단일 separability 지표가 숨긴 의사결정 차이가 드러남
+전체 20개 actual method × PFM cell, scanner-specific content reversal과 provenance는
+[`e5_comparator_population_results.md`](e5_comparator_population_results.md)에 잠갔다.
+E5는 실제 방법에서도 fidelity gate가 개별 positive invariance 판정을 바꿀 수 있음을
+보였지만, feature-space 정렬이 independent biology 또는 clinical utility를 보존했다는
+주장은 하지 않는다.
 
 #### 3.7 Correction 효과는 tissue와 slide에 따라 달라진다 — E6
 
-- Tissue-specific correction slope
-- PFM × tissue × correction interaction
-- Overall winner가 모든 tissue에서 winner인지 평가
-- 어떤 baseline spectrum/morphology가 correction response를 예측하는지
+- E5의 exact LOSO prediction에서 슬라이드당 5개 disjoint 20-location replicate를 만들고,
+  20개 radius-benefit cell과 100개 source-scanner content-change cell 각각에 tissue와
+  slide-within-tissue random slope를 적합했다. 전체 및 minimum-three sensitivity를 합친
+  240개 full/reduced REML fit은 모두 수렴하고 독립 result lock을 통과했다.
+- Full 37-tissue 분석에서 radius benefit은 18/20 cell, content change는 71/100 cell에서
+  prespecified family별 BH q<0.05였다. 31 tissue/98 slide minimum-three sensitivity에서는
+  각각 17/20과 70/100이었다.
+- Frozen global winner인 orthogonal Procrustes는 ResNet50과 UNI v1에서 37/37 tissue,
+  CONCH v1에서 36/37, Virchow2에서 34/37 tissue의 predicted radius benefit 1위를
+  유지했다. 나머지 네 tissue에서는 CORAL이 1위였고 모두 3-slide class였다.
+- 독립 morphology annotation은 없다. 따라서 post-E6 secondary 계약에서 AT2 band power
+  3개와 across-scanner transfer SD 3개만 사용했다. Exact tissue-held-out ridge의 predictive
+  R² CI 하한이 0보다 큰 것은 20개 중 ResNet50 frequency, UNI Reinhard, UNI paired OD의
+  세 cell뿐이었다. CORAL/Procrustes의 큰 평균 gain은 이 단순 spectrum 변수로 예측되지
+  않아 universal response predictor 주장은 지지되지 않는다.
+- Exact 37-fold correction LOTO population도 872/872 shard와 1,308,000/1,308,000 embedding
+  audit을 통과했다. LOSO 대비 fidelity-safe 및 safe-and-improved 판정 변화는 20개 cell
+  모두 0이었고, common-safe + improved인 Reinhard/CORAL/Procrustes 결론도 유지됐다.
+  최대 RR 변화는 Virchow2 CORAL의 −3.21 percentage point였다. 이는 primary LOSO를
+  대체하지 않는 unseen-tissue transfer sensitivity다.
+
+전체 결과, BLUP, class-size sensitivity와 provenance는
+[`e6_heterogeneity_results.md`](e6_heterogeneity_results.md)에 기록했다.
 
 #### 3.8 Content fidelity와 tissue-type evidence — E7
 
-- Prespecified primary representation/content endpoint와 margin
-- Variance, effective rank와 pairwise-distance collapse guardrail
-- Tissue-type retrieval/grouped probe와 cross-scanner tissue-neighborhood agreement
-- Tissue class imbalance와 minimum-slide sensitivity
-- Optional nucleus/spatial structural sensitivity
+- E5의 prespecified content margin과 variance/effective-rank/pairwise-distance collapse
+  guardrail이 primary fidelity decision을 제공한다. E7은 이를 대체하지 않는 coarse
+  tissue-type secondary다.
+- Raw AT2만으로 held-out-slide centroid를 적합하고 singleton tissue를 제외해 36 tissue,
+  108 slide를 평가했다. 25,920 source row와 432 AT2 row가 identity/finiteness/hash gate를
+  통과했고, tissue→slide 5,000회 hierarchical bootstrap을 사용했다.
+- Primary LOSO에서 Procrustes top-1 변화는 네 PFM 모두 CI가 0을 포함했지만 matched-AT2
+  centroid-profile agreement는 네 PFM 모두 증가했다(+0.00347--+0.0402, 모든 CI 하한 >0).
+  Exact LOTO에서도 profile agreement 증가는 유지됐으나 UNI v1과 Virchow2의
+  correct-tissue margin은 감소했다.
+- CORAL은 primary E5 gate를 통과했지만 centroid-profile agreement가 LOSO와 LOTO 모두 네
+  PFM에서 감소했다. UNI v1 top-1은 LOSO −2.92 pp, LOTO −3.72 pp였고, minimum-three
+  sensitivity에서는 top-1 CI가 0을 포함했으나 top-5/margin/profile 감소는 남았다.
+- 따라서 어떤 correction도 모든 tissue metric과 PFM을 일률적으로 개선하지 않았다.
+  E7은 global collapse가 없다는 것과 모든 class-relative geometry가 보존된다는 것이
+  동치가 아님을 보여주지만, E5의 frozen safe/unsafe 판정을 사후 변경하지 않는다.
 
-Self-cosine이 높거나 tissue type이 유지된다는 이유만으로 독립 biological fidelity를
-확정하지 않는다. 이 절의 결론은 representation/content preservation으로 제한한다.
+Figure 6과 전체 결과/provenance는
+[`e7_tissue_probe_results.md`](e7_tissue_probe_results.md)에 잠갔다. Self-cosine 또는
+tissue type만으로 독립 biological fidelity를 확정하지 않으며 nucleus/spatial endpoint는
+annotation/QC 계약이 없어 PanNormal core에서 생략한다.
 
 #### 3.9 PLISM post-core extension — E8, 현재 보류
 
@@ -632,6 +730,8 @@ internal–external effect comparison을 사전 동결 계획에 따라 추가�
 - Background feature가 tissue ERT의 held-out prediction을 일관되게 개선하지 않음
 - Noise/QC characterization으로서의 제한된 역할
 - 동일 processing chain의 noise-floor sensitivity
+- 65,400개 glass patch의 post-render QC 유지율은 98.34%였고, 사후 QC 실패 patch도
+  결과에서 제외하지 않았다. Maximum black-pixel fraction은 0.00140이었다
 
 ### 5.4 Discussion
 
@@ -677,17 +777,17 @@ internal–external effect comparison을 사전 동결 계획에 따라 추가�
 
 | ID | 실험 | 핵심 질문 | 상태 | 본문 배치 | 완료/통과 조건 |
 |---|---|---|---|---|---|
-| E0a | Common physical grid audit | 모든 scanner pixel이 AT2 물리 좌표를 따르는가? | **Revise** | Methods 2.2, Results 3.1 | AA grid 재생성 + metadata 수정 |
-| E0b | Coarse-to-fine registration | AKOYA 경계 포화가 ERT를 교란하는가? | **완료** | Methods 2.2, Results 3.1 | 10,900-row six-scanner/512 px manifest 통과 |
-| E0c | 2D aliasing audit | GT450/VERSA downsampling이 high band를 오염하는가? | **진단 완료 · Revise** | Methods 2.3, Results 3.1 | AA grid에서 ≤5% 재통과 |
-| E0d | Anchor/noise-floor audit | ERT shape가 anchor와 noise에 견고한가? | 부분 완료 | Methods 2.4, Results 3.1/Supplement | Registered-chain sensitivity와 SNR 보고 |
-| E1 | Paired ERT | Scanner별 frequency signature가 재현되는가? | **잠정** | Results 3.2 | E0 통과 후 109-slide 재산출 |
-| E2 | Hierarchical decomposition | Signature가 tissue/slide에 의존하는가? | **잠정** | Results 3.3 | Corrected ERT로 재적합 |
-| E3 | Scalar reducibility test | 단일 blur–sharpen 축으로 충분한가? | 부분 완료 | Results 3.4 | CV lack-of-fit와 bootstrap CI |
-| E4 | Control population | Collapse, oracle, divergence가 frontier를 정의하는가? | Pilot | Results 3.5 | 109 slides, 4 PFM, CI |
-| E5 | Correction benchmark | Protocol이 실제 방법 선택을 바꾸는가? | 미완 | Results 3.6 | Image+feature comparator와 held-out slide |
-| E6 | Content-dependent correction | Correction benefit이 tissue/slide에 따라 달라지는가? | 미완 | Results 3.7 | Primary interaction/random slope |
-| E7 | Content/tissue fidelity | Invariance gain이 representation과 coarse tissue content를 보존하는가? | 미완 | Results 3.8 | Primary content endpoint + collapse guardrail + tissue secondary |
+| E0a | Common physical grid audit | 모든 scanner pixel이 AT2 물리 좌표를 따르는가? | **완료** | Methods 2.2, Results 3.1 | 65,400 native-AA patch identity/hash gate 통과 |
+| E0b | Coarse-to-fine registration | AKOYA 경계 포화가 ERT를 교란하는가? | **완료** | Methods 2.2, Results 3.1 | 65,400-row/10,900-tuple six-scanner/512 px gate 통과 |
+| E0c | 2D aliasing audit | GT450/VERSA downsampling이 high band를 오염하는가? | **완료** | Methods 2.3, Results 3.1 | 최종 transform q05/q50/q95에서 ≤5% 통과 |
+| E0d | Anchor/noise-floor audit | ERT shape가 anchor와 noise에 견고한가? | **완료** | Methods 2.4, Results 3.1/Supplement | 65,400 same-chain glass patch, 음수 subtraction 0/47,088, SNR 1/2/5/10 보고 |
+| E1 | Paired ERT | Scanner별 frequency signature가 재현되는가? | **완료** | Results 3.2 | Native-AA 109-slide locked tables |
+| E2 | Hierarchical decomposition | Signature가 tissue/slide에 의존하는가? | **완료** | Results 3.3 | 37-tissue/slide nested REML 완료 |
+| E3 | Scalar reducibility test | 단일 blur–sharpen 축으로 충분한가? | **완료** | Results 3.4 | LOSO lack-of-fit와 5,000 bootstrap CI |
+| E4 | Control population | Collapse, oracle, divergence가 frontier를 정의하는가? | **완료** | Results 3.5 | 436 shards, 2,354,400 embeddings, 4 PFM, slide-bootstrap CI |
+| E5 | Correction benchmark | Protocol이 실제 방법 선택을 바꾸는가? | **완료** | Results 3.6 | 872 shards, 1,308,000 embeddings, five-method LOSO frontier와 Figure 5 |
+| E6 | Content-dependent correction | Correction benefit이 tissue/slide에 따라 달라지는가? | **완료** | Results 3.7 | 240 REML fit + 37-fold exact LOTO transfer lock |
+| E7 | Content/tissue fidelity | Invariance gain이 representation과 coarse tissue content를 보존하는가? | **완료** | Results 3.8 | 36-class grouped probe + 5,000 hierarchical bootstrap + Figure 6 |
 | E8 | PLISM post-core extension | 결론이 외부 scanner/stain에서 재현되는가? | **보류** | Future/Results 3.9 | PanNormal 완료 후 별도 frozen plan |
 | E9 | Background characterization | Background가 tissue ERT를 설명하는가? | 완료 | Supplement/Results 3.10 | 기존 null + registered noise sensitivity |
 
@@ -699,39 +799,43 @@ internal–external effect comparison을 사전 동결 계획에 따라 추가�
 
 - Paired acquisition과 분석 단위
 - Invariance-only degeneracy 개념도
-- AKOYA registration saturation 전후
-- GT450/VERSA resampling mixing audit
+- Outcome-blind registration recovery와 최종 geometry/render retention
+- GT450/VERSA resampling mixing audit와 same-chain background floor
 
 **Figure 2 — Audited frequency-resolved scanner signatures**
 
-- 2D/radial spectrum
-- Unnormalized power와 normalized ERT
-- Scanner별 cohort curve와 slide spread
-- Scalar blur–sharpen projection residual
+- Scanner별 normalized ERT cohort curve와 slide spread
+- High-band fixed effect와 95% CI
+- Scalar blur–sharpen LOSO projection residual과 slide-bootstrap CI
+- Unnormalized radial power와 전체 2D mixing은 Supplement에 배치
 
 **Figure 3 — Scanner × content structure**
 
-- Scanner fixed mean
 - Tissue/slide/sampling decomposition
-- Tissue-specific slopes와 AKOYA subset sensitivity
+- Band별 tissue share와 BH q-value
+- Tissue-specific slopes. Scanner fixed mean은 Figure 2B, AKOYA/route sensitivity는
+  Supplement에 배치
 
 **Figure 4 — Control-bounded invariance–fidelity frontier**
 
-- Raw, collapse, global mean, paired oracle, sharpening
-- PFM별 frontier와 bootstrap CI
-- Collapse guardrail
+- ~~Raw, collapse, global mean, paired oracle, sharpening~~
+- ~~PFM별 frontier와 bootstrap CI~~
+- ~~Content non-inferiority와 every-scanner collapse guardrail~~
+- PNG/PDF 및 source/output hash 잠금 완료
 
 **Figure 5 — Image- and feature-space correction benchmark**
 
-- Actual methods의 frontier
-- Separability-only ranking 대 fidelity-constrained decision
-- Tissue/PFM별 correction heterogeneity
+- ~~Actual methods의 full method × PFM frontier~~
+- ~~Separability-only ranking 대 fidelity-constrained decision~~
+- ~~Content와 every-scanner collapse gate~~
+- PNG/PDF 및 source/output hash 잠금 완료
 
 **Figure 6 — Content preservation and tissue-level evidence**
 
-- Primary content-fidelity endpoint와 collapse guardrail
-- Tissue-type secondary endpoint와 class-size sensitivity
-- Optional structural sensitivity
+- ~~Primary content-fidelity endpoint와 collapse guardrail~~
+- ~~Tissue-type secondary endpoint와 class-size sensitivity~~
+- ~~Tissue class-size와 minimum-slide sensitivity~~
+- PNG/PDF 및 source/output hash 잠금 완료
 
 ### Main tables
 
@@ -741,6 +845,13 @@ internal–external effect comparison을 사전 동결 계획에 따라 추가�
 | Table 2 | Audited scanner spectrum과 content variance, 95% CI |
 | Table 3 | PFM × method FC-RR, fidelity gate, collapse status와 decision |
 | Table 4 | Content-fidelity, collapse guardrail과 tissue-type secondary endpoint |
+
+Table 1의 native-header recoverable field는 654/654 scanner--slide file에서 감사했다.
+Objective NA와 firmware, VERSA/AKOYA exact manufacturer/model, S60/S360 JPEG quality만
+operator/acquisition-record 확인 항목으로 남는다. Table 2는 E1--E3 locked result를 한 행의
+scanner summary로 결합한다.
+Table 3의 full PFM × method grid는 E5 result lock, Table 4의 content/collapse/tissue-type
+endpoint는 E5와 E7 result lock에서 재현되며 Figure 6과 함께 잠겼다.
 
 ### Supplement
 
@@ -755,15 +866,15 @@ internal–external effect comparison을 사전 동결 계획에 따라 추가�
 
 ## 8. 현재 수치의 사용 규칙
 
-### 잠정적으로만 보존할 수치
+### Legacy provenance로만 보존할 수치
 
 - GT450 high-band ERT 1.595
 - AKOYA high-band ERT 0.297
 - High-band scanner main descriptive fraction 85.5%
-- Scanner × tissue/slide fractions
 
-이 수치는 기존 분석의 provenance로 남기되 E0 audit와 재등록 후 교체한다. 초록, 제목,
-Highlights와 최종 결론에는 audited table만 사용한다.
+이 수치는 historical registered-image 분석의 provenance로만 남긴다. E0 audit 이후 primary는
+native-AA GT450 1.478, AKOYA 0.335와 scanner별 nested tissue/slide variance component다.
+초록, 제목, Highlights와 최종 결론에는 audited table만 사용한다.
 
 ### 현재도 사용할 수 있는 진단적 결과
 
@@ -803,26 +914,37 @@ Highlights와 최종 결론에는 audited table만 사용한다.
 
 1. ~~Common grid와 transform/interpolation provenance 회수~~ — 96-slide exact rigid provenance,
    VALIS/libvips bicubic·MPP overwrite 확인
-2. Existing offsets에서 constant 대 affine slide prior 진단
+2. ~~Existing offsets에서 constant 대 affine slide prior 진단~~ — 109-slide five-fold
+   `prior_fits.csv`의 2,725 scanner-fold fit에서 affine 1,544, constant 1,181을 선택하고
+   downstream geometry audit에 전달
 3. ~~Sentinel 10–20 slides 선정~~
    - AKOYA registration worst/median/best
    - GT450/VERSA aliasing risk
    - Tissue와 slide strata 균형
 4. ~~현재 registered WSI의 corrected integer crop과 기존 VALIS rigid output 대조~~
 5. ~~109-slide common-pool에서 100-location/512 px manifest 복구~~
-6. ~~Pool 복구 실패 cell에 한해서만 native WSI에서 rigid registration 재실행~~
-   — 실패 cell 0, 기존 grid 기준 trigger 없음
+6. ~~Native geometry gate 실패 cell에 한해서만 preserved rigid를 감사하고 필요한 cell은
+   native WSI에서 VALIS registration 재실행~~ — primary 654 cell 중 61개가 실패했으며,
+   preserved audit와 targeted from-scratch similarity를 거쳐 20개 cell을 진단했다. Similarity가
+   primary보다 불량한 cell은 unchanged gate 아래 primary를 유지했고, 별도 affine diagnostic도
+   이를 개선하지 못했다. 이 선택에는 PFM, tissue 또는 downstream outcome을 사용하지 않았다.
 7. ~~GT450/VERSA 한-slide same-scanner geometry recovery + native explicit-AA patch pilot~~
    — local residual 후 NCC median 0.996, boundary failure 0/80; global transform 단독은 GT450에서
    불충분하므로 per-location residual 유지
-8. 109 slides × 100 locations에서 scanner별 native transform과 local residual manifest를
-   구축하고 512 px/six-scanner QC를 통과 — global inlier/scale/reprojection gate와 ±120 px
-   local NCC/boundary/native-bounds gate를 결과 전에 동결; 최종 65,400 scanner-location
-   rows와 10,900 complete tuples 필요
-9. Frozen native geometry로 anti-aliased patch/grid를 생성하고 historical-original 대비
-   `geometry × resampling` sensitivity를 감사
-10. ~~2D alias mixing~~ — original bicubic 실패, explicit-AA 통과; native-AA grid
-   재생성 후 anchor/noise-floor sensitivity
+8. ~~109 slides × 100 locations에서 scanner별 native transform과 local residual manifest를
+   구축하고 512 px/six-scanner QC를 통과~~ — global inlier/scale/reprojection gate와 ±120 px
+   local NCC/boundary/native-bounds gate를 유지했다. Route-min candidate plan은 22개 slide의
+   44개 location만 outcome-blind reserve로 교체했으며, 최종 65,400/65,400 scanner-location,
+   654/654 scanner–slide cell과 10,900/10,900 six-scanner tuple이 통과했다. 최종 RGB source는
+   모두 native WSI다.
+9. ~~Frozen native geometry로 anti-aliased 512 px patch/grid 생성과 입력 무결성·historical
+   sensitivity 감사~~
+   — 109/109 shard와 65,400/65,400 patch의 SHA-256, geometry identity 및 black/white render
+   gate 통과. Historical 대비 `geometry × resampling` band delta 산출 완료
+10. ~~최종 native transform 2D alias mixing과 E0d sensitivity~~ — original bicubic 실패,
+    explicit-AA는 전체 q05/q50/q95에서 통과. Anchor sensitivity와 65,400-patch same-chain
+    background/noise-floor audit도 완료했으며, 전체 47,088 bin에서 음수 subtraction은 없고
+    high-band median ERT 변화는 비참조 scanner에서 0.0039 log2 이하였다
 
 **Stop:** Common physical coordinates가 보장되지 않음.
 
@@ -833,51 +955,75 @@ Highlights와 최종 결론에는 audited table만 사용한다.
 
 ### Phase 1 — E1–E3 rebuild
 
-1. 109-slide ERT 재산출
-2. Scanner × tissue/slide model 재적합
-3. Scalar reducibility test 강화
-4. Main Figure 1–3의 locked tables 생성
+1. ~~109-slide ERT 재산출~~
+2. ~~Scanner × tissue/slide model 재적합~~
+3. ~~Scalar reducibility LOSO test와 5,000 slide bootstrap~~
+4. ~~E0--E3 locked table과 artifact provenance 생성~~ — 22개 source artifact SHA-256,
+   26개 locked result row와 6개 figure component를 전수 감사해 통과
+5. ~~Main Figure 1--3 journal-layout composite 조립~~ — E0--E3 locked source만 사용한
+   PNG/PDF 3쌍을 생성하고 source/output SHA-256과 시각 검수를 완료
 
 **Go:** 결과가 E0 contract를 통과하고 slide-bootstrap uncertainty가 완전함.
 
 ### Phase 2 — Evaluation protocol population test
 
-1. 4개 core PFM의 TRIDENT commit/checkpoint/preprocessing contract 동결
-2. Frozen 109 × 100 canonical-center manifest에서 모델별 native FOV crop을 직접 생성
-3. TRIDENT sampling을 재실행하지 않고 동일 RGB crop에 네 encoder feature를 추출
-4. E4 control population 실행
-5. Primary content endpoint, margin과 collapse guardrail 확정
-6. Minimal E5 image+feature benchmark
-7. FC-RR 및 frontier 산출
+1. ~~4개 core PFM의 TRIDENT commit/checkpoint/preprocessing contract 동결~~
+2. ~~Frozen 109 × 100 canonical-center manifest에서 모델별 native FOV crop을 직접 생성~~
+3. ~~TRIDENT sampling을 재실행하지 않고 동일 RGB crop에 네 encoder feature를 추출~~
+   — 436/436 model-slide shard, 261,600/261,600 embedding 전수 audit 통과
+4. ~~**E4--E7 outcome을 열기 전에** primary scanner-dispersion/content endpoint, margin,
+   collapse guardrail, comparator, cross-validation과 multi-PFM claim rule을 사용자 승인으로 동결~~
+   — 2026-08-03 전부 승인; every-source-scanner collapse gate와 Supplement-only Macenko 포함
+5. ~~E4 control population 실행~~ — 436/436 shard, 2,354,400/2,354,400 embedding과
+   91,560 slide-result row audit 통과; paired HF 25% oracle만 four-of-four common-safe + improved
+6. ~~Minimal E5 image+feature benchmark~~ — 872/872 shard, 1,308,000/1,308,000 embedding
+7. ~~E5 method FC-RR 및 fidelity-constrained frontier 산출~~ — Reinhard/CORAL/orthogonal
+   Procrustes four-of-four common-safe + improved; UNI paired OD invariance-positive but unsafe
 
 **Go:** 실제 correction에서 invariance와 fidelity를 함께 판정할 수 있음. E4만으로 논문을
 완결하지 않는다.
 
 ### Phase 3 — Heterogeneity and content fidelity
 
-1. E6 tissue/slide correction effect
-2. E7 primary representation/content endpoint와 collapse guardrail
-3. Tissue-type secondary와 optional structural sensitivity
-4. Remaining PFM panel 확장 여부 결정
+1. ~~E6 tissue/slide correction effect~~ — full/minimum-three 240 REML fit과 exact LOTO 완료
+2. ~~E7 primary representation/content endpoint와 collapse guardrail~~ — E5 authoritative
+   gate와 E7 secondary의 역할을 분리해 잠금
+3. ~~Tissue-type secondary, tissue class-size 보고와 minimum-slide sensitivity~~ — 36/108
+   full-evaluable과 31/98 sensitivity 완료
 
 **Go:** 사전 동결한 content-fidelity 판정과 slide-level inference가 완전하고, tissue-type
 결과의 표본수 제한이 명시됨.
 
 ### Phase 4 — PanNormal manuscript lock
 
-- 초록 수치를 locked tables와 대조
-- 결과 확인 후 method, PFM 또는 threshold를 선택하지 않음
-- Null과 failed-fidelity method를 frontier에 그대로 포함
-- Main/Supplement 배치와 terminology audit
-- `biological fidelity`와 `clinical validation` 과장 여부 최종 점검
-- MedIA Guide for Authors, highlights와 disclosure 최종 확인
+- ~~초록 수치를 locked tables와 대조~~
+- ~~결과 확인 후 method, PFM 또는 threshold를 선택하지 않음~~
+- ~~Null과 failed-fidelity method를 frontier에 그대로 포함~~
+- ~~Main/Supplement 배치와 terminology audit~~
+- ~~`biological fidelity`와 `clinical validation` 과장 여부 최종 점검~~
+- Elsevier highlights/AI disclosure 정책은 확인했고, MedIA submission portal의
+  journal-specific abstract/figure 조건은 실제 투고 직전에 재확인
 
-### Post-core extension — PLISM, 현재 보류
+### Post-core extensions — E5-RF1 result-locked; 추가 PFM과 PLISM은 보류
 
-1. PLISM interpolation audit
-2. 한 stain scanner-only primary
-3. Scanner × stain secondary
-4. Internal–external effect comparison
+1. **E5-RF1 result-locked:** five-fold cross-fitted Reinhard 이후 72-bin mean-OD residual
+   spectrum을 shared-OD gamut projection으로 교정했다. Input-only gate가 선택한 gain cap은
+   1.25였고, final hard-clamp MAE는 0이었다. Spectrum RMSE는 15 FOV×scanner cell 중
+   12개에서 감소했지만 S360 세 cell은 악화됐다.
+2. RF1은 네 PFM 모두 raw 대비 common-safe + improved였고 RR은 ResNet50 29.7%, UNI v1
+   6.7%, CONCH v1 14.7%, Virchow2 4.7%였다. Paired Reinhard 대비 scanner radius도 네 PFM
+   모두 추가 감소했지만 크기는 +0.61--+2.75 RR percentage point의 점진적 개선이었다.
+3. Tissue-type secondary top-1은 UNI에서만 full/min-3 모두 Reinhard 대비 개선됐고,
+   나머지는 혼합 또는 null이었다. 따라서 biological claim은 확대하지 않는다.
+4. 현재 원고에서는 CycleGAN을 추가하지 않는다. Learned residual generator가 필요하면
+   paired scanner-conditioned residual, image-only nested selection, hallucination audit와
+   PLISM external validation을 포함한 새 계약을 먼저 동결한다.
+5. Core 결과와 무관하게 추가 PFM panel 및 checkpoint contract를 별도 동결
+6. 추가 PFM에서 core endpoint와 claim rule을 그대로 재현
+7. PLISM interpolation audit
+8. 한 stain scanner-only primary
+9. Scanner × stain secondary
+10. Internal–external effect comparison
 
 ## 11. 예상 초록의 구조
 
@@ -895,12 +1041,13 @@ guardrail과 tissue-type secondary endpoint를 사용한다.
 
 ### Results
 
-다음 네 결과만 최종 locked 수치로 채운다.
-
-1. Audited scanner spectrum과 content dependence
-2. Collapse/oracle control이 만드는 attainable region
-3. Actual correction에서 separability-only 대 fidelity-constrained decision
-4. Representation/content preservation과 tissue-type secondary result
+Native-AA scanner spectrum은 scanner별 population signature와 유의한 tissue/slide
+heterogeneity를 보였고 사전 정의한 scalar blur--sharpen family로 환원되지 않았다.
+Destructive controls와 paired oracle은 낮은 scanner radius가 collapse와 genuine alignment
+양쪽에서 생길 수 있음을 보였다. Actual LOSO에서 Reinhard, CORAL와 Procrustes는 네 PFM
+모두 safe + improved였고 exact LOTO에서도 판정 변화가 없었다. Tissue secondary에서는
+Procrustes가 네 PFM의 paired centroid-profile agreement를 높였지만 어떤 correction도 모든
+tissue metric을 보존하거나 개선하지는 않았다.
 
 ### Conclusion
 
@@ -922,7 +1069,8 @@ Highlights는 제출 시 Elsevier의 최신 글자 수 제한을 다시 확인�
 - 이 문서는 storyline과 claim architecture의 기준이다.
 - [`final_study_protocol.md`](final_study_protocol.md)는 세부 데이터·모델·구현
   계약을 담으며, 다음 갱신에서 이 storyline에 맞춰 E0와 fidelity contract를 반영한다.
-- [`manuscript/scanner_spectrum_media_draft_ko.md`](manuscript/scanner_spectrum_media_draft_ko.md)는
-  원고 working draft이며 E0 통과 전의 숫자는 잠정 표시를 유지한다.
-- 과거 판단과 실행 로그는 [`archive/`](archive/)에서 provenance로만 보존한다.
+- 별도 manuscript working draft와 archive는 active tree에서 유지하지 않는다. 제출용
+  원고는 이 storyline, protocol과 locked-results 문서에서 새로 생성한다.
+- 삭제된 과거 판단이 필요하면 `checkpoints/prenorm_postcleanup_20260803.bundle`을 별도
+  경로에 clone해 조회하고 active documentation으로 복원하지 않는다.
 - 결과 문서에는 `확정`, `잠정`, `pilot`, `미완` 상태를 명시한다.

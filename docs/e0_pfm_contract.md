@@ -1,6 +1,6 @@
 # E0/E4 core PFM execution contract
 
-Status: frozen and four-model A100 smoke gate passed before PFM outcome extraction on
+Status: frozen; four-model A100 smoke and 109-slide population extraction gates passed on
 2026-08-02.
 
 TRIDENT is pinned to commit `a6305acfef68d4c6da65e837dde1e0d1870d60e1` and is
@@ -33,3 +33,14 @@ Observed checkpoint SHA-256 prefixes are ResNet50 `065b941a`, UNI v1 `56ef09b4`,
 CONCH v1 `40a9644b` and Virchow2 `14244fba`. The official transforms produced
 224, 224, 448 and 224 px tensors respectively, and all expected feature dimensions passed
 on an NVIDIA A100-SXM4-40GB under PyTorch 2.5.1+cu124.
+
+Population extraction reads only the audited native-AA HDF5 grid, center-crops the frozen
+model FOV, and applies the corresponding TRIDENT evaluation transform. It produced and
+audited 109 shards per model: 436/436 shards and 261,600/261,600 embeddings passed source
+grid SHA-256, scanner/location/center identity, shape, finiteness, nonzero-norm and
+within-shard non-collapse checks. Features are stored as float32 after inference under
+`outputs/e0_pfm_features/`; their total HDF5 size is 923,614,030 bytes.
+
+The successful jobs used the pinned `clam-uni-conch` runtime with user site-packages
+disabled. An initial submission in the unrelated `cpath` environment was rejected before
+model loading by the runtime-version gate and produced no population artifacts.

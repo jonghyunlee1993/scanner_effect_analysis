@@ -4,6 +4,7 @@
 /.calude/
 /.codex/
 /.git-data/
+/checkpoints/
 
 # Python and test caches
 __pycache__/
