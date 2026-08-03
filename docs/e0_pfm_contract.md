@@ -7,6 +7,10 @@ used only for encoder construction, checkpoint loading and official evaluation t
 The prenorm manifest/DataLoader owns paired center identity, route geometry, native FOV and
 image-condition construction.
 
+The initial runtime is also frozen to PyTorch 2.5.1, torchvision 0.20.1, timm 0.9.8,
+huggingface_hub 0.29.1 and CONCH 0.1.0 from source commit
+`02d6ac59cc20874bff0f581de258c2b257f69a84`. The smoke gate fails on runtime drift.
+
 | Encoder | Hugging Face revision | Native FOV | Feature contract |
 |---|---|---:|---|
 | ResNet50 | `timm/resnet50.tv_in1k@78f3ecfdb38e06d9b8397f662e7ab8fee96026fa` | 256 px | stage 3, adaptive pooled, 1,024-D |

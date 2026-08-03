@@ -12,6 +12,14 @@ from huggingface_hub import hf_hub_download
 
 CONTRACT_VERSION = "e0_pfm_panel_v1"
 TRIDENT_COMMIT = "a6305acfef68d4c6da65e837dde1e0d1870d60e1"
+RUNTIME_DISTRIBUTIONS = {
+    "torch": "2.5.1",
+    "torchvision": "0.20.1",
+    "timm": "0.9.8",
+    "huggingface_hub": "0.29.1",
+    "conch": "0.1.0",
+}
+CONCH_SOURCE_COMMIT = "02d6ac59cc20874bff0f581de258c2b257f69a84"
 MODELS = (
     {
         "encoder_id": "resnet50",
@@ -120,6 +128,8 @@ def main():
         "analysis": "e0_pfm_checkpoint_contract",
         "contract_version": CONTRACT_VERSION,
         "trident_commit": TRIDENT_COMMIT,
+        "runtime_distributions": RUNTIME_DISTRIBUTIONS,
+        "conch_source_commit": CONCH_SOURCE_COMMIT,
         "panel_order": [model["encoder_id"] for model in MODELS],
         "models": records,
         "checkpoint_selection_uses_results": False,

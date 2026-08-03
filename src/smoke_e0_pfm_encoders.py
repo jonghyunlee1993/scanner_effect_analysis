@@ -13,7 +13,12 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from fetch_e0_pfm_checkpoints import TRIDENT_COMMIT, sha256
+from fetch_e0_pfm_checkpoints import (
+    CONCH_SOURCE_COMMIT,
+    RUNTIME_DISTRIBUTIONS,
+    TRIDENT_COMMIT,
+    sha256,
+)
 
 
 RELEVANT_TRIDENT_PATHS = (
@@ -108,6 +113,24 @@ def package_version(name: str):
         return None
 
 
+def verify_runtime_contract(contract):
+    expected = contract.get("runtime_distributions")
+    if expected != RUNTIME_DISTRIBUTIONS:
+        raise RuntimeError("checkpoint manifest runtime contract changed")
+    observed = {name: package_version(name) for name in expected}
+    if observed != expected:
+        raise RuntimeError(f"runtime distributions differ: {observed} != {expected}")
+    conch_distribution = importlib.metadata.distribution("conch")
+    direct_url_path = Path(conch_distribution._path) / "direct_url.json"
+    if not direct_url_path.exists():
+        raise RuntimeError("CONCH direct_url provenance is absent")
+    direct_url = json.loads(direct_url_path.read_text())
+    conch_commit = direct_url.get("vcs_info", {}).get("commit_id")
+    if conch_commit != contract.get("conch_source_commit") or conch_commit != CONCH_SOURCE_COMMIT:
+        raise RuntimeError(f"CONCH source commit differs: {conch_commit}")
+    return {"distributions": observed, "conch_source_commit": conch_commit}
+
+
 def main():
     import torch
 
@@ -118,6 +141,7 @@ def main():
     contract = json.loads(contract_path.read_text())
     if contract.get("trident_commit") != TRIDENT_COMMIT:
         raise RuntimeError("checkpoint and source contracts name different TRIDENT commits")
+    runtime = verify_runtime_contract(contract)
     source = verify_trident_source(Path(args.trident_root))
     sys.path.insert(0, str(Path(args.trident_root).resolve()))
     from trident.patch_encoder_models.load import encoder_factory
@@ -181,6 +205,7 @@ def main():
         "analysis": "e0_pfm_encoder_gpu_smoke",
         "contract_version": contract["contract_version"],
         "trident_source": source,
+        "runtime_contract": runtime,
         "models_expected": 4,
         "models_passing": len(results),
         "all_models_pass": len(results) == 4 and all(row["smoke_pass"] for row in results),
