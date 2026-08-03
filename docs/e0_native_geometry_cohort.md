@@ -103,6 +103,10 @@ six-scanner tuples pass with native WSI marked as the pixel source.
 target/native bounds failures go directly to deterministic candidates, complete preserved
 rigid cells are promoted, and only missing or non-bounds geometry failures request a
 from-scratch pairwise native VALIS rigid run.
+Finalization is plan-driven: `finalize_e0_native_geometry.py` replaces only explicitly
+listed candidate slide manifests and scanner-cell geometry routes, verifies that every
+route's canonical centers match the final candidate coordinates, and reruns the complete
+65,400-row/10,900-tuple cohort gate.
 
 After the six-scanner gate passes, `render_e0_native_aa_shard.py` renders one 512 px
 target-grid RGB patch per scanner and location directly from the native WSI. It applies
