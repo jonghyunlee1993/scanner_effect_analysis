@@ -96,6 +96,9 @@ that passes the complete six-scanner route gate. A rejected reserve remains reco
 is never reconsidered for another slot.
 Candidate trials reuse only fingerprint-matched global transform matrices from the frozen
 cohort shard; all location residual, NCC, boundary and FOV checks are recomputed.
+`audit_e0_native_candidate_trial.py` then composes an explicit scanner-to-route map and
+accepts a trial only when all 600 scanner-location keys, all six cell gates and all 100
+six-scanner tuples pass with native WSI marked as the pixel source.
 
 After the six-scanner gate passes, `render_e0_native_aa_shard.py` renders one 512 px
 target-grid RGB patch per scanner and location directly from the native WSI. It applies
