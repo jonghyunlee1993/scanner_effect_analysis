@@ -1213,7 +1213,7 @@
           <tr>
             <td class="txt">Feature-space batch correction</td>
             <td class="txt">ComBat on TCGA COAD/STAD 2024; language-mediated embeddings 2026; FEATMAP preprint 2026</td>
-            <td class="txt"><span class="flag flag-fail">precedent exists, including with a clinical endpoint</span></td>
+            <td class="txt"><span class="flag">not a claim of ours — corroborates the conclusion we reach</span></td>
           </tr>
           <tr class="group-start">
             <td class="txt">Registered same-location multi-scanner acquisition</td>
@@ -1235,26 +1235,33 @@
     </div>
 
     <div class="callout">
-      <h3>The most consequential precedent</h3>
+      <h3>Independent support for where this ends up</h3>
       <p>
         ComBat feature harmonization on TCGA colon and stomach cohorts dropped tissue-source-site
         prediction from AUROC above 0.95 to about 0.506 while microsatellite-instability
-        prediction was unchanged at 0.667 → 0.669. That is the same shape as our probe result —
-        feature correction erases the technical signature and keeps the biology — but it arrives
-        with a molecular endpoint attached, and ours does not. It also states the caveat we
-        should adopt: batch effects in <em>feature interactions</em> may survive a linear
-        correction.
+        prediction was unchanged at 0.667 → 0.669. Feature correction erases the technical
+        signature and keeps the biology — with a molecular endpoint attached, which this cohort
+        cannot supply. That is corroboration for the direction section 12 arrives at, from an
+        independent cohort and a different correction.
       </p>
     </div>
 
     <div class="prose">
       <p>
-        Two qualifications keep our probe section standing on its own. ComBat corrected
-        <em>institution</em> on TCGA, where scanner, protocol and site are confounded; our design
-        scans the same physical slide on six instruments, so the label being removed is the
-        scanner specifically. And the comparison that matters here is not feature correction
-        against nothing, but <strong>feature correction against a fully optimized image
-        correction</strong> — which, to our knowledge, has not been reported.
+        It is not a competing claim, because feature-space correction is not one of ours. CORAL
+        and orthogonal Procrustes enter this study as comparators taken from the literature, and
+        the conclusion drawn from them is a boundary statement about image space, not a proposal
+        for a new harmonizer. What is novel on this axis is the other half of the contrast:
+        <strong>feature correction measured against a fully optimized image correction on the
+        same embeddings and the same slides</strong>, which we did not find reported.
+      </p>
+      <p>
+        Our version is also the sharper one for the scanner question specifically. ComBat removed
+        <em>institution</em> on TCGA, where scanner, staining protocol and site are confounded and
+        cannot be separated; this design scans one physical slide on six instruments, so the label
+        being removed is the scanner and nothing else. The caveat the ComBat authors state
+        transfers directly and we adopt it: batch effects living in <em>feature interactions</em>
+        may survive a linear correction, and a linear probe would not see them.
       </p>
       <p>
         What appears genuinely unclaimed is the pairing of two results: that a pre-registered
