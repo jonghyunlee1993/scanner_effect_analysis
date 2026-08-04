@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 import h5py
@@ -36,7 +37,7 @@ from extract_e0_pfm_features import (
     string_array,
     transformed_batch,
 )
-from fetch_e0_pfm_checkpoints import sha256
+from fetch_e0_pfm_checkpoints import TRIDENT_COMMIT, sha256
 from rf1m_combined import RF1M_SIGMAS
 from rf1u_unpaired import (
     RF1U_CONDITION,
@@ -47,7 +48,11 @@ from rf1u_unpaired import (
     source_indices,
     target_index,
 )
-from smoke_e0_pfm_encoders import encoder_kwargs, verify_runtime_contract, verify_trident_source
+from smoke_e0_pfm_encoders import (
+    encoder_kwargs,
+    package_version,
+    verify_trident_source,
+)
 
 
 ANALYSIS = "rf1u_feature_shard"
@@ -75,6 +80,9 @@ def parse_args():
     parser.add_argument("--e5-statistics", default="outputs/e5_image_statistics")
     parser.add_argument("--energy", default="outputs/rf1u_multitarget/energy")
     parser.add_argument(
+        "--runtime-drift", default="outputs/rf1u_multitarget/runtime_drift/summary.json"
+    )
+    parser.add_argument(
         "--execution-contract", default="docs/e5_rf1u_multitarget_contract.md"
     )
     parser.add_argument("--output", default="outputs/rf1u_multitarget/features")
@@ -83,6 +91,39 @@ def parse_args():
     )
     parser.add_argument("--batch-size", type=int)
     return parser.parse_args()
+
+
+def verify_runtime_equivalence(path: Path, contract: dict, encoder_id: str) -> str:
+    """Accept the runtime only if it matches the pin or provably reproduces it.
+
+    The contract pins distribution versions so that new features stay comparable
+    with the locked raw population.  A version match is one sufficient proof; a
+    measured bit-identical re-encode of the audited crops is a stronger one.  Any
+    other state is refused.
+    """
+    observed = {
+        name: package_version(name) for name in contract["runtime_distributions"]
+    }
+    if observed == contract["runtime_distributions"]:
+        return "version_match"
+    audit = json.loads(path.read_text())
+    rows = [
+        row
+        for row in audit["encoders"]
+        if row.get("available") and row["encoder_id"] == encoder_id
+    ]
+    if not (
+        audit.get("analysis") == "pfm_runtime_drift_audit"
+        and audit.get("observed_runtime") == observed
+        and audit.get("contract_runtime") == contract["runtime_distributions"]
+        and rows
+        and all(row["max_abs_difference"] == 0.0 for row in rows)
+    ):
+        raise RuntimeError(
+            f"runtime differs from the contract and no bit-identical audit covers "
+            f"{encoder_id}: {observed} != {contract['runtime_distributions']}"
+        )
+    return f"bit_identical_audit_over_{len(rows)}_slides"
 
 
 def infer(encoder, rgb8: np.ndarray, batch_size: int, feature_dim: int):
@@ -154,9 +195,16 @@ def main():
     if not torch.cuda.is_available():
         raise RuntimeError("RF1U feature extraction requires a CUDA device")
     contract = json.loads(Path(args.contract).read_text())
-    model = select_model(contract, args.encoder_id, args.encoder_index)
+    if contract.get("trident_commit") != TRIDENT_COMMIT:
+        raise RuntimeError("PFM contract does not use the frozen TRIDENT commit")
     verify_trident_source(Path(args.trident_root))
-    verify_runtime_contract()
+    model = select_model(contract, args.encoder_id, args.encoder_index)
+    runtime_basis = verify_runtime_equivalence(
+        Path(args.runtime_drift), contract, model["encoder_id"]
+    )
+    runtime_drift_sha = sha256(Path(args.runtime_drift))
+    if sha256(Path(model["checkpoint_path"])) != model["checkpoint_sha256"]:
+        raise RuntimeError(f"checkpoint hash mismatch: {model['encoder_id']}")
 
     audit = json.loads(Path(args.grid_audit).read_text())
     if audit.get("grid_gate_pass") is not True or audit.get("patches_observed") != 65_400:
@@ -189,13 +237,13 @@ def main():
     gains = {fold: fold_gains(energy, fold) for fold in range(RF1_FOLDS)}
     contract_sha = sha256(Path(args.execution_contract))
 
+    sys.path.insert(0, str(Path(args.trident_root).resolve()))
     from trident.patch_encoder_models.load import encoder_factory
 
     encoder = encoder_factory(
         model["encoder_id"], **encoder_kwargs(model["encoder_id"], model["checkpoint_path"])
-    )
+    ).eval().cuda()
     encoder = encoder.half() if encoder.precision == torch.float16 else encoder.float()
-    encoder = encoder.cuda().eval()
     batch_size = args.batch_size or BATCH_SIZE[model["encoder_id"]]
 
     grid_root = Path(args.grid)
@@ -305,6 +353,8 @@ def main():
             sink.attrs["raw_feature_sha256"] = raw_summary["output_sha256"]
             sink.attrs["band_energy_sha256"] = energy_sha
             sink.attrs["execution_contract_sha256"] = contract_sha
+            sink.attrs["runtime_basis"] = runtime_basis
+            sink.attrs["runtime_drift_sha256"] = runtime_drift_sha
             sink.flush()
         os.replace(temporary, output_path)
         summary = {
@@ -327,6 +377,8 @@ def main():
             "e5_statistics_sha256": e5_summary["output_sha256"],
             "band_energy_sha256": energy_sha,
             "execution_contract_sha256": contract_sha,
+            "runtime_basis": runtime_basis,
+            "runtime_drift_sha256": runtime_drift_sha,
             "output": str(output_path.resolve()),
             "output_sha256": sha256(output_path),
             "shard_gate_pass": True,

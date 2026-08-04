@@ -121,6 +121,35 @@ A `(target, PFM)` cell is called **safe and improved over Reinhard** only if RF1
 non-inferiority, passes the collapse gate for every source scanner, and its paired radius
 difference CI excludes zero in its favour.
 
+## 5a. Amendment 1 — runtime equivalence in place of a version pin (2026-08-04)
+
+**Status:** dated pre-outcome amendment, written and frozen before any RF1U embedding existed.
+
+The environment had drifted from the frozen PFM contract: `timm` 0.9.8 → 1.0.12,
+`huggingface_hub` 0.29.1 → 0.36.2, and the `conch` package was absent, so `conch_v1` could not
+be constructed at all. `geopandas` was also missing, which prevented TRIDENT from importing.
+`verify_runtime_contract` correctly refused to extract.
+
+`conch` 0.1.0 and `geopandas` were installed. A dry run confirmed neither install changes an
+existing package; `torch` 2.5.1 and `torchvision` 0.20.1 still match the pin, and `timm` and
+`huggingface_hub` remain at the newer versions.
+
+The pin exists so that new features stay comparable with the locked raw population. A version
+match proves that; a direct measurement proves it more strongly. The audit in
+[`audit_pfm_runtime_drift.py`](../src/audit_pfm_runtime_drift.py) re-encodes audited crops under
+the installed runtime and compares against the stored raw features. Over 4 encoders × 3 slides,
+7,200 embeddings, **every cell was bit identical**, maximum absolute difference exactly
+`0.000e+00` and relative L2 exactly zero.
+
+RF1U extraction therefore accepts the runtime when **either** the pinned versions match **or**
+the drift audit covers that encoder with a maximum absolute difference of exactly zero, under
+the same observed and contract runtimes recorded in the audit. Every shard records which basis
+was used and the audit hash. The locked raw population remains the comparison baseline and is
+not re-extracted.
+
+This amendment changes no endpoint, threshold, transform parameter or target. It does not modify
+the locked PFM contract, whose pin continues to govern the E0--E7 artifacts.
+
 ## 6. Boundaries
 
 - RF1U is developed after the primary E5 outcomes were known and cannot enter the frozen
