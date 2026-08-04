@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스캐너 정규화 방법 계보 — Reinhard에서 RF1U까지</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body, h1, h2, h3, p, figure, table, ul { margin: 0; padding: 0; }
+  ul { list-style-position: outside; }
+  img, svg { max-width: 100%; }
+  button { font: inherit; color: inherit; }
+
+  :root {
+    --ground: #f6f7f9;
+    --surface: #ffffff;
+    --surface-sunk: #eef0f4;
+    --ink: #161b22;
+    --ink-soft: #525c6b;
+    --ink-faint: #7a8593;
+    --rule: #d9dee6;
+    --rule-soft: #e7eaf0;
+    --accent: #0e7c86;
+    --accent-soft: #e2f0f1;
+    --amplify: #a75c14;
+    --attenuate: #3a6698;
+    --pass: #2b7049;
+    --fail: #a1372a;
+
+    --f-display: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    --f-body: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    --f-data: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+    --measure: 68ch;
+    --wide: 60rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #11151b;
+      --surface: #181d25;
+      --surface-sunk: #0d1116;
+      --ink: #e2e7ee;
+      --ink-soft: #9ba6b5;
+      --ink-faint: #77828f;
+      --rule: #2a3240;
+      --rule-soft: #212833;
+      --accent: #45b3bd;
+      --accent-soft: #17323a;
+      --amplify: #dc9550;
+      --attenuate: #7fa9da;
+      --pass: #5eb88c;
+      --fail: #e57866;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #11151b;
+    --surface: #181d25;
+    --surface-sunk: #0d1116;
+    --ink: #e2e7ee;
+    --ink-soft: #9ba6b5;
+    --ink-faint: #77828f;
+    --rule: #2a3240;
+    --rule-soft: #212833;
+    --accent: #45b3bd;
+    --accent-soft: #17323a;
+    --amplify: #dc9550;
+    --attenuate: #7fa9da;
+    --pass: #5eb88c;
+    --fail: #e57866;
+  }
+
+  :root[data-theme="light"] {
+    --ground: #f6f7f9;
+    --surface: #ffffff;
+    --surface-sunk: #eef0f4;
+    --ink: #161b22;
+    --ink-soft: #525c6b;
+    --ink-faint: #7a8593;
+    --rule: #d9dee6;
+    --rule-soft: #e7eaf0;
+    --accent: #0e7c86;
+    --accent-soft: #e2f0f1;
+    --amplify: #a75c14;
+    --attenuate: #3a6698;
+    --pass: #2b7049;
+    --fail: #a1372a;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 17px;
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: var(--wide);
+    margin: 0 auto;
+    padding: 4.5rem 1.5rem 7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3.75rem;
+  }
+
+  .prose { max-width: var(--measure); }
+
+  h1, h2, h3, .label, .stat-value, table, .step-tag { font-family: var(--f-display); }
+
+  h1 {
+    font-size: clamp(2rem, 4.6vw, 3rem);
+    line-height: 1.08;
+    letter-spacing: -0.028em;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    line-height: 1.22;
+    letter-spacing: -0.018em;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  h3 { font-size: 1.06rem; letter-spacing: -0.008em; font-weight: 700; }
+
+  .prose p + p { margin-top: 1.1rem; }
+
+  .label {
+    font-size: 0.72rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .deck {
+    font-size: 1.16rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 58ch;
+  }
+
+  header.masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding-bottom: 2.25rem;
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+  }
+
+  .theme-toggle {
+    position: absolute;
+    top: -1.75rem;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-family: var(--f-data);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  .theme-toggle:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  section { display: flex; flex-direction: column; gap: 1.5rem; }
+  .sec-head { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  .stat {
+    background: var(--surface);
+    padding: 1.35rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .stat-value {
+    font-size: 1.95rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .stat-label { font-size: 0.86rem; color: var(--ink-soft); line-height: 1.4; }
+
+  .ladder { display: flex; flex-direction: column; border-top: 1px solid var(--rule); }
+
+  .step {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    gap: 1.75rem;
+    padding: 1.75rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .step-tag { display: flex; flex-direction: column; gap: 0.3rem; }
+  .step-name { font-size: 1.02rem; font-weight: 700; letter-spacing: -0.01em; }
+
+  .step-state {
+    font-family: var(--f-data);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    color: var(--ink-faint);
+  }
+
+  .step-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    max-width: var(--measure);
+  }
+
+  .gain-cost {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.6rem 1.5rem;
+    font-size: 0.94rem;
+  }
+
+  .gc-item { display: flex; gap: 0.6rem; align-items: baseline; }
+
+  .gc-key {
+    font-family: var(--f-data);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    padding-top: 0.15rem;
+  }
+
+  .gc-gain .gc-key { color: var(--pass); }
+  .gc-cost .gc-key { color: var(--fail); }
+
+  @media (max-width: 42rem) {
+    .step { grid-template-columns: 1fr; gap: 0.9rem; }
+  }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  caption {
+    caption-side: top;
+    text-align: left;
+    font-family: var(--f-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--ink-soft);
+    padding: 0.9rem 1rem 0.6rem;
+  }
+
+  th, td {
+    padding: 0.6rem 1rem;
+    text-align: right;
+    border-bottom: 1px solid var(--rule-soft);
+    white-space: nowrap;
+  }
+
+  th:first-child, td:first-child { text-align: left; }
+
+  thead th {
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 600;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr.group-start td { border-top: 1px solid var(--rule); }
+
+  .num-pos { color: var(--pass); font-weight: 600; }
+  .num-neg { color: var(--fail); font-weight: 600; }
+  .dim { color: var(--ink-faint); }
+
+  .flag {
+    font-family: var(--f-data);
+    font-size: 0.74rem;
+    letter-spacing: 0.02em;
+    padding: 0.1rem 0.45rem;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .flag-pass { color: var(--pass); background: color-mix(in srgb, var(--pass) 12%, transparent); }
+  .flag-fail { color: var(--fail); background: color-mix(in srgb, var(--fail) 14%, transparent); }
+
+  figure { display: flex; flex-direction: column; gap: 0.85rem; }
+
+  .fig-frame {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: 1.75rem 1.5rem;
+    overflow-x: auto;
+  }
+
+  figure svg { height: auto; display: block; margin: 0 auto; }
+
+  figcaption {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    max-width: var(--measure);
+    line-height: 1.55;
+  }
+
+  .callout {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 1.15rem 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: var(--measure);
+  }
+
+  .callout p { font-size: 0.98rem; }
+
+  .note {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    max-width: var(--measure);
+    padding-left: 0.9rem;
+    border-left: 2px solid var(--rule);
+  }
+
+  code {
+    font-family: var(--f-data);
+    font-size: 0.86em;
+    background: var(--surface-sunk);
+    padding: 0.08em 0.32em;
+    border-radius: 2px;
+  }
+
+  strong { font-weight: 700; }
+
+  ul.tight {
+    padding-left: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    max-width: var(--measure);
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    max-width: var(--measure);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  footer .mono { font-family: var(--f-data); font-size: 0.78rem; }
+
+  @media print {
+    body { background: #fff; color: #000; font-size: 11pt; }
+    .theme-toggle { display: none; }
+    .page { padding: 0; gap: 2rem; max-width: none; }
+    section, figure, .table-wrap { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="masthead">
+    <button class="theme-toggle" type="button" id="themeToggle" aria-label="밝기 전환">THEME</button>
+    <div class="label">스캐너 정규화 · 방법 계보 종합 · 2026-08-04</div>
+    <h1>Reinhard 위에 무엇을 얹었고,<br>그 대가는 무엇이었나</h1>
+    <p class="deck">
+      색만 맞추는 Reinhard에서 시작해 네 단계를 거쳤습니다. 마지막 단계에서
+      PFM 봉인을 열었더니, 방법보다 <strong>어느 스캐너를 목적지로 삼느냐</strong>가
+      결과를 갈랐습니다.
+    </p>
+  </header>
+
+  <section>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value">7<span class="dim" style="font-size:1.1rem"> / 12</span></div>
+        <div class="stat-label">Reinhard보다 safe + improved인 타겟·PFM 조합. 전부 GT450·S60이고 AT2는 0/4</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" style="color:var(--attenuate)">−0.212</div>
+        <div class="stat-label">AT2를 향할 때 평균 log-gain. 음수 = 대부분의 스캐너를 <em>뭉갠다</em></div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" style="color:var(--amplify)">+0.168</div>
+        <div class="stat-label">GT450을 향할 때 평균 log-gain. 양수 = 대부분을 <em>선명하게</em> 한다</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">3</div>
+        <div class="stat-label">전체 그리드에서 collapse 게이트 실패 건수 — 전부 AT2 타겟, 전부 UNI v1</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">출발점</div>
+      <h2>Reinhard는 색만 맞춥니다</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Reinhard는 두 집단의 색 통계(CIE Lab의 채널별 평균과 표준편차)를 맞춥니다.
+        카메라의 화이트밸런스와 같은 일입니다. 짝지어진 사진이 필요 없고, 소스 사진
+        여러 장과 타겟 사진 여러 장만 있으면 됩니다.
+      </p>
+      <p>
+        문제는 스캐너 차이가 색에만 있지 않다는 것입니다. 같은 조직을 찍어도
+        <strong>선명도</strong>가 다릅니다 — GT450은 AT2보다 고주파 전달이 1.478배,
+        AKOYA는 0.335배입니다. 색을 맞춰도 이 차이는 그대로 남습니다.
+      </p>
+    </div>
+
+    <figure>
+      <div class="fig-frame">
+        <svg viewBox="0 0 720 250" role="img" aria-label="이미지를 세 개의 디테일 밴드와 색을 담은 바탕으로 분해한 뒤, 밴드마다 게인을 곱해 다시 합치는 과정. Reinhard는 바탕만 건드리고 밴드 보정이 나머지를 담당한다.">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+
+          <text x="10" y="18" font-size="12" font-weight="700" fill="currentColor">소스 이미지</text>
+          <rect x="10" y="30" width="96" height="96" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <text x="58" y="84" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.65">mean OD</text>
+
+          <line x1="112" y1="78" x2="158" y2="78" stroke="currentColor" stroke-width="1.4" marker-end="url(#ah)"/>
+          <text x="135" y="70" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">분해</text>
+
+          <text x="168" y="18" font-size="12" font-weight="700" fill="currentColor">밴드</text>
+
+          <rect x="168" y="30" width="120" height="30" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="178" y="49" font-size="11" fill="currentColor">σ=1px 미세결</text>
+          <rect x="168" y="66" width="120" height="30" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="178" y="85" font-size="11" fill="currentColor">σ=2px 중간결</text>
+          <rect x="168" y="102" width="120" height="30" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="178" y="121" font-size="11" fill="currentColor">σ=4px 굵은결</text>
+          <rect x="168" y="150" width="120" height="34" fill="none" stroke="currentColor" stroke-width="2.2"/>
+          <text x="178" y="171" font-size="11" font-weight="700" fill="currentColor">바탕 (색)</text>
+
+          <line x1="294" y1="45" x2="336" y2="45" stroke="currentColor" stroke-width="1.4" marker-end="url(#ah)"/>
+          <text x="315" y="38" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">×g₁</text>
+          <line x1="294" y1="81" x2="336" y2="81" stroke="currentColor" stroke-width="1.4" marker-end="url(#ah)"/>
+          <text x="315" y="74" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">×g₂</text>
+          <line x1="294" y1="117" x2="336" y2="117" stroke="currentColor" stroke-width="1.4" marker-end="url(#ah)"/>
+          <text x="315" y="110" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">×g₃</text>
+          <line x1="294" y1="167" x2="336" y2="167" stroke="currentColor" stroke-width="2.2" marker-end="url(#ah)"/>
+          <text x="315" y="160" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">그대로</text>
+
+          <rect x="342" y="30" width="128" height="154" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="406" y="98" font-size="12" font-weight="700" text-anchor="middle" fill="currentColor">재합성</text>
+          <text x="406" y="116" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.65">밝기 성분에만</text>
+
+          <line x1="476" y1="107" x2="518" y2="107" stroke="currentColor" stroke-width="1.4" marker-end="url(#ah)"/>
+
+          <rect x="524" y="60" width="186" height="94" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <text x="617" y="88" font-size="12" font-weight="700" text-anchor="middle" fill="currentColor">범위 밖은</text>
+          <text x="617" y="106" font-size="12" font-weight="700" text-anchor="middle" fill="currentColor">자르지 않고 투영</text>
+          <text x="617" y="128" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.65">색조 보존, clamp = 0</text>
+
+          <line x1="168" y1="205" x2="288" y2="205" stroke="currentColor" stroke-width="2.2"/>
+          <text x="228" y="224" font-size="11" text-anchor="middle" fill="currentColor" font-weight="700">Reinhard 담당</text>
+          <line x1="168" y1="196" x2="168" y2="214" stroke="currentColor" stroke-width="2.2"/>
+          <line x1="288" y1="196" x2="288" y2="214" stroke="currentColor" stroke-width="2.2"/>
+
+          <line x1="342" y1="205" x2="710" y2="205" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 3"/>
+          <text x="526" y="224" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">밴드 보정이 추가하는 것</text>
+        </svg>
+      </div>
+      <figcaption>
+        이미지를 세 개의 디테일 밴드와 색을 담은 바탕으로 나눕니다. Reinhard는 바탕의 통계만 맞추고,
+        밴드 보정이 나머지 셋의 세기를 맞춥니다. 오디오 이퀄라이저에서 Reinhard가 마스터 볼륨 하나라면,
+        밴드 보정은 저·중·고음을 따로 맞추는 것입니다.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">계보</div>
+      <h2>네 단계, 각각이 산 것과 치른 대가</h2>
+    </div>
+
+    <div class="ladder">
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">Reinhard</div>
+          <div class="step-state">locked · 원고 기준</div>
+        </div>
+        <div class="step-body">
+          <p>집단 Lab 평균·표준편차 매칭. 네 PFM 모두에서 safe + improved로 검증된 baseline입니다.</p>
+          <div class="gain-cost">
+            <div class="gc-item gc-gain"><span class="gc-key">얻음</span><span>ResNet50 27.6%, CONCH 11.9%의 scanner radius 감소</span></div>
+            <div class="gc-item gc-cost"><span class="gc-key">한계</span><span>선명도 차이는 손도 못 댐</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">RF1</div>
+          <div class="step-state">locked · 결과 확정</div>
+        </div>
+        <div class="step-body">
+          <p>
+            Reinhard 뒤에 <strong>전역 주파수 게인 곡선</strong>(72칸 radial)을 얹고, 보정량을
+            밝기 성분에만 더한 뒤 유효 범위로 투영합니다. 예전 방식이 픽셀의 9–19%를 잘라내던
+            문제를 여기서 없앴습니다.
+          </p>
+          <div class="gain-cost">
+            <div class="gc-item gc-gain"><span class="gc-key">얻음</span><span>RR +0.6~2.8pp, clamp 정확히 0</span></div>
+            <div class="gc-item gc-cost"><span class="gc-key">대가</span><span>공통 cap 1.25 탓에 <strong>S360이 29.6% 악화</strong></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">RF1M</div>
+          <div class="step-state" style="color:var(--fail)">게이트 실패 · 차단</div>
+        </div>
+        <div class="step-body">
+          <p>
+            세 가지를 바꿨습니다. 전역 72칸 대신 <strong>국소 3밴드</strong>, 공통 cap 대신
+            <strong>스캐너별 강도</strong>(identity 포함), 그리고 밴드 에너지를 근사하지 않고
+            <strong>직접 측정</strong>.
+          </p>
+          <div class="gain-cost">
+            <div class="gc-item gc-gain"><span class="gc-key">얻음</span><span>이미지 스펙트럼 −7.2% → −49.3%, S360 부호도 뒤집음</span></div>
+            <div class="gc-item gc-cost"><span class="gc-key">대가</span><span>per-fold no-harm 게이트 <strong>72/75</strong> — S360 fold 4에서 실패, PFM 미접근</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">RF1U</div>
+          <div class="step-state">현재 · PFM 개봉</div>
+        </div>
+        <div class="step-body">
+          <p>
+            게인을 <strong>집단 통계</strong>로만 구하고, 그 게인이 얼마나 못 미더운지를
+            슬라이드 bootstrap으로 재서 <strong>밴드마다 축소</strong>합니다. 후보 격자도,
+            중첩 교차검증도, 짝지은 데이터도 필요 없어져 RF1M보다 오히려 단순합니다.
+          </p>
+          <div class="gain-cost">
+            <div class="gc-item gc-gain"><span class="gc-key">얻음</span><span>Reinhard와 같은 배포 조건, 못 믿으면 자동으로 Reinhard로 후퇴</span></div>
+            <div class="gc-item gc-cost"><span class="gc-key">발견</span><span>타겟에 따라 safe 여부가 완전히 갈림 → 아래</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      중간에 검증한 두 가지는 채택하지 않았습니다. <strong>슬라이드별 게인 예측</strong>은
+      회귀 기울기 0.63으로 AKOYA·GT450·S60에서 오차를 52–57% 줄였지만, 정작 문제였던
+      S360·VERSA에서는 CI로 확인되지 않았습니다. <strong>조직 분할 검정</strong>은 좋은
+      소식이었습니다 — 소스와 타겟의 장기 구성을 완전히 어긋나게 해도 오차가
+      1.07–1.33배만 늘어, unpaired 배포에서 조직 매칭이 필수가 아님을 보였습니다.
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">핵심 발견</div>
+      <h2>목적지가 방법보다 결정적입니다</h2>
+    </div>
+
+    <div class="prose">
+      <p>
+        변환·fold·축소·게이트·인코딩이 세 타겟에서 모두 동일하므로, 통제된 비교 변수는
+        <strong>타겟 하나</strong>입니다. 그 하나가 결과를 뒤집습니다.
+      </p>
+    </div>
+
+    <figure>
+      <div class="fig-frame">
+        <svg viewBox="0 0 720 274" role="img" aria-label="AT2를 목적지로 삼으면 대부분의 스캐너가 뭉개지고 게이트가 실패하며, GT450이나 S60을 목적지로 삼으면 대부분이 선명해지고 게이트를 통과한다.">
+          <defs>
+            <marker id="ahAtt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#3a6698"/>
+            </marker>
+            <marker id="ahAmp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#a75c14"/>
+            </marker>
+          </defs>
+
+          <text x="12" y="20" font-size="12" font-weight="700" fill="currentColor">고주파 전달량 축 (AT2 = 1.0 기준)</text>
+
+          <line x1="24" y1="52" x2="696" y2="52" stroke="currentColor" stroke-width="1.2"/>
+          <circle cx="70" cy="52" r="4.5" fill="currentColor"/>
+          <text x="70" y="42" font-size="11" text-anchor="middle" fill="currentColor">AKOYA</text>
+          <text x="70" y="70" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">0.34</text>
+
+          <circle cx="300" cy="52" r="4.5" fill="currentColor"/>
+          <text x="300" y="42" font-size="11" text-anchor="middle" fill="currentColor">S360</text>
+          <text x="300" y="70" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">0.84</text>
+
+          <circle cx="392" cy="52" r="4.5" fill="currentColor"/>
+          <text x="392" y="42" font-size="11" text-anchor="middle" fill="currentColor">VERSA</text>
+          <text x="392" y="70" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">0.94</text>
+
+          <circle cx="452" cy="52" r="6" fill="currentColor"/>
+          <text x="452" y="42" font-size="11" text-anchor="middle" font-weight="700" fill="currentColor">AT2</text>
+          <text x="452" y="70" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">1.00</text>
+
+          <circle cx="500" cy="52" r="6" fill="currentColor"/>
+          <text x="500" y="42" font-size="11" text-anchor="middle" font-weight="700" fill="currentColor">S60</text>
+          <text x="500" y="70" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">1.04</text>
+
+          <circle cx="646" cy="52" r="6" fill="currentColor"/>
+          <text x="646" y="42" font-size="11" text-anchor="middle" font-weight="700" fill="currentColor">GT450</text>
+          <text x="646" y="70" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">1.48</text>
+
+          <text x="24" y="122" font-size="12" font-weight="700" fill="#3a6698">목적지 = AT2</text>
+          <line x1="620" y1="140" x2="480" y2="140" stroke="#3a6698" stroke-width="2" marker-end="url(#ahAtt)"/>
+          <line x1="560" y1="158" x2="480" y2="158" stroke="#3a6698" stroke-width="2" marker-end="url(#ahAtt)"/>
+          <text x="640" y="145" font-size="10.5" fill="#3a6698">GT450 ×0.51</text>
+          <text x="580" y="163" font-size="10.5" fill="#3a6698">S60 ×0.61</text>
+          <text x="24" y="145" font-size="11" fill="#3a6698">뭉갠다</text>
+          <text x="24" y="163" font-size="11" fill="#3a6698">평균 −0.212</text>
+          <rect x="24" y="176" width="132" height="20" fill="none" stroke="#a1372a" stroke-width="1.4"/>
+          <text x="90" y="190" font-size="10.5" text-anchor="middle" fill="#a1372a" font-weight="700">safe+improved 0/4</text>
+
+          <text x="24" y="228" font-size="12" font-weight="700" fill="#a75c14">목적지 = GT450 · S60</text>
+          <line x1="180" y1="246" x2="620" y2="246" stroke="#a75c14" stroke-width="2" marker-end="url(#ahAmp)"/>
+          <text x="400" y="240" font-size="10.5" fill="#a75c14" text-anchor="middle">AKOYA ×2.70 · 나머지도 대부분 &gt;1</text>
+          <rect x="24" y="236" width="132" height="20" fill="none" stroke="#2b7049" stroke-width="1.4"/>
+          <text x="90" y="250" font-size="10.5" text-anchor="middle" fill="#2b7049" font-weight="700">safe+improved 7/8</text>
+        </svg>
+      </div>
+      <figcaption>
+        같은 추정기라도 목적지가 어디냐에 따라 보정의 <em>방향</em>이 뒤집힙니다. 가장 부드러운
+        AT2를 향하면 선명한 스캐너들을 절반 가까이 뭉개야 하고, 선명한 GT450·S60을 향하면
+        대부분을 선명하게 만듭니다.
+      </figcaption>
+    </figure>
+
+    <div class="table-wrap">
+      <table>
+        <caption>raw 대비 scanner radius 감소율 — Reinhard 단독 vs RF1U</caption>
+        <thead>
+          <tr><th>목적지</th><th>PFM</th><th>Reinhard</th><th>RF1U</th><th>차이</th><th>판정</th></tr>
+        </thead>
+        <tbody>
+          <tr class="group-start"><td rowspan="4">AT2</td><td>ResNet50</td><td>27.57%</td><td>19.46%</td><td class="num-neg">−8.11pp</td><td><span class="flag flag-fail">불리</span></td></tr>
+          <tr><td>UNI v1</td><td>6.05%</td><td class="dim">−1.12%</td><td class="num-neg">−7.17pp</td><td><span class="flag flag-fail">content·collapse 실패</span></td></tr>
+          <tr><td>CONCH v1</td><td>11.91%</td><td>6.51%</td><td class="num-neg">−5.40pp</td><td><span class="flag flag-fail">불리</span></td></tr>
+          <tr><td>Virchow2</td><td>3.63%</td><td class="dim">−7.37%</td><td class="num-neg">−11.01pp</td><td><span class="flag flag-fail">content 실패</span></td></tr>
+
+          <tr class="group-start"><td rowspan="4">GT450</td><td>ResNet50</td><td>28.53%</td><td><strong>32.85%</strong></td><td class="num-pos">+4.32pp</td><td><span class="flag flag-pass">safe + improved</span></td></tr>
+          <tr><td>UNI v1</td><td>4.04%</td><td><strong>6.86%</strong></td><td class="num-pos">+2.82pp</td><td><span class="flag flag-pass">safe + improved</span></td></tr>
+          <tr><td>CONCH v1</td><td>14.52%</td><td><strong>19.56%</strong></td><td class="num-pos">+5.04pp</td><td><span class="flag flag-pass">safe + improved</span></td></tr>
+          <tr><td>Virchow2</td><td class="dim">−0.08%</td><td><strong>4.04%</strong></td><td class="num-pos">+4.12pp</td><td><span class="flag flag-pass">safe + improved</span></td></tr>
+
+          <tr class="group-start"><td rowspan="4">S60</td><td>ResNet50</td><td>27.65%</td><td><strong>31.84%</strong></td><td class="num-pos">+4.19pp</td><td><span class="flag flag-pass">safe + improved</span></td></tr>
+          <tr><td>UNI v1</td><td>5.30%</td><td>5.56%</td><td class="dim">+0.27pp</td><td><span class="flag">CI 미달</span></td></tr>
+          <tr><td>CONCH v1</td><td>12.13%</td><td><strong>16.88%</strong></td><td class="num-pos">+4.75pp</td><td><span class="flag flag-pass">safe + improved</span></td></tr>
+          <tr><td>Virchow2</td><td>4.30%</td><td><strong>6.69%</strong></td><td class="num-pos">+2.39pp</td><td><span class="flag flag-pass">safe + improved</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <h3>뭉개서 얻은 것이 없습니다</h3>
+      <p>
+        AT2를 향한 보정은 정보를 지우고도 invariance를 사지 못했습니다. RF1U의 radius가
+        순수 Reinhard보다 <strong>크고</strong>, UNI와 Virchow2는 아무 보정도 안 한 raw보다
+        나쁩니다. 밴드 에너지를 아래로 맞추면 통계적으로는 AT2에 가까워지지만 표현
+        공간에서는 오히려 멀어집니다.
+      </p>
+    </div>
+
+    <div class="prose">
+      <p>
+        게이트 실패가 이 선을 정확히 따라갑니다. AT2 타겟에서 content 비열등이 UNI v1
+        (Δ −0.0338)과 Virchow2 (Δ −0.0366)에서 무너지고 — 기준은 −0.02입니다 — collapse
+        실패 3건은 전부 UNI v1의, 하필 <strong>가장 심하게 뭉개진 두 스캐너</strong>에서
+        나옵니다(GT450 variance trace 0.775, S60 0.865, 기준 0.90).
+      </p>
+      <p>
+        이건 이 연구의 논지가 자기 method development 안에서 재현된 것입니다. 고주파를
+        지우면 이미지 불일치는 줄지만 표현이 손상되고, 그걸 잡으라고 결과 보기 전에
+        동결해 둔 게이트가 정확히 그 실패를 잡아냈습니다.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">모델 사이</div>
+      <h2>PFM마다 다른 것 세 가지</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <caption>스캐너 민감도, 교정 가능성, 뭉갬에 대한 취약성</caption>
+        <thead>
+          <tr><th>PFM</th><th>raw radius</th><th>Reinhard가 걷어냄</th><th>GT450에서 추가 이득</th><th>AT2에서 손상</th><th>뭉갬 내성</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>ResNet50 <span class="dim">자연영상 CNN</span></td><td>0.212</td><td>27.6%</td><td class="num-pos">+4.32pp</td><td class="num-neg">−8.11pp</td><td><span class="flag flag-pass">견딤</span></td></tr>
+          <tr><td>CONCH v1 <span class="dim">비전-언어</span></td><td>0.263</td><td>11.9%</td><td class="num-pos">+5.04pp</td><td class="num-neg">−5.40pp</td><td><span class="flag flag-pass">견딤</span></td></tr>
+          <tr><td>Virchow2 <span class="dim">대형 병리 SSL</span></td><td>0.351</td><td>3.6%</td><td class="num-pos">+4.12pp</td><td class="num-neg">−11.01pp</td><td><span class="flag flag-fail">content 붕괴</span></td></tr>
+          <tr><td>UNI v1 <span class="dim">병리 SSL</span></td><td>0.483</td><td>6.1%</td><td class="num-pos">+2.82pp</td><td class="num-neg">−7.17pp</td><td><span class="flag flag-fail">content + collapse</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose">
+      <p>
+        <strong>첫째, 민감도와 교정 가능성이 반대로 갑니다.</strong> UNI는 raw radius가 0.483으로
+        가장 스캐너에 민감한데, Reinhard가 걷어내는 몫은 6.1%로 가장 적습니다. ResNet50은
+        정반대입니다 — 민감도는 0.212로 가장 낮은데 27.6%가 색 보정만으로 사라집니다.
+        <em>ResNet50의 스캐너 신호는 대부분 색이고, 병리 SSL 모델의 것은 아닙니다.</em>
+      </p>
+      <p>
+        <strong>둘째, 취약한 쪽이 병리 전용 모델입니다.</strong> AT2 타겟에서 content 게이트가
+        무너진 둘은 UNI v1과 Virchow2, 즉 미세 질감을 집중적으로 학습한 병리 SSL 모델입니다.
+        ResNet50(자연영상)과 CONCH(비전-언어, 캡션으로 학습)는 같은 뭉갬을 견뎠습니다.
+        고주파를 지우는 것이 병리 SSL 모델에게는 학습한 표현의 근간을 지우는 일이라는
+        해석과 부합하지만, 네 모델로 확인한 <em>가설</em>이지 확립된 사실은 아닙니다.
+      </p>
+      <p>
+        <strong>셋째, 그럼에도 방향은 네 모델이 일치합니다.</strong> GT450·S60을 향한 보정은
+        네 PFM 모두에서 이득이고, AT2를 향한 보정은 네 PFM 모두에서 손해입니다. 크기는
+        다르지만 부호가 갈리지 않는다는 것이, 이 결과가 특정 모델의 특이성이 아니라는
+        가장 강한 근거입니다.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">종합</div>
+      <h2>세 줄 요약</h2>
+    </div>
+    <ul class="tight">
+      <li>
+        <strong>Reinhard가 색을 맞춘 뒤 남는 것은 선명도이고, 그걸 밴드별로 맞추면 이득이 있습니다</strong> —
+        단, 선명하게 만드는 방향일 때만입니다.
+      </li>
+      <li>
+        <strong>AT2는 paired 기준점이지 harmonization의 목적지가 아닙니다.</strong> 가장 부드러운
+        스캐너를 canonical target으로 삼으면 정보를 지우고도 아무것도 얻지 못합니다.
+      </li>
+      <li>
+        <strong>사전 동결한 게이트가 실제로 작동했습니다.</strong> RF1M을 막았고, AT2 타겟의
+        collapse를 잡아냈습니다. 두 번 다 "집계 지표는 좋아 보이는데 내용이 손상된" 경우였습니다.
+      </li>
+    </ul>
+
+    <div class="note">
+      <strong>주장하지 않는 것</strong> — 어떤 스캐너가 임상적으로 우월하다는 뜻이 아닙니다.
+      RF1U는 동결된 5-method 순위에 들어가지 않고 RF1을 대체하지도 않습니다. 109 슬라이드 한
+      코호트의 세 타겟이며, GT450보다 선명한 스캐너나 다른 코호트에서도 성립할지는
+      확인되지 않았습니다.
+    </div>
+  </section>
+
+  <footer>
+    <div>
+      PanNormal E0–E7 core는 잠긴 상태로 변경되지 않았습니다. 모든 조건은 결과 확인 전에
+      동결한 계약 아래에서 한 번씩만 평가됐습니다.
+    </div>
+    <div class="mono">
+      1,308 shards · 3 targets × 2 conditions × 4 PFMs × 109 slides · slide bootstrap 5,000 · seed 20260803
+    </div>
+    <div class="mono">
+      docs/e5_rf1u_multitarget_contract.md · docs/e5_rf1u_multitarget_results.md
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    var saved = null;
+    try { saved = localStorage.getItem('rf1u-theme'); } catch (e) { saved = null; }
+    if (saved === 'dark' || saved === 'light') { root.setAttribute('data-theme', saved); }
+    btn.addEventListener('click', function () {
+      var current = root.getAttribute('data-theme');
+      if (!current) {
+        current = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      var next = current === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('rf1u-theme', next); } catch (e) {}
+    });
+  })();
+</script>
+
+</body>
+</html>
