@@ -14,6 +14,13 @@ Two measurements, both from the stored per-slide band energies:
 * `bootstrap`: slide bootstrap of the population gain when source and target
   come from the same slides.  This is the sampling precision available when a
   paired calibration set exists, and it understates true unpaired uncertainty.
+* `tissue`: the same disjoint split but cut along tissue type rather than at
+  random, so the two populations contain different organs.  This is the worst
+  realistic unpaired case, and comparing it with the random split separates
+  tissue-composition bias from ordinary slide-to-slide sampling noise.
+
+The per-tissue gain spread is reported alongside, since a gain that varies
+strongly by organ cannot be transported to a population with a different mix.
 
 No PFM endpoint is read and no image is rendered.
 """
@@ -29,6 +36,7 @@ import numpy as np
 
 from analyze_rf1m_slide_adaptive import load_energy
 from e5_comparator_population import FOVS, SCANNERS
+from e6_loto_population import load_tissue_annotation
 from fetch_e0_pfm_checkpoints import sha256
 from rf1m_combined import RF1M_SIGMAS, RF1M_VERSION
 
@@ -41,6 +49,11 @@ SHRINKAGE_MULTIPLIERS = (2.0, 3.0)
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--energy", default="outputs/rf1m_slide_adaptive/energy")
+    parser.add_argument(
+        "--geometry",
+        default="outputs/e0_native_geometry_final/native_geometry_manifest.csv",
+    )
+    parser.add_argument("--min-tissue-slides", type=int, default=3)
     parser.add_argument("--output", default="outputs/rf1m_unpaired_estimator")
     return parser.parse_args()
 
@@ -54,11 +67,20 @@ def log_population_gain(target: np.ndarray, source: np.ndarray) -> float:
     return 0.5 * float(np.log(target.mean()) - np.log(source.mean()))
 
 
+def tissue_disjoint_halves(tissue_of_slide: np.ndarray, tissues, generator):
+    """Split slides so the two populations contain disjoint sets of organs."""
+    order = generator.permutation(len(tissues))
+    first = {tissues[index] for index in order[: len(tissues) // 2]}
+    mask = np.asarray([value in first for value in tissue_of_slide])
+    return np.flatnonzero(mask), np.flatnonzero(~mask)
+
+
 def main():
     args = parse_args()
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
     generator = np.random.default_rng(SEED)
+    tissue_by_slide, tissues = load_tissue_annotation(Path(args.geometry))
 
     rows = []
     hashes = {}
@@ -70,6 +92,17 @@ def main():
         # the choice of fold shifts every slide alike and cannot change a ratio.
         source = values["source_band_energy"][:, :, 0, :]
         slides = len(target)
+        tissue_of_slide = np.asarray(
+            [tissue_by_slide[str(value)] for value in values["slide_ids"]]
+        )
+        tissue_sizes = {
+            tissue: int((tissue_of_slide == tissue).sum()) for tissue in tissues
+        }
+        evaluable = [
+            tissue
+            for tissue in tissues
+            if tissue_sizes[tissue] >= args.min_tissue_slides
+        ]
         for scanner_index, scanner in enumerate(SCANNERS[1:]):
             for band_index, sigma in enumerate(RF1M_SIGMAS):
                 t = target[:, band_index]
@@ -83,6 +116,24 @@ def main():
                     disjoint[replicate] = log_population_gain(
                         t[first], s[second]
                     ) - log_population_gain(t[first], s[first])
+
+                tissue_split = np.empty(REPLICATES)
+                for replicate in range(REPLICATES):
+                    first, second = tissue_disjoint_halves(
+                        tissue_of_slide, tissues, generator
+                    )
+                    tissue_split[replicate] = log_population_gain(
+                        t[first], s[second]
+                    ) - log_population_gain(t[first], s[first])
+
+                per_tissue = np.asarray(
+                    [
+                        log_population_gain(
+                            t[tissue_of_slide == tissue], s[tissue_of_slide == tissue]
+                        )
+                        for tissue in evaluable
+                    ]
+                )
 
                 index = generator.integers(0, slides, size=(REPLICATES, slides))
                 replicates = 0.5 * (
@@ -101,6 +152,17 @@ def main():
                     "disjoint_abs_median": float(np.median(np.abs(disjoint))),
                     "disjoint_abs_q95": float(np.quantile(np.abs(disjoint), 0.95)),
                     "disjoint_noise_ratio": float(np.median(np.abs(disjoint))) / abs(paired),
+                    "tissue_split_abs_median": float(np.median(np.abs(tissue_split))),
+                    "tissue_split_abs_q95": float(np.quantile(np.abs(tissue_split), 0.95)),
+                    "tissue_split_noise_ratio": float(np.median(np.abs(tissue_split)))
+                    / abs(paired),
+                    "tissue_split_vs_random": float(np.median(np.abs(tissue_split)))
+                    / float(np.median(np.abs(disjoint))),
+                    "evaluable_tissues": len(evaluable),
+                    "per_tissue_log_gain_sd": float(per_tissue.std(ddof=1)),
+                    "per_tissue_log_gain_range": float(per_tissue.max() - per_tissue.min()),
+                    "per_tissue_sd_over_abs_log_gain": float(per_tissue.std(ddof=1))
+                    / abs(paired),
                 }
                 for k in SHRINKAGE_MULTIPLIERS:
                     tag = f"k{k:g}"
@@ -109,6 +171,9 @@ def main():
                     )
                     row[f"alpha_unpaired_{tag}"] = max(
                         0.0, 1.0 - k * row["disjoint_noise_ratio"]
+                    )
+                    row[f"alpha_tissue_shifted_{tag}"] = max(
+                        0.0, 1.0 - k * row["tissue_split_noise_ratio"]
                     )
                 rows.append(row)
 
@@ -134,6 +199,18 @@ def main():
             "alpha_unpaired_k2": float(
                 np.mean([row["alpha_unpaired_k2"] for row in selected])
             ),
+            "tissue_split_noise_ratio": float(
+                np.mean([row["tissue_split_noise_ratio"] for row in selected])
+            ),
+            "tissue_split_vs_random": float(
+                np.mean([row["tissue_split_vs_random"] for row in selected])
+            ),
+            "alpha_tissue_shifted_k2": float(
+                np.mean([row["alpha_tissue_shifted_k2"] for row in selected])
+            ),
+            "per_tissue_sd_over_abs_log_gain": float(
+                np.mean([row["per_tissue_sd_over_abs_log_gain"] for row in selected])
+            ),
         }
     result = {
         "analysis": "rf1m_unpaired_estimator_check",
@@ -156,6 +233,8 @@ def main():
         "cells": len(rows),
         "replicates": REPLICATES,
         "seed": SEED,
+        "tissue_annotation": str(Path(args.geometry).resolve()),
+        "min_tissue_slides": args.min_tissue_slides,
         "by_scanner": by_scanner,
         "energy_sha256": hashes,
         "artifacts": {table.name: sha256(table)},
