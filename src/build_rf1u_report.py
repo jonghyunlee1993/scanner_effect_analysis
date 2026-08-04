@@ -9,6 +9,7 @@ page can never drift from the artifacts they came from.
 from __future__ import annotations
 
 import argparse
+import base64
 import html
 import json
 from pathlib import Path
@@ -43,6 +44,7 @@ def parse_args():
     parser.add_argument("--gallery", default="outputs/rf1u_multitarget/gallery")
     parser.add_argument("--knn-gallery", default="outputs/rf1u_multitarget/knn_gallery")
     parser.add_argument("--scanner-probe", default="outputs/rf1u_multitarget/scanner_probe")
+    parser.add_argument("--blur-umap", default="outputs/rf1u_multitarget/blur_umap")
     parser.add_argument(
         "--output", default="presentations/rf1u_multitarget_2026-08-04/index.html"
     )
@@ -366,6 +368,8 @@ def main():
     probe_meta = json.loads(
         (Path(args.scanner_probe) / f"{MODELS[0]}.summary.json").read_text()
     )
+    umap_png = Path(args.blur_umap) / "blur_sharpen_umap.png"
+    umap_uri = "data:image/png;base64," + base64.b64encode(umap_png.read_bytes()).decode()
     knn = json.loads((Path(args.knn_gallery) / "knn_gallery.json").read_text())
     knn_meta = json.loads((Path(args.knn_gallery) / "summary.json").read_text())
 
@@ -393,6 +397,7 @@ def main():
         .replace("{{KNN_QUERY_LOCATION}}", str(knn_meta["location"]))
         .replace("{{KNN_QUERY_MODEL}}", MODEL_LABEL[knn_meta["query_from_model"]][0])
         .replace("{{KNN_NARRATIVE}}", knn_narrative(knn, knn_meta))
+        .replace("{{BLUR_UMAP}}", umap_uri)
         .replace("{{PROBE_ROWS}}", probe_rows(probe))
         .replace(
             "{{PROBE_CHANCE}}",
