@@ -286,8 +286,11 @@
     <p class="deck">
       A 109-slide cohort in which every slide was imaged by all six scanners at the same
       physical locations. That pairing lets us separate what the scanner changes from what the
-      tissue changes, bound what any correction could achieve, and then test corrections against
-      a fidelity constraint rather than against scanner separability alone.
+      tissue changes, bound what any correction could achieve, and test corrections against a
+      fidelity constraint rather than against scanner separability alone. The argument runs in
+      three steps: after colour is matched the residual is <em>spatial frequency</em>; correcting
+      it is nearly free and does work; and even so it caps out well short of what a correction in
+      feature space reaches.
     </p>
   </header>
 
@@ -745,9 +748,13 @@
     </div>
     <div class="prose">
       <p>
-        Three observations carry forward. First, <strong>frequency calibration on raw images does
-        essentially nothing</strong> — correcting the spectrum before matching colour is the wrong
-        order, which is what motivated putting the band correction after Reinhard. Second,
+        Three observations carry forward, and the first is the hinge of this report.
+        <strong>Frequency calibration applied to raw images does essentially nothing</strong>:
+        +0.5%, −0.1%, −0.5% and +0.3% across the four models. The same physical quantity
+        corrected <em>after</em> colour matching is worth +2.8 to +5.0 points (section 9). The
+        spectrum is not a weak lever — it is a lever that only engages once the colour offset is
+        out of the way, which is why nobody looking at raw-image frequency correction would have
+        found it. Second,
         <strong>paired OD affine is the cautionary case</strong>: it improves UNI's radius by 8.9%
         with a positive CI and is still ruled unsafe, because VERSA's variance-trace ratio lands
         at 0.8865 against a 0.90 threshold. An invariance gain that fails fidelity is not a
@@ -768,8 +775,18 @@
   <!-- ================= 7. OUR METHOD ================= -->
   <section>
     <div class="sec-head">
-      <div class="label">7 · Our extension</div>
-      <h2>Reinhard, and what we add to it</h2>
+      <div class="label">7 · The bridge</div>
+      <h2>Correcting the residual, as cheaply as possible</h2>
+    </div>
+
+    <div class="prose">
+      <p>
+        What follows is not offered as a new normalizer competing for adoption. Its purpose is
+        evidentiary: if spatial frequency is the residual after colour, then correcting it should
+        pay — and if even a well-optimized version of that correction runs out of room, the
+        ceiling is a property of the image domain rather than of one implementation. The method
+        is deliberately the cheapest thing that can carry that argument.
+      </p>
     </div>
 
     <div class="ladder">
@@ -808,6 +825,11 @@
             Step 3 is the safety mechanism: a band whose gain cannot be estimated reliably gets
             α = 0, which is exact identity, and the method degrades to plain Reinhard.
           </p>
+          <div class="gain-cost">
+            <div class="gc-item gc-gain"><span class="gc-key">costs</span><span>three numbers per source scanner on top of Reinhard's six Lab moments; one extra Gaussian pyramid at inference</span></div>
+            <div class="gc-item gc-gain"><span class="gc-key">needs</span><span>exactly what Reinhard needs — a source population and a target population, no paired acquisitions at fit time</span></div>
+            <div class="gc-item gc-cost"><span class="gc-key">risks</span><span>none added: gamut projection is unchanged, and an unreliable estimate returns Reinhard exactly</span></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1154,41 +1176,50 @@
   <section>
     <div class="sec-head">
       <div class="label">12 · Synthesis</div>
-      <h2>Where image-space work ends</h2>
+      <h2>Frequency is the bottleneck; feature space is where the room is</h2>
     </div>
 
-    <ul class="tight">
+    <div class="prose">
+      <p>
+        The report is one argument in four steps, and the correction in section 7 is the bridge
+        between them rather than the destination.
+      </p>
+    </div>
+
+    <ol class="recipe" style="font-size:1rem">
       <li>
         <strong>The scanner effect is spectral, content-dependent and not one-dimensional.</strong>
-        Six distinct transfer signatures, a tissue component that differs by instrument, and a
-        pre-specified scalar family rejected for all five scanners.
+        Six distinct transfer signatures with intervals excluding zero, a tissue component that
+        ranges from 0.033 to 0.313 and differs by instrument, and a pre-specified scalar
+        blur–sharpen family rejected for all five scanners.
       </li>
       <li>
-        <strong>Reduced scanner separability is not evidence of success.</strong> Destructive
-        controls cut radius by up to half while destroying content; a paired oracle improves it
-        by a third as much and keeps content. Every verdict here is joint on radius, content and
-        collapse.
+        <strong>Spatial frequency is the residual once colour is matched, and it is a real
+        lever.</strong> Frequency calibration on raw images is worth nothing — +0.5% to −0.5%
+        across four models. The same correction after Reinhard is worth +2.8 to +5.0 points, for
+        three numbers per scanner, no paired data at fit time and no retraining. That the gain is
+        modest but nearly free is the point: it establishes that the residual exists and is
+        correctable, without claiming the correction is the answer.
       </li>
       <li>
-        <strong>After colour, what remains is sharpness, and matching it band by band helps —
-        in the sharpening direction only.</strong> Aiming at a detail-poor destination removes
-        information and buys no invariance.
+        <strong>But the direction matters, and the image domain caps out.</strong> Aim at a
+        detail-poor destination and the same estimator destroys content while buying no
+        invariance. Aim well and it helps — and a linear probe still names the scanner at 0.885
+        or better. That ceiling is not a property of our implementation: a variant with seven
+        times the image-domain gain was blocked by our own no-harm gate, a slide-adaptive
+        estimator helped only the scanners that did not need it, and three destinations were
+        tried.
       </li>
       <li>
-        <strong>Image-space correction cannot remove the scanner's linear signature.</strong>
-        A probe still names the scanner at 0.89 or better after the best image method available;
-        feature-space correction takes it to chance. We regard our image method as close to the
-        practical ceiling of this family: it amplifies only existing structure, carries no
-        hallucination risk, and falls back to a validated baseline when its estimate is
-        untrustworthy.
+        <strong>So the headroom is in feature space.</strong> Procrustes reaches +20 to +44%
+        radius reduction where the best image method reaches +4 to +33%, and takes the probe from
+        0.99 to 0.12. The recommendation this report ends on is therefore not to adopt our
+        correction but to correct where the room is — while noting that the two levels are
+        complementary: image correction is model-independent and produces an artefact a
+        pathologist can inspect, feature correction is fitted per model and produces nothing
+        viewable, and only the second reaches the linear signature.
       </li>
-      <li>
-        <strong>The two levels are complementary, not competing.</strong> Image correction yields
-        an artefact a pathologist can inspect and is model-independent; feature correction is
-        fitted per model, produces nothing viewable, and cannot be audited for hallucination —
-        but it is the only one of the two that reaches the linear signature.
-      </li>
-    </ul>
+    </ol>
 
     <div class="note">
       <strong>Not claimed</strong> — no clinical or biological preference among scanners is
