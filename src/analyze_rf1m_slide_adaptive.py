@@ -82,14 +82,18 @@ def predicted_target_log(
     raise ValueError(f"unknown estimator: {estimator}")
 
 
-def load_energy(root: Path, fov: int):
-    path = root / f"fov_{fov}.npz"
+def load_energy(root: Path, fov: int, target: str = "at2"):
+    """Load one band-energy file, accepting the pre-multi-target filename."""
+    path = root / f"{target}_fov_{fov}.npz"
+    if not path.exists():
+        path = root / f"fov_{fov}.npz"
     summary = json.loads(path.with_suffix(".summary.json").read_text())
     if not (
         summary.get("analysis") == ENERGY_ANALYSIS
         and summary.get("rf1m_version") == RF1M_VERSION
         and summary.get("pfm_feature_access") is False
         and summary.get("fov") == fov
+        and summary.get("target", "at2") == target
         and summary.get("output_sha256") == sha256(path)
         and summary.get("energy_gate_pass") is True
     ):

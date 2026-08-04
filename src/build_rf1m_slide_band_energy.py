@@ -1,4 +1,8 @@
-"""Accumulate per-slide Laplacian band energy for the slide-adaptive gain test.
+"""Accumulate per-slide Laplacian band energy toward a chosen target scanner.
+
+Originally written for the AT2 slide-adaptive test; `--target` generalizes it to
+the RF1U multi-target design, where the Reinhard step maps each source scanner to
+the chosen target and the raw target patches supply the target band energy.
 
 The RF1M cells store band energy summed over all training slides, which is
 exactly the quantity whose pooling the slide-adaptive proposal questions.  This
@@ -31,6 +35,7 @@ from e5_comparator_population import (
 from e5_reinhard_residual_frequency import RF1_FOLDS, fold_assignments, fold_counts
 from fetch_e0_pfm_checkpoints import sha256
 from rf1m_combined import RF1M_SIGMAS, RF1M_VERSION, accumulate_band_energy
+from rf1u_unpaired import RF1U_TARGETS, source_indices, target_index
 
 
 ANALYSIS = "rf1m_slide_band_energy"
@@ -44,6 +49,7 @@ def parse_args():
     )
     parser.add_argument("--grid", default="outputs/e0_native_aa_grid/shards")
     parser.add_argument("--e5-statistics", default="outputs/e5_image_statistics")
+    parser.add_argument("--target", choices=RF1U_TARGETS, default="at2")
     parser.add_argument("--output", default="outputs/rf1m_slide_adaptive/energy")
     parser.add_argument("--batch-size", type=int, default=4)
     return parser.parse_args()
@@ -77,6 +83,8 @@ def main():
     if not 0 <= args.task_index < len(FOVS):
         raise ValueError(f"task index must lie in [0,{len(FOVS)})")
     fov = int(FOVS[args.task_index])
+    target = target_index(args.target)
+    sources = source_indices(args.target)
 
     audit_path = Path(args.grid_audit)
     audit = json.loads(audit_path.read_text())
@@ -96,7 +104,7 @@ def main():
     std_tensor = torch.as_tensor(lab_std, dtype=torch.float32, device="cuda")
 
     n_bands = len(RF1M_SIGMAS)
-    n_sources = len(SCANNERS) - 1
+    n_sources = len(sources)
     target_energy = np.zeros((len(slide_ids), n_bands), dtype=np.float64)
     source_energy = np.zeros(
         (len(slide_ids), n_sources, RF1_FOLDS, n_bands), dtype=np.float64
@@ -111,13 +119,13 @@ def main():
                     raise ValueError(f"{slide_id}: slide identity mismatch")
                 for start in range(0, 100, args.batch_size):
                     stop = min(start + args.batch_size, 100)
-                    target = rgb8_to_rgb01(
-                        centered_crop(source["rgb"][0, start:stop], fov), device="cuda"
+                    reference = rgb8_to_rgb01(
+                        centered_crop(source["rgb"][target, start:stop], fov), device="cuda"
                     )
-                    energy, count = accumulate_band_energy(target)
+                    energy, count = accumulate_band_energy(reference)
                     target_energy[slide_index] += energy
                     patches[slide_index] += count
-                    for scanner_index in range(1, len(SCANNERS)):
+                    for position, scanner_index in enumerate(sources):
                         rgb = rgb8_to_rgb01(
                             centered_crop(source["rgb"][scanner_index, start:stop], fov),
                             device="cuda",
@@ -127,12 +135,16 @@ def main():
                                 rgb,
                                 mean_tensor[fold, scanner_index],
                                 std_tensor[fold, scanner_index],
-                                mean_tensor[fold, 0],
-                                std_tensor[fold, 0],
+                                mean_tensor[fold, target],
+                                std_tensor[fold, target],
                             )["output"]
                             energy, _ = accumulate_band_energy(base)
-                            source_energy[slide_index, scanner_index - 1, fold] += energy
-            print(f"[{slide_index + 1}/{len(slide_ids)}] FOV {fov} {slide_id}", flush=True)
+                            source_energy[slide_index, position, fold] += energy
+            print(
+                f"[{slide_index + 1}/{len(slide_ids)}] target {args.target} "
+                f"FOV {fov} {slide_id}",
+                flush=True,
+            )
 
     if not (
         np.all(patches == 100)
@@ -145,15 +157,18 @@ def main():
 
     output_root = Path(args.output)
     output_root.mkdir(parents=True, exist_ok=True)
-    output_path = output_root / f"fov_{fov}.npz"
-    temporary = output_root / f".fov_{fov}.{os.getpid()}.tmp.npz"
+    output_path = output_root / f"{args.target}_fov_{fov}.npz"
+    temporary = output_root / f".{args.target}_fov_{fov}.{os.getpid()}.tmp.npz"
     np.savez_compressed(
         temporary,
         rf1m_version=np.asarray(RF1M_VERSION),
         fov=np.asarray(fov, dtype=np.int64),
+        target=np.asarray(args.target),
+        target_index=np.asarray(target, dtype=np.int64),
+        source_indices=np.asarray(sources, dtype=np.int64),
         slide_ids=np.asarray(slide_ids),
         fold_of_slide=np.asarray([assignments[value] for value in slide_ids], dtype=np.int8),
-        scanners=np.asarray(SCANNERS[1:]),
+        scanners=np.asarray([SCANNERS[index] for index in sources]),
         sigmas=np.asarray(RF1M_SIGMAS, dtype=np.float64),
         patches_per_slide=patches,
         target_band_energy=target_energy,
@@ -166,11 +181,12 @@ def main():
         "outcome_access": False,
         "pfm_feature_access": False,
         "fov": fov,
+        "target": args.target,
         "slides": len(slide_ids),
-        "source_scanners": list(SCANNERS[1:]),
+        "source_scanners": [SCANNERS[index] for index in sources],
         "folds": RF1_FOLDS,
         "pyramid_sigmas_pixels": list(RF1M_SIGMAS),
-        "target": "raw AT2 Laplacian band energy per slide",
+        "target_energy": "raw target Laplacian band energy per slide",
         "source": "post-Reinhard band energy per slide, scanner and fold",
         "patches_per_slide": 100,
         "grid_audit_sha256": audit_sha,
