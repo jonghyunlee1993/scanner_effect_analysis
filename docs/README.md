@@ -46,6 +46,10 @@ working draft는 2026-08-03에 제거했으며 삭제 전 상태는
 - [RF1 locked results](e5_reinhard_residual_frequency_results.md)
 - [RF1 visual comparison](e5_rf1_visual_comparison.md)
 - [RF1 improvement pilot contract](e5_rf1_improvement_pilot_contract.md)
+- [RF1M combined-candidate contract](e5_rf1m_combined_candidate_contract.md): multiscale +
+  strict no-harm 후보와 Amendment 1
+- [RF1M image-only results](e5_rf1m_combined_candidate_results.md): per-fold no-harm gate 실패로
+  PFM 접근 차단
 
 ## E6--E7: heterogeneity and tissue evidence
 
