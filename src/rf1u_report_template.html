@@ -317,7 +317,8 @@
         cohort. Sections 3 to 5 are the locked characterization — what the scanner does, what
         white space can and cannot tell us, and how far any correction could go. Sections 6 to 11
         are the correction benchmark, our extension of it, and what a retrieval and a linear
-        probe say about both. Section 12 states where we think image-space work ends.
+        probe say about both. Section 12 states where we think image-space work ends, and sections 13 and 14 place the work
+        against the current literature and say what we would do next.
       </p>
     </div>
   </section>
@@ -1174,6 +1175,190 @@
       image-level extension is a post-core method development and does not enter the frozen
       five-method ranking. External validation on an independent multi-scanner resource remains
       the outstanding gap.
+    </div>
+  </section>
+
+  <!-- ================= 13. RELATED WORK ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="label">13 · Position</div>
+      <h2>What the field already knows, and what is left</h2>
+    </div>
+
+    <div class="prose">
+      <p>
+        The literature moved quickly while this work was running. Three of its four strands now
+        overlap ours, and being explicit about which is which is more useful than claiming
+        novelty broadly.
+      </p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Where this work sits against the current literature</caption>
+        <thead>
+          <tr><th class="txt">Strand</th><th class="txt">Representative work</th><th class="txt">Relation to this report</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="txt">PFMs are scanner-sensitive</td>
+            <td class="txt">Thiringer et al. 2026 (14 PFMs); ScanGen, MICCAI 2025; Chai et al., <em>J Pathol Clin Res</em> 2026</td>
+            <td class="txt"><span class="flag flag-fail">settled — we do not re-demonstrate it</span></td>
+          </tr>
+          <tr>
+            <td class="txt">Robustness benchmarking and fine-tuning fixes</td>
+            <td class="txt">PathoROB / robustifying by fine-tuning 2026; &ldquo;The Good, the Bad, and the Brittle&rdquo; 2026</td>
+            <td class="txt"><span class="flag flag-fail">crowded — different lane (we keep encoders frozen)</span></td>
+          </tr>
+          <tr>
+            <td class="txt">Feature-space batch correction</td>
+            <td class="txt">ComBat on TCGA COAD/STAD 2024; language-mediated embeddings 2026; FEATMAP preprint 2026</td>
+            <td class="txt"><span class="flag flag-fail">precedent exists, including with a clinical endpoint</span></td>
+          </tr>
+          <tr class="group-start">
+            <td class="txt">Registered same-location multi-scanner acquisition</td>
+            <td class="txt">UWarp 2025 (50 samples × 5 scanners, 25,000 patches); PLISM 2024 (aligned TMA, 13 devices × 13 stains)</td>
+            <td class="txt"><span class="flag">closest neighbours; ours is 109 × 6 × 100 = 65,400 with an alias-audited render chain</span></td>
+          </tr>
+          <tr>
+            <td class="txt">Reference/target choice in stain normalization</td>
+            <td class="txt">recognized as subjective and impactful, but framed as <em>colour</em> reference selection</td>
+            <td class="txt"><span class="flag flag-pass">our direction result is a different axis</span></td>
+          </tr>
+          <tr>
+            <td class="txt">Invariance–fidelity degeneracy made operational</td>
+            <td class="txt">no direct precedent found</td>
+            <td class="txt"><span class="flag flag-pass">contribution</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <h3>The most consequential precedent</h3>
+      <p>
+        ComBat feature harmonization on TCGA colon and stomach cohorts dropped tissue-source-site
+        prediction from AUROC above 0.95 to about 0.506 while microsatellite-instability
+        prediction was unchanged at 0.667 → 0.669. That is the same shape as our probe result —
+        feature correction erases the technical signature and keeps the biology — but it arrives
+        with a molecular endpoint attached, and ours does not. It also states the caveat we
+        should adopt: batch effects in <em>feature interactions</em> may survive a linear
+        correction.
+      </p>
+    </div>
+
+    <div class="prose">
+      <p>
+        Two qualifications keep our probe section standing on its own. ComBat corrected
+        <em>institution</em> on TCGA, where scanner, protocol and site are confounded; our design
+        scans the same physical slide on six instruments, so the label being removed is the
+        scanner specifically. And the comparison that matters here is not feature correction
+        against nothing, but <strong>feature correction against a fully optimized image
+        correction</strong> — which, to our knowledge, has not been reported.
+      </p>
+      <p>
+        What appears genuinely unclaimed is the pairing of two results: that a pre-registered
+        fidelity constraint changes which corrections are acceptable, and that the destination
+        chosen for harmonization decides whether the same estimator helps or destroys. The stain
+        normalization literature knows reference choice matters, but treats it as picking a
+        representative colour template. The claim here is sharper and physical: what governs the
+        outcome is the target's <em>post-normalization detail power</em>, because that sets
+        whether the correction attenuates or amplifies, and attenuation costs content without
+        buying invariance.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 14. FUTURE WORK ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="label">14 · Next</div>
+      <h2>What we would do next, in priority order</h2>
+    </div>
+
+    <div class="ladder">
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">External</div>
+          <div class="step-state">highest value</div>
+        </div>
+        <div class="step-body">
+          <p>
+            <strong>PLISM as external mechanistic validation.</strong> An independent registered
+            resource of 46 tissue types across 13 stain conditions and 13 devices, with 3,417
+            aligned image groups, overlapping our panel on several instruments. Band boundaries,
+            transform family, gates and success criteria would be frozen from this cohort before
+            PLISM is opened, and the tiles would not be used to refit anything.
+          </p>
+          <p>
+            One prerequisite: PLISM tiles are Elastix-registered and resampled to a common
+            reference, so interpolation can alter exactly the high-frequency content we measure.
+            An identity/resampling audit runs first, and if native scans are unavailable the
+            result is reported as effective transfer <em>after PLISM preprocessing</em>, not as
+            scanner transfer.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">Downstream</div>
+          <div class="step-state">the real gap</div>
+        </div>
+        <div class="step-body">
+          <p>
+            <strong>A labelled endpoint.</strong> Every fidelity measure here is
+            representation-level, because normal tissue type is the only biological label this
+            cohort carries. The ComBat precedent shows the template: pair harmonization with a
+            molecular or clinical readout and report both. Concretely, we would test whether the
+            destination effect survives into a downstream task — does correcting toward a
+            detail-poor target measurably cost subtype or biomarker accuracy, not just cosine
+            geometry?
+          </p>
+          <p>
+            This is the single change that would move the work from &ldquo;careful measurement of
+            representation geometry&rdquo; to &ldquo;decisions change&rdquo;.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">Direction</div>
+          <div class="step-state">cheap, follows directly</div>
+        </div>
+        <div class="step-body">
+          <p>
+            <strong>Does the target matter in feature space too?</strong> Our destination result
+            is an image-space finding. CORAL and Procrustes are also fitted toward a chosen
+            reference, and nobody has asked whether aiming them at a detail-poor scanner carries
+            the same penalty. The machinery for this already exists and the harmonized features
+            are stored; it is a re-fit, not a new pipeline.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">Loose ends</div>
+          <div class="step-state">before submission</div>
+        </div>
+        <div class="step-body">
+          <ol class="recipe">
+            <li><strong>CORAL's sub-chance probe.</strong> Consistent across all five folds and currently unexplained; it must be diagnosed or reported as a measurement caveat, not left as a number.</li>
+            <li><strong>Noise amplification for AKOYA.</strong> A fine-band gain of 2.7 amplifies sensor and compression noise with the signal. The locked background NPS population can bound where amplification stops paying, and that bound belongs in the method.</li>
+            <li><strong>Additional PFM panel.</strong> Four models already span three architecture families and the direction agrees across all of them, so this strengthens rather than establishes; worth doing, not worth delaying for.</li>
+            <li><strong>Learned residual generator.</strong> Deliberately deferred. If pursued it needs paired scanner-conditioned residuals, image-only model selection, hallucination audits and external validation frozen in advance — and it gives up the property that makes the current method defensible, that it can only rescale structure that is already present.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Timing risk.</strong> The feature-harmonization lane is active, with at least one
+      paired multi-scanner preprint already combining feature-level correction with PLISM. The
+      characterization, the control-bounded frontier and the destination result are ours
+      regardless, but the feature-space framing is not a lane to enter slowly.
     </div>
   </section>
 
