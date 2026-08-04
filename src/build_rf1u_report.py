@@ -41,6 +41,7 @@ def parse_args():
     parser.add_argument("--frontier", default="outputs/rf1u_multitarget/frontier")
     parser.add_argument("--neighbourhood", default="outputs/rf1u_multitarget/neighbourhood")
     parser.add_argument("--gallery", default="outputs/rf1u_multitarget/gallery")
+    parser.add_argument("--knn-gallery", default="outputs/rf1u_multitarget/knn_gallery")
     parser.add_argument(
         "--output", default="presentations/rf1u_multitarget_2026-08-04/index.html"
     )
@@ -178,6 +179,89 @@ def gallery_blocks(gallery: dict) -> str:
     return "\n".join(blocks)
 
 
+def knn_blocks(knn: dict, meta: dict) -> str:
+    """Toggleable strips: the query patch and its nearest neighbours per condition."""
+    order = ["raw"] + [f"ours_{target}" for target in ("gt450", "at2")]
+    label = {
+        "raw": "Raw",
+        "ours_gt450": "Ours → GT450",
+        "ours_at2": "Ours → AT2",
+    }
+    buttons = "".join(
+        '<button type="button" class="knn-btn{}" data-cond="{}" '
+        'aria-pressed="{}">{}</button>'.format(
+            " is-active" if index == 0 else "",
+            name,
+            "true" if index == 0 else "false",
+            label[name],
+        )
+        for index, name in enumerate(order)
+        if name in knn
+    )
+
+    panels = []
+    for index, name in enumerate([value for value in order if value in knn]):
+        condition = knn[name]
+        strips = []
+        for model in MODELS:
+            if model not in condition["models"]:
+                continue
+            entry = condition["models"][model]
+            model_label, _ = MODEL_LABEL[model]
+            tiles = []
+            for item in entry["entries"]:
+                classes = ["knn-tile"]
+                if item["is_query"]:
+                    classes.append("is-query")
+                elif item["same_location"]:
+                    classes.append("is-location")
+                elif item["same_scanner"]:
+                    classes.append("is-scanner")
+                tag = (
+                    "QUERY"
+                    if item["is_query"]
+                    else "cos {:.3f}".format(item["cosine"])
+                )
+                tiles.append(
+                    '<figure class="{}"><img src="{}" alt="{} location {}" '
+                    'width="192" height="192" loading="lazy">'
+                    '<figcaption>{} · {}<span class="knn-cos">{}</span></figcaption>'
+                    "</figure>".format(
+                        " ".join(classes),
+                        condition["images"][item["key"]],
+                        item["scanner"].upper(),
+                        item["location"],
+                        item["scanner"].upper(),
+                        item["location"],
+                        tag,
+                    )
+                )
+            strips.append(
+                '<div class="knn-model"><div class="knn-model-head">{}'
+                '<span class="knn-counts">{} of 8 same scanner · {} of 5 same location'
+                "</span></div>"
+                '<div class="knn-strip">{}</div></div>'.format(
+                    model_label,
+                    entry["same_scanner_neighbours"],
+                    entry["same_location_neighbours"],
+                    "".join(tiles),
+                )
+            )
+        panels.append(
+            '<div class="knn-panel{}" data-cond="{}"{}>{}</div>'.format(
+                " is-active" if index == 0 else "",
+                name,
+                "" if index == 0 else " hidden",
+                "".join(strips),
+            )
+        )
+
+    return (
+        '<div class="knn"><div class="knn-controls" role="group" '
+        'aria-label="Condition">{}</div>{}</div>'.format(buttons, "".join(panels))
+    )
+
+
 def main():
     args = parse_args()
     frontier = Path(args.frontier)
@@ -201,6 +285,8 @@ def main():
     neighbour_meta = json.loads((Path(args.neighbourhood) / "summary.json").read_text())
     gallery = json.loads((Path(args.gallery) / "gallery.json").read_text())
     gallery_meta = json.loads((Path(args.gallery) / "summary.json").read_text())
+    knn = json.loads((Path(args.knn_gallery) / "knn_gallery.json").read_text())
+    knn_meta = json.loads((Path(args.knn_gallery) / "summary.json").read_text())
 
     safe_count = int(endpoints[endpoints.is_ours].safe_and_improved.sum())
     template = Path(__file__).with_name("rf1u_report_template.html").read_text()
@@ -221,6 +307,10 @@ def main():
         .replace("{{GALLERY_SLIDE}}", html.escape(gallery_meta["slide_id"]))
         .replace("{{GALLERY_LOCATION}}", str(gallery_meta["location"]))
         .replace("{{GALLERY_TRAIN}}", str(gallery_meta["training_slides"]))
+        .replace("{{KNN_GALLERY}}", knn_blocks(knn, knn_meta))
+        .replace("{{KNN_QUERY_SCANNER}}", knn_meta["query_scanner"].upper())
+        .replace("{{KNN_QUERY_LOCATION}}", str(knn_meta["location"]))
+        .replace("{{KNN_QUERY_MODEL}}", MODEL_LABEL[knn_meta["query_from_model"]][0])
     )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -234,6 +324,8 @@ def main():
                 "safe_and_improved_cells": safe_count,
                 "gallery_rows": len(gallery["rows"]),
                 "gallery_panels": len(gallery["panels"]),
+                "knn_conditions": list(knn),
+                "knn_images": sum(len(value["images"]) for value in knn.values()),
             },
             indent=2,
         )
