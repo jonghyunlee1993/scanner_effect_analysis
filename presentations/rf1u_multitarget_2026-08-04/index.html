@@ -1287,6 +1287,55 @@
         transfers directly and we adopt it: batch effects living in <em>feature interactions</em>
         may survive a linear correction, and a linear probe would not see them.
       </p>
+    </div>
+
+    <h3>What the stain-normalization literature measures</h3>
+    <div class="prose">
+      <p>
+        This matters because our method sits in that family, so it is worth being precise about
+        what that family reports. The largest benchmark we found — identical tissue stained in 66
+        laboratories across 11 countries, eight methods including Macenko, Reinhard, Vahadane,
+        CycleGAN and pix2pix — scores methods on colour-distribution agreement in lαβ
+        (histogram intersection, correlation, Euclidean distance, Jensen–Shannon), on FID, and on
+        SSIM. Histogram matching led the colour metrics at 0.891 intersection and 0.938
+        correlation; Vahadane led SSIM at 0.989, with every method above 0.92.
+      </p>
+      <p>
+        Two things follow. First, <strong>structure is certified by SSIM</strong>, and SSIM above
+        0.92 is compatible with a substantial band-power mismatch: it is a local
+        luminance–contrast–structure product, not a measurement of how much energy sits at each
+        spatial scale. A method can pass it while leaving the sharpness difference this report
+        measures entirely uncorrected. Second, and more directly, that benchmark states it offers
+        limited mechanistic analysis and contains no frequency or spectral decomposition; the
+        deep-learning review likewise covers Fourier-based normalization without discussing
+        amplitude versus phase or whether those methods change high-frequency texture at all.
+      </p>
+      <p>
+        Where the Fourier transform does appear in this literature, it is used to
+        <strong>construct</strong> a normalizer or an augmenter. We did not find work that uses it
+        to <strong>characterize</strong> the difference being corrected — asking, with paired
+        acquisitions of the same tissue, how much of the mismatch lives at each spatial scale and
+        whether colour matching removes it. That inversion is what sections 3 and 9 do, and the
+        same holds on the physics side: whole-slide optical transfer is measured through-focus on
+        custom resolution targets, not on paired tissue across instruments.
+      </p>
+      <p>
+        The gap has a visible symptom in their own reviews: methods that score better on
+        normalization metrics do not necessarily perform better downstream, and this is named as
+        an open problem. Band power offers one concrete mechanism for it. After Reinhard, GT450
+        still carries 4.14× AT2's fine-band power and S60 2.94× — a discrepancy no
+        colour-distribution metric can see, and which section 11 shows the models can.
+      </p>
+      <p>
+        One adjacent result supports our design choice rather than competing with it. The
+        Fourier-domain adaptation rationale holds that convolutional networks are more sensitive
+        to the amplitude spectrum while human recognition leans on phase. Our correction changes
+        band amplitude only and leaves phase untouched by construction, which is why edges keep
+        their position and shape while local contrast changes.
+      </p>
+    </div>
+
+    <div class="prose">
       <p>
         What appears genuinely unclaimed is the pairing of two results: that a pre-registered
         fidelity constraint changes which corrections are acceptable, and that the destination
