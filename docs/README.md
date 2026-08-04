@@ -50,6 +50,8 @@ working draft는 2026-08-03에 제거했으며 삭제 전 상태는
   strict no-harm 후보와 Amendment 1
 - [RF1M image-only results](e5_rf1m_combined_candidate_results.md): per-fold no-harm gate 실패로
   PFM 접근 차단
+- [RF1M slide-adaptive feasibility](e5_rf1m_slide_adaptive_feasibility.md): slide별 gain 추정은
+  AKOYA/GT450/S60에서만 성립
 
 ## E6--E7: heterogeneity and tissue evidence
 
