@@ -72,14 +72,39 @@ multiplier to two standard errors, which moved the selection to `cap_1.03`--`cap
 the held-out damage from 33.7--37.0% to **2.3--6.6%**, a five- to eight-fold reduction. It did
 not reach non-worse.
 
-This is not a selector defect and not a scanner-specific coding error. It is the regime the
-locked E2 decomposition already identified: S360 has the smallest tissue fraction of
-between-slide scanner-slope variance, 0.033 at BH q = 0.4607, so its residual spectrum is the
-most slide-idiosyncratic of the five scanners. A correction strength estimated on four folds is
-least transferable there. A robustness filter on the candidate's own inner variance would not
-have helped, because the candidate's benefit was consistent across all four inner folds; only
-reducing the applied strength bounds the damage, and reducing it far enough to guarantee
-no-harm on S360 also removes the correction that made RF1M valuable.
+This is not a selector defect and not a scanner-specific coding error. The direct evidence is
+the ratio of estimation noise to available benefit, measured within RF1M itself. Averaging the
+selected candidate's inner standard error and mean inner gain over the 15 outer-fold selections
+of each scanner, both expressed as fractions of that scanner's Reinhard base RMSE:
+
+| Scanner | base RMSE | gain / base | SE / base | **SE / gain** |
+|---|---:|---:|---:|---:|
+| S60 | 1.127 | 0.830 | 0.015 | 0.018 |
+| GT450 | 1.521 | 0.744 | 0.015 | 0.021 |
+| AKOYA | 1.334 | 0.411 | 0.023 | 0.056 |
+| VERSA | 0.323 | 0.479 | 0.086 | 0.177 |
+| S360 | 0.268 | 0.111 | 0.031 | **0.310** |
+
+S360's estimation noise is not the largest in the panel; VERSA's is nearly three times larger in
+absolute terms, and VERSA passed. What distinguishes S360 is that only 11% of its post-Reinhard
+error is correctable at all, against 74--83% for GT450 and S60, so the same estimation noise
+consumes a third of the available benefit instead of a fiftieth. A scanner already close to the
+AT2 reference offers little to gain and is therefore the easiest to make worse.
+
+This is consistent with, and more direct than, the locked E2 decomposition, in which S360 has
+the smallest tissue fraction of between-slide scanner-slope variance at 0.033, BH q = 0.4607.
+
+A robustness filter on the candidate's own inner variance would not have helped, because the
+candidate's benefit was consistent across all four inner folds; only reducing the applied
+strength bounds the damage, and reducing it far enough to guarantee no-harm on S360 also removes
+the correction that made RF1M valuable.
+
+The absolute magnitudes should be stated alongside the verdict. The blocking harm is a log-RMSE
+increase of 0.0044--0.0128, against gains of 1.114 and 0.934 for GT450 and S60 in the same
+units, roughly one part in a hundred to one in two hundred fifty. The gate is a per-cell
+relative no-harm criterion and does not distinguish a small worsening from a large one. That is
+the frozen criterion and it is not relaxed here, but the failure is correctly described as an
+unguaranteed no-harm on one already well-matched scanner, not as a large regression.
 
 ## Interpretation
 
