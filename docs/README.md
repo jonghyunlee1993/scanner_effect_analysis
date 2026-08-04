@@ -52,6 +52,10 @@ working draft는 2026-08-03에 제거했으며 삭제 전 상태는
   PFM 접근 차단
 - [RF1M slide-adaptive feasibility](e5_rf1m_slide_adaptive_feasibility.md): slide별 gain 추정은
   AKOYA/GT450/S60에서만 성립
+- [RF1U multi-target contract](e5_rf1u_multitarget_contract.md): unpaired band-wise 조건과
+  runtime equivalence amendment
+- [RF1U multi-target results](e5_rf1u_multitarget_results.md): 타겟이 방법보다 결정적 —
+  AT2 0/4, GT450·S60 7/8 safe+improved
 
 ## E6--E7: heterogeneity and tissue evidence
 
