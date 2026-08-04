@@ -625,22 +625,17 @@
     </div>
 
     <div class="note">
-      Query is {{KNN_QUERY_SCANNER}} at location {{KNN_QUERY_LOCATION}} of the same slide,
-      picked as a patch sitting at that slide's median raw same-scanner count under
-      {{KNN_QUERY_MODEL}} — the usual case rather than a flattering one — and then held fixed
-      for both models so they can be compared directly. Neighbours come from the already
-      extracted embeddings; only the patches shown were rendered.
+      Query is {{KNN_QUERY_SCANNER}} at location {{KNN_QUERY_LOCATION}} of the same slide. Every
+      location on this cohort clears a stain-fraction threshold, including near-empty fields, so
+      candidates are first restricted to the top third by mid-scale detail — this patch scores
+      {{KNN_QUERY_SCORE}} against a cohort median of {{KNN_MEDIAN_SCORE}} — and the query is then
+      the one sitting at the median raw same-scanner count under {{KNN_QUERY_MODEL}}, the usual
+      case rather than a flattering one. The same query is held fixed for both models.
+      Neighbours come from the already extracted embeddings; only the patches shown were rendered.
     </div>
 
     <div class="prose">
-      <p>
-        The strips make the population numbers concrete. Under ResNet50 the five green tiles —
-        the identical spot seen by the other five scanners — already lead in raw, and the
-        remaining three neighbours are the query's own scanner. Switch to GT450 and those three
-        are replaced by other scanners entirely; switch to AT2 and they come back. UNI v1 does
-        not move on this particular patch, which is the honest version of a 0.559 to 0.500
-        population shift: it is real on average and invisible on any single example.
-      </p>
+      {{KNN_NARRATIVE}}
       <p>
         The two tables move together, which is the whole point. At GT450 and S60 our correction
         makes neighbours <em>less</em> scanner-bound and <em>more</em> content-accurate at the same

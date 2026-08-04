@@ -21,7 +21,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-from analyze_rf1_multiscale import shared_od_multiscale
+from analyze_rf1_multiscale import laplacian_pyramid, shared_od_multiscale
 from build_rf1m_cell import load_e5_statistics
 from build_rf1m_slide_band_energy import fold_lab_statistics
 from e5_comparator_population import (
@@ -64,18 +64,41 @@ def parse_args():
     parser.add_argument("--energy", default="outputs/rf1u_multitarget/energy")
     parser.add_argument("--output", default="outputs/rf1u_multitarget/gallery")
     parser.add_argument("--sources-per-target", type=int, default=2)
+    parser.add_argument("--texture-percentile", type=float, default=0.67)
     parser.add_argument("--batch-size", type=int, default=8)
     return parser.parse_args()
 
 
-def deterministic_choice(slide_ids: list[str], salt: str) -> tuple[str, int]:
-    """Outcome-blind slide and location, fixed by a salted hash of the cohort."""
+def deterministic_choice(slide_ids: list[str], salt: str, eligible=None):
+    """Outcome-blind slide and location, fixed by a salted hash of the cohort.
+
+    `eligible` restricts the location draw to indices that hold enough stained
+    tissue; a blank field shows nothing about a sharpness correction. The draw
+    stays deterministic because it indexes into the sorted eligible list.
+    """
     import hashlib
 
     digest = hashlib.sha256((salt + "|".join(slide_ids)).encode()).digest()
     slide = slide_ids[int.from_bytes(digest[:4], "big") % len(slide_ids)]
-    location = int.from_bytes(digest[4:8], "big") % 100
-    return slide, location
+    draw = int.from_bytes(digest[4:8], "big")
+    if eligible is None:
+        return slide, draw % 100
+    choices = sorted(int(value) for value in eligible)
+    if not choices:
+        raise ValueError("no location meets the tissue-content requirement")
+    return slide, choices[draw % len(choices)]
+
+
+def structure_score(rgb01) -> float:
+    """Standard deviation of the mid-scale detail band of the mean OD.
+
+    Stain fraction is a poor proxy for a useful example: on this cohort every
+    location clears the Macenko OD threshold, including near-empty fields. What
+    a sharpness correction acts on is structure, so score the σ=2 px band
+    directly and pick examples from the detailed end.
+    """
+    bands, _ = laplacian_pyramid(rgb01_to_od(rgb01).mean(dim=-1), RF1M_SIGMAS)
+    return float(bands[1].std())
 
 
 def png_bytes(rgb8: np.ndarray) -> bytes:
@@ -101,10 +124,10 @@ def main():
     slide_ids = [str(value) for value in statistics["slide_ids"]]
     assignments = fold_assignments(slide_ids)
     lab_mean, lab_std = fold_lab_statistics(statistics, slide_ids, assignments)
-    slide_id, location = deterministic_choice(slide_ids, GALLERY_SALT)
+    slide_id, _ = deterministic_choice(slide_ids, GALLERY_SALT)
     fold = assignments[slide_id]
     train_ids = [value for value in slide_ids if assignments[value] != fold]
-    print(f"gallery slide={slide_id} location={location} heldout_fold={fold}", flush=True)
+    print(f"gallery slide={slide_id} heldout_fold={fold}", flush=True)
 
     output = Path(args.output)
     (output / "panels").mkdir(parents=True, exist_ok=True)
@@ -118,6 +141,21 @@ def main():
                 centered_crop(source["rgb"][scanner_index, start:stop], GALLERY_FOV),
                 device="cuda",
             )
+
+    with torch.inference_mode():
+        content = np.asarray(
+            [structure_score(crop(slide_id, 0, index, index + 1)) for index in range(100)]
+        )
+    threshold = float(np.quantile(content, args.texture_percentile))
+    eligible = np.flatnonzero(content >= threshold)
+    _, location = deterministic_choice(slide_ids, GALLERY_SALT, eligible)
+    print(
+        f"structure filter: {len(eligible)}/100 locations at or above the "
+        f"{args.texture_percentile:.0%} percentile ({threshold:.4f}); chose location "
+        f"{location} (score {content[location]:.4f}, cohort median "
+        f"{np.median(content):.4f})",
+        flush=True,
+    )
 
     rows = []
     embedded = {}
@@ -239,6 +277,9 @@ def main():
         "heldout_fold": fold,
         "fov": GALLERY_FOV,
         "salt": GALLERY_SALT,
+        "texture_percentile": args.texture_percentile,
+        "location_structure_score": float(content[location]),
+        "median_structure_score": float(np.median(content)),
         "targets": list(RF1U_TARGETS),
         "panels": list(PANELS),
         "rows": len(rows),

@@ -262,6 +262,45 @@ def knn_blocks(knn: dict, meta: dict) -> str:
     )
 
 
+def knn_narrative(knn: dict, meta: dict) -> str:
+    """Describe what the strips show, from the counts rather than from memory."""
+    total = meta["neighbours"]
+    lines = []
+    for model in ("resnet50", "uni_v1"):
+        if not all(model in knn[name]["models"] for name in knn):
+            continue
+        label = MODEL_LABEL[model][0]
+        counts = {
+            name: knn[name]["models"][model]["same_scanner_neighbours"] for name in knn
+        }
+        location = knn["raw"]["models"][model]["same_location_neighbours"]
+        moved = counts.get("ours_gt450", counts["raw"]) - counts["raw"]
+        if moved < 0:
+            verb = "falls to {}".format(counts["ours_gt450"])
+        elif moved > 0:
+            verb = "rises to {}".format(counts["ours_gt450"])
+        else:
+            verb = "is unchanged at {}".format(counts["ours_gt450"])
+        lines.append(
+            "Under {label} the query keeps {location} of its five reachable same-location "
+            "neighbours in raw, and {raw} of {total} neighbours come from its own scanner. "
+            "Aiming at GT450 that count {verb}; aiming at AT2 it is {at2}.".format(
+                label=label,
+                location=location,
+                raw=counts["raw"],
+                total=total,
+                verb=verb,
+                at2=counts.get("ours_at2", counts["raw"]),
+            )
+        )
+    lines.append(
+        "A single patch cannot carry a population effect: the tables above move by a few "
+        "hundredths on average, which is real across 109 slides and often invisible on any "
+        "one example. The strips are here to show what the metric is counting, not to prove it."
+    )
+    return "\n".join("      <p>{}</p>".format(line) for line in lines)
+
+
 def main():
     args = parse_args()
     frontier = Path(args.frontier)
@@ -311,6 +350,11 @@ def main():
         .replace("{{KNN_QUERY_SCANNER}}", knn_meta["query_scanner"].upper())
         .replace("{{KNN_QUERY_LOCATION}}", str(knn_meta["location"]))
         .replace("{{KNN_QUERY_MODEL}}", MODEL_LABEL[knn_meta["query_from_model"]][0])
+        .replace("{{KNN_NARRATIVE}}", knn_narrative(knn, knn_meta))
+        .replace("{{KNN_QUERY_SCORE}}", "{:.4f}".format(knn_meta["query_structure_score"]))
+        .replace(
+            "{{KNN_MEDIAN_SCORE}}", "{:.4f}".format(knn_meta["median_structure_score"])
+        )
     )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)

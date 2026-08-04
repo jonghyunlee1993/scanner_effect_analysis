@@ -19,7 +19,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-from analyze_rf1_multiscale import shared_od_multiscale
+from analyze_rf1_multiscale import laplacian_pyramid, shared_od_multiscale
 from build_rf1m_cell import load_e5_statistics
 from build_rf1m_slide_band_energy import fold_lab_statistics
 from e4_primary_metrics import l2_normalize
@@ -30,6 +30,7 @@ from e5_comparator_population import (
     rgb8_to_rgb01,
     uint8_from_rgb01,
 )
+from e5_comparator_population import rgb01_to_od
 from e5_reinhard_residual_frequency import fold_assignments
 from extract_rf1u_features import fold_gains, load_band_energy
 from fetch_e0_pfm_checkpoints import sha256
@@ -62,6 +63,7 @@ def parse_args():
         default="typical",
     )
     parser.add_argument("--neighbours", type=int, default=NEIGHBOURS)
+    parser.add_argument("--texture-percentile", type=float, default=0.67)
     parser.add_argument("--targets", nargs="+", default=["gt450", "at2"])
     return parser.parse_args()
 
@@ -77,7 +79,20 @@ def png_data_uri(rgb8: np.ndarray, size: int) -> str:
     return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode()
 
 
-def select_query(features: np.ndarray, count: int, rule: str) -> int:
+def structure_score(rgb01) -> float:
+    """Standard deviation of the mid-scale detail band of the mean OD.
+
+    Every location on this cohort clears a stain-fraction threshold, including
+    near-empty fields, so score structure instead and draw the query from the
+    detailed end where a sharpness change is actually judgeable.
+    """
+    bands, _ = laplacian_pyramid(rgb01_to_od(rgb01).mean(dim=-1), RF1M_SIGMAS)
+    return float(bands[1].std())
+
+
+def select_query(
+    features: np.ndarray, count: int, rule: str, eligible: np.ndarray = None
+) -> int:
     """Pick the query patch by a stated rule rather than by eye.
 
     `typical` takes a patch sitting at the slide's median raw same-scanner
@@ -94,12 +109,24 @@ def select_query(features: np.ndarray, count: int, rule: str) -> int:
     location_of = np.tile(np.arange(locations), scanners)
     same_scanner = (scanner_of[top] == scanner_of[:, None]).sum(axis=1)
     same_location = (location_of[top] == location_of[:, None]).sum(axis=1)
+    if eligible is None:
+        eligible = np.ones(len(same_scanner), dtype=bool)
+    if not eligible.any():
+        raise ValueError("no patch meets the tissue-content requirement")
+    penalty = np.where(eligible, 0, len(same_scanner) * 10)
     if rule == "hardest":
-        order = np.lexsort((np.arange(len(same_scanner)), same_location, -same_scanner))
+        order = np.lexsort(
+            (np.arange(len(same_scanner)), same_location, -same_scanner, penalty)
+        )
         return int(order[0])
-    median = np.median(same_scanner)
+    median = np.median(same_scanner[eligible])
     order = np.lexsort(
-        (np.arange(len(same_scanner)), -same_location, np.abs(same_scanner - median))
+        (
+            np.arange(len(same_scanner)),
+            -same_location,
+            np.abs(same_scanner - median),
+            penalty,
+        )
     )
     return int(order[0])
 
@@ -133,17 +160,6 @@ def main():
         Path(args.raw) / args.models[0] / "shards" / f"{slide_id}.h5", "r"
     ) as source:
         raw_features = np.asarray(source["features"][:], dtype=np.float32)
-    if args.query_selection == "fixed":
-        query_index = SCANNERS.index(args.query_scanner) * 100 + location
-    else:
-        query_index = select_query(raw_features, args.neighbours, args.query_selection)
-    query_scanner, location = divmod(query_index, 100)
-    print(
-        f"query = {SCANNERS[query_scanner]} @ {slide_id} loc {location} "
-        f"(fold {fold}, models {args.models}, selection {args.query_selection})",
-        flush=True,
-    )
-
     grid_root = Path(args.grid)
     mean_tensor = torch.as_tensor(lab_mean[fold], dtype=torch.float32, device="cuda")
     std_tensor = torch.as_tensor(lab_std[fold], dtype=torch.float32, device="cuda")
@@ -154,6 +170,35 @@ def main():
                 centered_crop(source["rgb"][scanner_index, position : position + 1], KNN_FOV),
                 device="cuda",
             )
+
+    with torch.inference_mode():
+        content = np.asarray(
+            [
+                structure_score(raw_patch(scanner_index, position))
+                for scanner_index in range(len(SCANNERS))
+                for position in range(100)
+            ]
+        )
+    threshold = float(np.quantile(content, args.texture_percentile))
+    eligible = content >= threshold
+    print(
+        f"structure filter: {int(eligible.sum())}/{len(eligible)} patches at or above "
+        f"the {args.texture_percentile:.0%} percentile ({threshold:.4f})",
+        flush=True,
+    )
+    if args.query_selection == "fixed":
+        query_index = SCANNERS.index(args.query_scanner) * 100 + location
+    else:
+        query_index = select_query(
+            raw_features, args.neighbours, args.query_selection, eligible
+        )
+    query_scanner, location = divmod(query_index, 100)
+    print(
+        f"query = {SCANNERS[query_scanner]} @ {slide_id} loc {location} "
+        f"(fold {fold}, models {args.models}, selection {args.query_selection})",
+        flush=True,
+    )
+
 
     conditions = [("raw", None, {args.models[0]: raw_features})]
     per_model_raw = {}
@@ -261,9 +306,13 @@ def main():
         "location": location,
         "query_scanner": SCANNERS[query_scanner],
         "query_selection": args.query_selection,
+        "texture_percentile": args.texture_percentile,
+        "query_structure_score": float(content[query_index]),
+        "median_structure_score": float(np.median(content)),
         "query_rule": (
             "a patch at this slide's median raw same-scanner neighbour count, so the "
-            "figure shows the usual case; ties by most same-location hits, then index"
+            "figure shows the usual case, restricted to structurally detailed patches; "
+            "ties by most same-location hits, then index"
         ),
         "heldout_fold": fold,
         "neighbours": args.neighbours,
