@@ -48,6 +48,9 @@ def parse_args():
     parser.add_argument("--encoder-index", type=int, required=True)
     parser.add_argument("--raw", default="outputs/e0_pfm_features")
     parser.add_argument("--features", default="outputs/rf1u_multitarget/features")
+    parser.add_argument(
+        "--feature-harmonization", default="outputs/e5_feature_harmonization"
+    )
     parser.add_argument("--output", default="outputs/rf1u_multitarget/scanner_probe")
     parser.add_argument("--location-stride", type=int, default=LOCATION_STRIDE)
     return parser.parse_args()
@@ -98,10 +101,18 @@ def main():
         raise ValueError(f"{model_id}: expected 109 raw shards, got {len(slide_ids)}")
     assignments = fold_assignments(slide_ids)
 
+    harmonization = Path(args.feature_harmonization) / model_id / "shards"
+    feature_methods = []
+    if harmonization.exists():
+        with h5py.File(next(harmonization.glob("*.h5")), "r") as source:
+            feature_methods = [value.decode() for value in source["condition"][:]]
+
     stacks = {"raw": []}
     for target in RF1U_TARGETS:
         stacks[f"reinhard_{target}"] = []
         stacks[f"ours_{target}"] = []
+    for method in feature_methods:
+        stacks[method] = []
     groups, folds = [], []
 
     for path in raw_paths:
@@ -133,6 +144,16 @@ def main():
                 )
                 stacks[key].append(
                     l2_normalize(values[index][:, positions]).reshape(-1, feature_dim)
+                )
+        if feature_methods:
+            with h5py.File(harmonization / f"{slide_id}.h5", "r") as source:
+                names = [value.decode() for value in source["condition"][:]]
+                harmonized = np.asarray(source["features"][:], dtype=np.float32)
+            if names != feature_methods:
+                raise RuntimeError(f"{slide_id}: feature-method order differs")
+            for index, method in enumerate(names):
+                stacks[method].append(
+                    l2_normalize(harmonized[index][:, positions]).reshape(-1, feature_dim)
                 )
         groups.append(
             np.repeat(np.arange(len(SCANNERS)), len(positions)).astype(np.int64)
@@ -187,6 +208,12 @@ def main():
         "location_stride": args.location_stride,
         "seed": PROBE_SEED,
         "conditions": list(stacks),
+        "feature_space_methods": feature_methods,
+        "feature_space_note": (
+            "CORAL and orthogonal Procrustes are the locked E5 feature-space "
+            "comparators, already cross-fitted by 109-fold leave-one-slide-out; "
+            "only the probe is refitted here."
+        ),
         "artifacts": {table.name: sha256(table)},
     }
     (output / f"{model_id}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")

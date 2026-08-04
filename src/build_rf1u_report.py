@@ -263,29 +263,34 @@ def knn_blocks(knn: dict, meta: dict) -> str:
     )
 
 
+FEATURE_METHODS = (("coral", "CORAL"), ("orthogonal_procrustes", "Procrustes"))
+
+
 def probe_rows(frame: pd.DataFrame) -> str:
+    """Image-space conditions and the locked feature-space comparators, side by side."""
     rows = []
     for model in MODELS:
         label, _ = MODEL_LABEL[model]
-        raw = frame[(frame.encoder_id == model) & (frame.condition == "raw")][
-            "balanced_accuracy"
-        ].iloc[0]
+
+        def value(condition):
+            return frame[
+                (frame.encoder_id == model) & (frame.condition == condition)
+            ]["balanced_accuracy"].iloc[0]
+
+        raw = value("raw")
         cells = [cell(label, "txt"), cell(f"{raw:.3f}", "dim")]
         for target in TARGETS:
-            pair = [
-                frame[
-                    (frame.encoder_id == model) & (frame.condition == f"{prefix}{target}")
-                ]["balanced_accuracy"].iloc[0]
-                for prefix in ("reinhard_", "ours_")
-            ]
-            lowered = pair[1] < pair[0]
-            cells.append(cell(f"{pair[0]:.3f}"))
+            base, ours = value(f"reinhard_{target}"), value(f"ours_{target}")
+            cells.append(cell(f"{base:.3f}"))
             cells.append(
                 cell(
-                    f"<strong>{pair[1]:.3f}</strong>" if lowered else f"{pair[1]:.3f}",
-                    "num-pos" if lowered else "num-neg",
+                    f"<strong>{ours:.3f}</strong>" if ours < base else f"{ours:.3f}",
+                    "num-pos" if ours < base else "num-neg",
                 )
             )
+        for condition, _ in FEATURE_METHODS:
+            if condition in set(frame.condition):
+                cells.append(cell(f"<strong>{value(condition):.3f}</strong>", "num-pos"))
         rows.append("<tr>" + "".join(cells) + "</tr>")
     return "\n".join(rows)
 
@@ -400,6 +405,28 @@ def main():
         .replace(
             "{{PROBE_RAW_MAX}}",
             "{:.3f}".format(probe[probe.condition == "raw"].balanced_accuracy.max()),
+        )
+        .replace(
+            "{{PROBE_FEATURE_MIN}}",
+            "{:.3f}".format(
+                probe[probe.condition.isin([c for c, _ in FEATURE_METHODS])]
+                .balanced_accuracy.min()
+            ),
+        )
+        .replace(
+            "{{PROBE_FEATURE_MAX}}",
+            "{:.3f}".format(
+                probe[probe.condition.isin([c for c, _ in FEATURE_METHODS])]
+                .balanced_accuracy.max()
+            ),
+        )
+        .replace(
+            "{{PROBE_IMAGE_BEST}}",
+            "{:.3f}".format(
+                probe[
+                    probe.condition.str.startswith(("reinhard_", "ours_"))
+                ].balanced_accuracy.min()
+            ),
         )
         .replace(
             "{{PROBE_LOWERED}}",

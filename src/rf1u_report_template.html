@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Choosing a normalization target — scanner harmonization for pathology foundation models</title>
+<title>What a scanner does to a foundation model — PanNormal harmonization report</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
@@ -281,40 +281,493 @@
 
   <header class="masthead">
     <button class="theme-toggle" type="button" id="themeToggle" aria-label="Switch theme">THEME</button>
-    <div class="label">Scanner harmonization · 2026-08-04</div>
-    <h1>The destination decides more<br>than the method does</h1>
+    <div class="label">PanNormal · scanner harmonization · report for PI review · 2026-08-04</div>
+    <h1>What a scanner does to a foundation model,<br>and how far images can undo it</h1>
     <p class="deck">
-      Reinhard matches colour. Adding a per-band sharpness correction on top of it helps —
-      but only when the target scanner pulls the correction toward <em>sharpening</em>.
-      Aim at the wrong destination and the same estimator erases content while buying
-      no invariance at all.
+      A 109-slide cohort in which every slide was imaged by all six scanners at the same
+      physical locations. That pairing lets us separate what the scanner changes from what the
+      tissue changes, bound what any correction could achieve, and then test corrections against
+      a fidelity constraint rather than against scanner separability alone.
     </p>
   </header>
 
   <section>
     <div class="stats">
       <div class="stat">
+        <div class="stat-value">109 × 6</div>
+        <div class="stat-label">physical slides by scanners, 100 matched locations each — 65,400 registered acquisitions</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">4</div>
+        <div class="stat-label">frozen foundation models: ResNet50, UNI v1, CONCH v1, Virchow2</div>
+      </div>
+      <div class="stat">
         <div class="stat-value">{{SAFE_COUNT}}<span class="dim" style="font-size:1.1rem"> / 12</span></div>
-        <div class="stat-label">target-and-model cells that are safe and beat Reinhard. All of them aim at GT450 or S60; none at AT2</div>
+        <div class="stat-label">target-and-model cells where our image correction is safe and beats Reinhard</div>
       </div>
       <div class="stat">
-        <div class="stat-value" style="color:var(--attenuate)">−0.212</div>
-        <div class="stat-label">mean log gain when aiming at AT2. Negative means most scanners get <em>blurred</em></div>
+        <div class="stat-value" style="color:var(--accent)">0.99 → 0.12</div>
+        <div class="stat-label">scanner-probe accuracy that image correction cannot move but feature correction does</div>
       </div>
-      <div class="stat">
-        <div class="stat-value" style="color:var(--amplify)">+0.168</div>
-        <div class="stat-label">mean log gain when aiming at GT450. Positive means most scanners get <em>sharpened</em></div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">3</div>
-        <div class="stat-label">collapse-gate failures in the whole grid — all at the AT2 target, all in UNI v1</div>
-      </div>
+    </div>
+
+    <div class="prose">
+      <p>
+        The report runs in the order the work did. Sections 1 and 2 fix the vocabulary and the
+        cohort. Sections 3 to 5 are the locked characterization — what the scanner does, what
+        white space can and cannot tell us, and how far any correction could go. Sections 6 to 11
+        are the correction benchmark, our extension of it, and what a retrieval and a linear
+        probe say about both. Section 12 states where we think image-space work ends.
+      </p>
     </div>
   </section>
 
+  <!-- ================= 1. GLOSSARY ================= -->
   <section>
     <div class="sec-head">
-      <div class="label">The lineage</div>
+      <div class="label">1 · How to read this</div>
+      <h2>The six quantities everything below is measured in</h2>
+    </div>
+
+    <div class="prose">
+      <p>
+        Every number in this report is one of six measurements. They are defined here once,
+        with the formula and the plain-language reading, because several of them are easy to
+        confuse and two of them are degenerate if read alone.
+      </p>
+    </div>
+
+    <div class="ladder">
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">Band power</div>
+          <div class="step-state">image domain</div>
+        </div>
+        <div class="step-body">
+          <p>
+            Convert the patch to optical density, <code>OD = −log(RGB)</code>, and take the mean
+            across the three channels. Blur that with Gaussians of σ = 1, 2 and 4 pixels and
+            subtract successive blurs. What remains are three <strong>detail bands</strong> —
+            fine, mid and coarse structure — plus a low-pass base that carries the colour:
+          </p>
+          <p style="font-family:var(--f-data);font-size:0.86rem">
+            b₁ = m − m<sub>σ1</sub> · b₂ = m<sub>σ1</sub> − m<sub>σ2</sub> ·
+            b₃ = m<sub>σ2</sub> − m<sub>σ4</sub> · base = m<sub>σ4</sub>
+          </p>
+          <p>
+            <strong>Band power</strong> is the mean square of one band over the pixels of a patch,
+            <code>E<sub>k</sub> = mean(b<sub>k</sub>²)</code>. It is a variance in a spatial
+            frequency band: how much structure the image carries at that scale. At 0.5052 µm per
+            pixel, σ = 1 px is roughly cellular texture and σ = 4 px is roughly nuclear and
+            glandular outline. &ldquo;Fine band power&rdquo; means E₁.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">ERT</div>
+          <div class="step-state">image domain</div>
+        </div>
+        <div class="step-body">
+          <p>
+            <strong>Effective relative transfer.</strong> For the same tissue imaged by two
+            scanners, the ratio of radially averaged power spectral density in a defined
+            frequency band. Reported against AT2, so AT2 is 1.000 by construction and GT450 at
+            1.478 transmits about half again as much high-frequency energy.
+          </p>
+          <p>
+            We deliberately do not call this an MTF. It is measured on tissue, not on a
+            calibration target, so optics, sharpening, sampling and JPEG all fold into it. It is
+            an observation about the acquisition chain, not a device specification.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">Scanner radius</div>
+          <div class="step-state">representation</div>
+        </div>
+        <div class="step-body">
+          <p>
+            Take one physical location, take the six scanners' embeddings of it, L2-normalize
+            them, and measure the RMS distance from the six points to their own centroid. Average
+            over the 100 locations of a slide.
+          </p>
+          <p>
+            It answers: <em>for the same spot, how far apart do the six acquisitions land?</em>
+            Content is removed by re-centring at every location, so what remains is scanner
+            disagreement. Raw values here run 0.212 to 0.483 on a scale whose maximum is 2.
+            <strong>Relative radius reduction (RR)</strong> is <code>1 − corrected / raw</code>.
+          </p>
+          <p>
+            <strong>Its minimum is degenerate.</strong> A model that mapped every patch to the
+            same vector would score zero. That single fact is why this report never ranks a
+            method on radius without a fidelity gate attached.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">Content margin</div>
+          <div class="step-state">representation</div>
+        </div>
+        <div class="step-body">
+          <p>
+            For a corrected patch, the cosine to the reference acquisition of the
+            <em>same physical location</em>, minus the 95th percentile of cosines that reference
+            has to <em>unmatched</em> locations on the same slide. Positive means the corrected
+            patch still resembles its own spot more than it resembles a random other spot.
+          </p>
+          <p>
+            The frozen non-inferiority margin is −0.02: a correction may lose at most that much
+            against raw before it is called unsafe.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">Collapse guardrail</div>
+          <div class="step-state">representation</div>
+        </div>
+        <div class="step-body">
+          <p>
+            Three geometry statistics computed per source scanner and expressed as a ratio to
+            raw: total variance, entropy effective rank, and median pairwise distance. A
+            correction that quietly compresses the embedding cloud shows up here even when the
+            content margin does not.
+          </p>
+          <p>
+            Thresholds are 0.90 on the point estimate and 0.85 on the CI lower bound, and
+            <em>every</em> source scanner must pass — not the average.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-tag">
+          <div class="step-name">Scanner probe</div>
+          <div class="step-state">representation · secondary</div>
+        </div>
+        <div class="step-body">
+          <p>
+            Fit a linear classifier on training slides to predict which of the six scanners
+            produced an embedding, and score balanced accuracy on slides it never saw. Chance is
+            {{PROBE_CHANCE}}.
+          </p>
+          <p>
+            Also degenerate alone, and for the same reason: a constant representation reaches
+            chance. It is reported here beside content and collapse, never instead of them. It
+            answers a different question from radius — not &ldquo;how far apart are the
+            clusters&rdquo; but &ldquo;does any direction still separate them&rdquo; — and
+            section 9 shows the two can disagree sharply.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      All inference is blocked by physical slide. Bootstraps resample slides, not patches, with
+      5,000 replicates and seed 20260803; cross-validation splits slides. Patches within a slide
+      are observations, not independent replicates, and are never treated as such.
+    </div>
+  </section>
+
+  <!-- ================= 2. COHORT ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="label">2 · The cohort</div>
+      <h2>Why this dataset can answer the question</h2>
+    </div>
+    <div class="prose">
+      <p>
+        109 physical slides spanning 37 tissue types, each scanned on all six instruments, with
+        100 tissue locations per slide-scanner brought onto a common physical grid at
+        0.5052 µm/px. Every comparison in this report is therefore between six images
+        <em>of the same cells</em>, which is what makes it possible to attribute a difference to
+        the instrument rather than to the biology.
+      </p>
+      <p>
+        Establishing that grid was most of the work. 654 native WSI headers were audited and all
+        654 opened with consistent MPP; the final geometry passed 512-pixel bounds and identity
+        checks on 65,400 of 65,400 scanner-locations and 10,900 of 10,900 six-scanner tuples.
+        Because resampling a scan can itself change its high-frequency content, the render chain
+        uses explicit anti-aliasing and was audited against a pre-specified alias limit of 5%:
+        the worst observed alias-to-in-band ratio was 0.0154 for sinusoids and 0.0190 for
+        broadband noise.
+      </p>
+      <p>
+        The tissue labels are normal tissue types only. There is no independent biological or
+        clinical outcome in this cohort, so nothing here is called biological fidelity or
+        clinical validation; the fidelity endpoints are representation-level and the tissue-type
+        analyses are labelled coarse secondary evidence throughout.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 3. WHAT THE SCANNER DOES ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="label">3 · Characterization</div>
+      <h2>The scanner effect is real, frequency-dependent, and not one number</h2>
+    </div>
+
+    <div class="prose">
+      <p>
+        Three locked results, in order. Each one narrows what a correction could possibly be.
+      </p>
+    </div>
+
+    <h3>3.1 Every scanner has a distinct spectral signature</h3>
+    <div class="table-wrap">
+      <table>
+        <caption>Audited high-band effective relative transfer against AT2, 109 slides</caption>
+        <thead>
+          <tr><th class="txt">Scanner</th><th>Fold vs AT2</th><th>log₂ estimate</th><th>95% CI</th><th class="txt">Reading</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="txt">GT450</td><td>1.478</td><td>+0.563</td><td>+0.532, +0.594</td><td class="txt">sharpest in the panel</td></tr>
+          <tr><td class="txt">S60</td><td>1.044</td><td>+0.062</td><td>+0.022, +0.102</td><td class="txt">closest to AT2</td></tr>
+          <tr><td class="txt">AT2</td><td class="dim">1.000</td><td class="dim">—</td><td class="dim">reference</td><td class="txt dim">paired anchor, not a gold standard</td></tr>
+          <tr><td class="txt">VERSA</td><td>0.938</td><td>−0.092</td><td>−0.151, −0.033</td><td class="txt">slightly softer</td></tr>
+          <tr><td class="txt">S360</td><td>0.842</td><td>−0.248</td><td>−0.318, −0.177</td><td class="txt">softer</td></tr>
+          <tr><td class="txt">AKOYA</td><td>0.335</td><td>−1.578</td><td>−1.674, −1.483</td><td class="txt">transmits a third of AT2's high band</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose">
+      <p>
+        Every interval excludes zero. The practical consequence is that scanner identity can be
+        treated as a position on a continuous physical axis rather than as a categorical label,
+        which is what makes it sensible to ask a correction to move a scanner along that axis.
+      </p>
+    </div>
+
+    <h3>3.2 The size of that signature depends on the tissue and the slide</h3>
+    <div class="prose">
+      <p>
+        A nested mixed-effects model was fitted to the 109-slide replicate table with a diagonal
+        tissue-level random slope on the scanner contrast and a slide-within-tissue random
+        slope, estimated by REML. The question it answers is how much of the between-slide
+        variation in a scanner's effect is attributable to tissue type rather than to the
+        individual slide.
+      </p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>High band — tissue share of between-slide scanner-slope variance</caption>
+        <thead>
+          <tr><th class="txt">Scanner</th><th>Tissue share</th><th>BH q</th><th class="txt">Reading</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="txt">AKOYA</td><td>0.313</td><td>0.00594</td><td class="txt">tissue-dependent response</td></tr>
+          <tr><td class="txt">S60</td><td>0.276</td><td>0.0145</td><td class="txt">tissue-dependent response</td></tr>
+          <tr><td class="txt">GT450</td><td>0.205</td><td>0.0499</td><td class="txt">borderline</td></tr>
+          <tr><td class="txt">VERSA</td><td>0.065</td><td>0.3510</td><td class="txt">slide-specific, not tissue-specific</td></tr>
+          <tr><td class="txt">S360</td><td>0.033</td><td>0.4607</td><td class="txt">slide-specific, not tissue-specific</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose">
+      <p>
+        So the scanner effect is a <strong>scanner × content response</strong>, not a detachable
+        global style — and the interaction differs by instrument. AKOYA and S60 respond to what
+        tissue is on the slide; VERSA and S360 vary slide to slide in a way tissue type does not
+        explain. Tissue classes hold one to six slides, mostly three, so this is coarse content
+        evidence and several tissue slopes are heavily shrunk.
+      </p>
+      <p>
+        The same structure reappears downstream. In the correction-heterogeneity analysis, 240
+        REML fits found tissue-level variance in the radius benefit for 18 of 20 method-model
+        cells and in scanner-specific content change for 71 of 100, with AKOYA heterogeneous in
+        all 20 cells. <strong>A pooled endpoint can conceal structured per-scanner and per-tissue
+        response</strong>, which is why the frozen safety rule requires every source scanner to
+        pass rather than the average.
+      </p>
+    </div>
+
+    <h3>3.3 One sharpness knob is not enough</h3>
+    <div class="prose">
+      <p>
+        Before building a correction it was worth asking whether the whole effect reduces to a
+        single blur-or-sharpen dial. A one-parameter Laplacian detail-gain family was defined in
+        advance over gains 0 to 2 and projected onto each scanner's curve with
+        leave-one-physical-slide-out cross-fitting. The residual off-axis RMS against a matched
+        scalar null, with 5,000 slide bootstraps, was:
+      </p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Residual after the best scalar blur–sharpen fit, 95% CI</caption>
+        <thead><tr><th class="txt">Scanner</th><th>CI lower</th><th>CI upper</th><th class="txt">Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="txt">GT450</td><td>0.081</td><td>0.116</td><td class="txt">scalar family rejected</td></tr>
+          <tr><td class="txt">VERSA</td><td>0.095</td><td>0.107</td><td class="txt">scalar family rejected</td></tr>
+          <tr><td class="txt">AKOYA</td><td>0.256</td><td>0.316</td><td class="txt">scalar family rejected</td></tr>
+          <tr><td class="txt">S60</td><td>0.093</td><td>0.111</td><td class="txt">scalar family rejected</td></tr>
+          <tr><td class="txt">S360</td><td>0.093</td><td>0.107</td><td class="txt">scalar family rejected</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      All five lower bounds exceed zero, so the pre-specified scalar family is rejected for every
+      scanner. This is not a claim that no one-dimensional representation could exist. GT450 also
+      reached the gain = 2 boundary in 90.8% of folds, so part of its residual reflects the
+      family's range rather than its dimensionality.
+    </div>
+  </section>
+
+  <!-- ================= 4. BACKGROUND ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="label">4 · White space</div>
+      <h2>What the glass tells us, and what it does not</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Empty background is the obvious place to characterize a scanner: no biology, just the
+        instrument. We extracted 65,400 raw white-space patches, one set per slide-scanner, and
+        asked whether background noise and optical-density features add explanatory power to the
+        within-slide tissue transfer already modelled from tissue itself.
+      </p>
+      <p>
+        They did not. Across 15 scanner-and-band models, AIC preferred the background-augmented
+        model in 3 and BIC in none; every likelihood-ratio test was non-significant after BH
+        correction; held-out prediction improved in 2 of 15 cells by +0.69% and +0.09% and
+        degraded in the other 13; and of 75 background coefficients, 5 were nominally significant
+        and none survived BH.
+      </p>
+      <p>
+        The interpretation is not that background is useless — it is a genuine record of dark and
+        white balance, noise fingerprint, compression artefact and acquisition QA. It is that
+        <strong>tissue-free background cannot identify a tissue-dependent optical transfer.</strong>
+        Background is therefore used here for three things only: supplemental noise
+        characterization, acquisition QC and failed-scan detection, and a noise-floor sensitivity
+        check on the tissue spectrum.
+      </p>
+      <p>
+        That sensitivity check matters for section 3. Re-rendering the same outcome-blind glass
+        coordinates through the identical geometry and anti-aliasing chain, all 47,088 tissue and
+        background radial bins stayed positive after noise subtraction, and the
+        corrected-minus-raw change in the high-band transfer estimate had a median of only
+        −0.0014 to −0.0039 log₂ for the non-reference scanners. The spectrum results in 3.1 are
+        not an artefact of the noise floor.
+      </p>
+    </div>
+    <div class="note">
+      This is an operational background floor, not detector NPS, DQE or absolute MTF. Those
+      require controlled uniform exposure and known input photon statistics, which a slide
+      archive does not provide.
+    </div>
+  </section>
+
+  <!-- ================= 5. CONTROLS ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="label">5 · Bounds</div>
+      <h2>Low scanner radius can mean alignment or destruction</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Before benchmarking real corrections we bounded the region with physical controls —
+        interventions that are not deployable but whose effect on the representation is known by
+        construction. 2,354,400 control embeddings, four models, slide-blocked inference.
+      </p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Control-bounded frontier — what each intervention does to radius and to content</caption>
+        <thead>
+          <tr><th class="txt">Intervention</th><th>Radius change</th><th>Δ content margin</th><th class="txt">Frozen decision</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="txt">Complete high-frequency removal</td><td>−26.8 to −51.1%</td><td class="num-neg">−0.2805 to −0.7425</td><td class="txt"><span class="flag flag-fail">fails in all four models</span></td></tr>
+          <tr><td class="txt">Global HF coefficient mean</td><td>−26.2 to −46.7%</td><td class="num-neg">−0.2721 to −0.7331</td><td class="txt"><span class="flag flag-fail">collapse CI 0.166–0.377</span></td></tr>
+          <tr><td class="txt">HF retention 0.75</td><td class="dim">improves all four</td><td class="dim">UNI −0.0292, CONCH −0.0205</td><td class="txt"><span class="flag flag-fail">not common-safe</span></td></tr>
+          <tr class="group-start"><td class="txt">Paired same-location HF oracle, 25%</td><td>−9.5 to −14.0%</td><td class="num-pos">+0.0015 to +0.0241</td><td class="txt"><span class="flag flag-pass">safe + improved, all four</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <h3>This is the study's central negative result</h3>
+      <p>
+        Deleting high-frequency content cuts scanner radius by up to half — a bigger reduction
+        than any real method achieves — while destroying the representation. The paired oracle
+        improves radius by a third as much and keeps content intact. <strong>Radius alone cannot
+        tell these two apart.</strong> Everything downstream is therefore judged on radius,
+        content and collapse jointly, and this frontier is what a real correction is measured
+        against.
+      </p>
+    </div>
+    <div class="note">
+      The oracle uses the registered same-location acquisition of another scanner, so it is not
+      deployable. Its role is to show that a fidelity-preserving invariance gain exists at all,
+      and to give the achievable region a ceiling.
+    </div>
+  </section>
+
+  <!-- ================= 6. COMPARATORS ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="label">6 · Benchmark</div>
+      <h2>Five deployable corrections under the frozen gates</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Three image-space and two feature-space methods, cross-fitted by exact 109-fold
+        leave-one-slide-out, 1,308,000 embeddings. RR is relative radius reduction from raw; a
+        method is called safe only if it clears content non-inferiority and every-source-scanner
+        collapse.
+      </p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Locked E5 comparator frontier — RR by method and model</caption>
+        <thead>
+          <tr>
+            <th class="txt">Method</th><th class="txt">Space</th>
+            <th>ResNet50</th><th>UNI v1</th><th>CONCH v1</th><th>Virchow2</th>
+            <th class="txt">Decision</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="txt">Reinhard</td><td class="txt dim">image</td><td>+27.6%</td><td>+6.0%</td><td>+11.9%</td><td>+3.7%</td><td class="txt"><span class="flag flag-pass">safe + improved ×4</span></td></tr>
+          <tr><td class="txt">Paired OD affine</td><td class="txt dim">image</td><td>+25.7%</td><td class="num-neg">+8.9%</td><td>−3.3%</td><td class="num-neg">−11.7%</td><td class="txt"><span class="flag flag-fail">unsafe in UNI, Virchow2</span></td></tr>
+          <tr><td class="txt">Frequency calibration</td><td class="txt dim">image</td><td>+0.5%</td><td>−0.1%</td><td>−0.5%</td><td>+0.3%</td><td class="txt"><span class="flag">safe, no improvement</span></td></tr>
+          <tr class="group-start"><td class="txt">CORAL</td><td class="txt dim">feature</td><td>+34.9%</td><td>+16.3%</td><td>+22.0%</td><td>+17.6%</td><td class="txt"><span class="flag flag-pass">safe + improved ×4</span></td></tr>
+          <tr><td class="txt">Orthogonal Procrustes</td><td class="txt dim">feature</td><td><strong>+43.9%</strong></td><td><strong>+22.5%</strong></td><td><strong>+23.9%</strong></td><td><strong>+20.0%</strong></td><td class="txt"><span class="flag flag-pass">best in all four</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose">
+      <p>
+        Three observations carry forward. First, <strong>frequency calibration on raw images does
+        essentially nothing</strong> — correcting the spectrum before matching colour is the wrong
+        order, which is what motivated putting the band correction after Reinhard. Second,
+        <strong>paired OD affine is the cautionary case</strong>: it improves UNI's radius by 8.9%
+        with a positive CI and is still ruled unsafe, because VERSA's variance-trace ratio lands
+        at 0.8865 against a 0.90 threshold. An invariance gain that fails fidelity is not a
+        marginal call under this rule. Third, <strong>the feature-space methods win on every
+        model</strong>, and by the largest margin exactly where image methods do least.
+      </p>
+      <p>
+        Exact leave-one-tissue-out refitting changed none of the 20 safe or safe-and-improved
+        decisions, so these verdicts are not an artefact of which tissues happened to be in the
+        training folds. In the coarse tissue-type probe, held-out raw top-1 accuracy was 29.2%
+        for ResNet50 and 50–56% for the pathology models, and correction-associated changes were
+        mostly within noise; Procrustes was the only method to improve paired centroid-profile
+        agreement in all four models, and no correction improved every tissue metric.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 7. OUR METHOD ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="label">7 · Our extension</div>
       <h2>Reinhard, and what we add to it</h2>
     </div>
 
@@ -327,18 +780,12 @@
         <div class="step-body">
           <p>
             Match the per-channel mean and standard deviation of CIE L*a*b* between the source
-            population and the target population. It is the white-balance step: no paired images
-            needed, just a set of source slides and a set of target slides.
-          </p>
-          <p>
-            It is a real baseline, not a straw man — it is safe and invariance-improving in all
-            four frozen models. What it cannot touch is <strong>sharpness</strong>. GT450 transmits
-            1.478× the high-frequency energy of AT2 and AKOYA only 0.335×, and matching colour
-            leaves that untouched.
+            population and the target population. No paired images needed. Safe and
+            invariance-improving in all four models, and the strongest image method in the
+            locked benchmark — but it cannot touch sharpness.
           </p>
         </div>
       </div>
-
       <div class="step">
         <div class="step-tag">
           <div class="step-name">Ours</div>
@@ -346,15 +793,15 @@
         </div>
         <div class="step-body">
           <p>
-            Same deployment contract as Reinhard — population statistics only, no paired
-            acquisitions anywhere in the fit — with a per-band sharpness correction added.
+            The same deployment contract — population statistics only — with a per-band
+            sharpness correction added.
           </p>
           <ol class="recipe">
-            <li>Split the optical-density mean into three detail bands at σ = 1, 2 and 4 px, keeping the low-pass base that carries colour.</li>
-            <li>For each band, take the ratio of pooled band energy between the target and source populations. This is Reinhard's moment matching applied per spatial frequency.</li>
-            <li>Bootstrap the slides to get that ratio's own standard error, and shrink each band toward identity by <code>α = max(0, 1 − 2·SE/|log g|)</code>.</li>
-            <li>Add the resulting correction to all three OD channels as one shared scalar, so hue is preserved.</li>
-            <li>Project anything out of range onto the exact RGB8 boundary instead of clipping channels independently.</li>
+            <li>Split the OD mean into the three detail bands of section 1 and the colour base.</li>
+            <li>For each band take the ratio of pooled band power between target and source populations, <code>g = sqrt(E_target / E_source)</code>. This is Reinhard's moment matching applied per spatial frequency.</li>
+            <li>Bootstrap the slides for that ratio's own standard error and shrink toward identity by <code>α = max(0, 1 − 2·SE/|log g|)</code>.</li>
+            <li>Add the result to all three OD channels as one shared scalar, preserving hue.</li>
+            <li>Project anything out of range onto the exact RGB8 boundary rather than clipping channels independently.</li>
           </ol>
           <p>
             Step 3 is the safety mechanism: a band whose gain cannot be estimated reliably gets
@@ -364,109 +811,73 @@
       </div>
     </div>
 
-    <figure>
-      <div class="fig-frame">
-        <svg viewBox="0 0 720 250" role="img" aria-label="The optical-density mean is split into three detail bands and a colour-carrying base; Reinhard matches the base while the band correction rescales the three detail bands, and the result is projected back into valid RGB.">
-          <defs>
-            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
-            </marker>
-          </defs>
-          <text x="10" y="18" font-size="12" font-weight="700" fill="currentColor">Source patch</text>
-          <rect x="10" y="30" width="96" height="96" fill="none" stroke="currentColor" stroke-width="1.5"/>
-          <text x="58" y="84" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.65">mean OD</text>
-          <line x1="112" y1="78" x2="158" y2="78" stroke="currentColor" stroke-width="1.4" marker-end="url(#ah)"/>
-          <text x="135" y="70" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">split</text>
+    <div class="callout">
+      <h3>It amplifies existing detail; it does not synthesize any</h3>
+      <p>
+        The added component is exactly <code>Σ(g<sub>k</sub> − 1)·b<sub>k</sub></code>, verified
+        against the implementation at a correlation of 1.0000000000 and a maximum absolute
+        deviation of 8.9e-08. Each band is multiplied by a scalar, so edges keep their position
+        and shape and only local contrast changes. Nothing is invented, which also means nothing
+        genuinely lost to blur is recovered — and that noise in a band is amplified along with
+        its signal. This is why the output is never described as recovered ground-truth detail.
+      </p>
+    </div>
 
-          <text x="168" y="18" font-size="12" font-weight="700" fill="currentColor">Bands</text>
-          <rect x="168" y="30" width="120" height="30" fill="none" stroke="currentColor" stroke-width="1.3"/>
-          <text x="178" y="49" font-size="11" fill="currentColor">σ=1px fine</text>
-          <rect x="168" y="66" width="120" height="30" fill="none" stroke="currentColor" stroke-width="1.3"/>
-          <text x="178" y="85" font-size="11" fill="currentColor">σ=2px mid</text>
-          <rect x="168" y="102" width="120" height="30" fill="none" stroke="currentColor" stroke-width="1.3"/>
-          <text x="178" y="121" font-size="11" fill="currentColor">σ=4px coarse</text>
-          <rect x="168" y="150" width="120" height="34" fill="none" stroke="currentColor" stroke-width="2.2"/>
-          <text x="178" y="171" font-size="11" font-weight="700" fill="currentColor">base (colour)</text>
-
-          <line x1="294" y1="45" x2="336" y2="45" stroke="currentColor" stroke-width="1.4" marker-end="url(#ah)"/>
-          <text x="315" y="38" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">×g₁</text>
-          <line x1="294" y1="81" x2="336" y2="81" stroke="currentColor" stroke-width="1.4" marker-end="url(#ah)"/>
-          <text x="315" y="74" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">×g₂</text>
-          <line x1="294" y1="117" x2="336" y2="117" stroke="currentColor" stroke-width="1.4" marker-end="url(#ah)"/>
-          <text x="315" y="110" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">×g₃</text>
-          <line x1="294" y1="167" x2="336" y2="167" stroke="currentColor" stroke-width="2.2" marker-end="url(#ah)"/>
-          <text x="315" y="160" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">unchanged</text>
-
-          <rect x="342" y="30" width="128" height="154" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
-          <text x="406" y="98" font-size="12" font-weight="700" text-anchor="middle" fill="currentColor">recombine</text>
-          <text x="406" y="116" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.65">one shared OD scalar</text>
-
-          <line x1="476" y1="107" x2="518" y2="107" stroke="currentColor" stroke-width="1.4" marker-end="url(#ah)"/>
-          <rect x="524" y="60" width="186" height="94" fill="none" stroke="currentColor" stroke-width="1.5"/>
-          <text x="617" y="88" font-size="12" font-weight="700" text-anchor="middle" fill="currentColor">project, never clip</text>
-          <text x="617" y="108" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.65">hue preserved</text>
-          <text x="617" y="126" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.65">final clamp = 0</text>
-
-          <line x1="168" y1="205" x2="288" y2="205" stroke="currentColor" stroke-width="2.2"/>
-          <line x1="168" y1="196" x2="168" y2="214" stroke="currentColor" stroke-width="2.2"/>
-          <line x1="288" y1="196" x2="288" y2="214" stroke="currentColor" stroke-width="2.2"/>
-          <text x="228" y="224" font-size="11" text-anchor="middle" fill="currentColor" font-weight="700">Reinhard's job</text>
-          <line x1="342" y1="205" x2="710" y2="205" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 3"/>
-          <text x="526" y="224" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">what the band correction adds</text>
-        </svg>
-      </div>
-      <figcaption>
-        Reinhard matches the colour-carrying base; the band correction rescales the three detail
-        bands. In equalizer terms Reinhard is a single master volume and this is a three-band EQ
-        whose knobs turn down on their own when the measurement is noisy.
-      </figcaption>
-    </figure>
+    <div class="prose">
+      <p>
+        Two rejected variants are worth recording. A version with per-scanner strengths chosen by
+        nested cross-validation improved the image-domain spectrum sevenfold over the locked
+        method but failed a per-fold no-harm gate on S360 and was blocked before any embedding
+        was computed. A slide-adaptive estimator that predicts each slide's gain from its own
+        source energy cut held-out prediction error by 52–57% for AKOYA, GT450 and S60 but did
+        nothing for VERSA and S360 — the two scanners that needed it — and was not adopted.
+      </p>
+    </div>
   </section>
 
+  <!-- ================= 8. GALLERY ================= -->
   <section>
     <div class="sec-head">
-      <div class="label">Gallery</div>
+      <div class="label">8 · Gallery</div>
       <h2>The same tissue, three destinations</h2>
     </div>
     <div class="prose">
       <p>
-        One physical location, chosen by a salted hash of the cohort before any of this was
-        looked at, imaged by every scanner. Every transform below is fitted on the
-        {{GALLERY_TRAIN}} training slides only — the slide shown is held out of all of them.
-        The last column amplifies the difference between ours and Reinhard five times, since
-        the point of the method is a change that is deliberately subtle.
+        One physical location, chosen by a salted hash of the cohort and restricted to the most
+        structurally detailed third of locations, imaged by every scanner. Every transform is
+        fitted on the {{GALLERY_TRAIN}} training slides only — the slide shown is held out of all
+        of them. The last column amplifies the difference between ours and Reinhard five times.
       </p>
     </div>
 
     <div class="bleed">{{GALLERY}}</div>
 
     <div class="note">
-      Slide <code>{{GALLERY_SLIDE}}</code>, location {{GALLERY_LOCATION}}, 256 px at
-      0.5052 µm/px. The two source scanners shown per destination are the two whose fitted
-      correction is largest, so the visual difference is at its most visible; the other three
-      sources are corrected less.
+      Slide <code>{{GALLERY_SLIDE}}</code>, location {{GALLERY_LOCATION}}, 256 px at 0.5052 µm/px.
+      The two source scanners shown per destination are those whose fitted correction is largest,
+      so the visible difference is at its most visible; the other three are corrected less.
     </div>
   </section>
 
+  <!-- ================= 9. TARGET ================= -->
   <section>
     <div class="sec-head">
-      <div class="label">The finding</div>
-      <h2>Why the destination flips the result</h2>
+      <div class="label">9 · The target finding</div>
+      <h2>Where you aim decides whether correction helps</h2>
     </div>
 
     <div class="prose">
       <p>
-        The transform, the folds, the shrinkage, the gates and the encoding pass are identical
-        across the three destinations. The only variable is which scanner the sources are mapped
-        onto — and it inverts the outcome.
+        The transform, folds, shrinkage, gates and encoding pass are identical across three
+        destinations — AT2, GT450 and S60. The only variable is which scanner the sources are
+        mapped onto, and it inverts the outcome.
       </p>
       <p>
-        The reason is not that AT2 is the softest scanner. By raw high-frequency transfer AT2 sits
-        in the middle of the panel: GT450 1.478, S60 1.044, <strong>AT2 1.000</strong>, VERSA 0.938,
-        S360 0.842, AKOYA 0.335. What matters is the band energy that survives <em>after</em>
+        The reason is not that AT2 is the softest scanner; by raw transfer it sits mid-panel at
+        1.000 against GT450's 1.478. What matters is the band power that survives <em>after</em>
         Reinhard's contrast matching, and on that measure AT2 is near the bottom — GT450 carries
-        4.14× AT2's fine-band energy and S60 2.94×. Aiming at AT2 therefore means attenuating
-        12 of 15 scanner-band combinations; aiming at GT450 or S60 means amplifying 12 of 15.
+        4.14× AT2's fine-band power and S60 2.94×. Aiming at AT2 therefore attenuates 12 of 15
+        scanner-band combinations; aiming at GT450 or S60 amplifies 12 of 15.
       </p>
     </div>
 
@@ -481,8 +892,7 @@
               <path d="M 0 0 L 10 5 L 0 10 z" fill="#a75c14"/>
             </marker>
           </defs>
-          <text x="12" y="20" font-size="12" font-weight="700" fill="currentColor">Post-Reinhard fine-band energy, relative to AT2</text>
-
+          <text x="12" y="20" font-size="12" font-weight="700" fill="currentColor">Post-Reinhard fine band power, relative to AT2</text>
           <line x1="24" y1="54" x2="696" y2="54" stroke="currentColor" stroke-width="1.2"/>
           <circle cx="60" cy="54" r="4.5" fill="currentColor"/>
           <text x="60" y="44" font-size="11" text-anchor="middle" fill="currentColor">AKOYA</text>
@@ -518,15 +928,15 @@
         </svg>
       </div>
       <figcaption>
-        The same estimator reverses direction depending on where it is aiming. Aiming at a target
-        with little detail energy means removing detail from everything else; aiming at a
-        detail-rich target means adding it.
+        The same estimator reverses direction depending on where it aims. A target with little
+        detail power means removing detail from everything else; a detail-rich target means
+        adding it.
       </figcaption>
     </figure>
 
     <div class="table-wrap">
       <table>
-        <caption>Scanner-radius reduction from raw — Reinhard alone versus ours</caption>
+        <caption>Scanner-radius reduction from raw — Reinhard alone versus ours, by destination</caption>
         <thead>
           <tr>
             <th class="txt">Destination</th><th class="txt">Model</th>
@@ -544,40 +954,38 @@
       <p>
         Aiming at AT2 removed information without purchasing invariance in exchange. Our radius
         is <strong>larger</strong> than plain Reinhard's in all four models, and worse than doing
-        nothing at all for UNI v1 and Virchow2. Matching band energy downward produces images
-        that are statistically closer to AT2 and representationally further from it.
+        nothing at all for UNI v1 and Virchow2. Content non-inferiority breaks for UNI v1
+        (Δ −0.0338) and Virchow2 (Δ −0.0366) against a −0.02 margin, and the only three collapse
+        failures anywhere in the grid appear there, all in UNI v1, on exactly the two scanners
+        blurred hardest — GT450 variance trace 0.775, S60 0.865, threshold 0.90.
       </p>
     </div>
 
     <div class="prose">
       <p>
-        The gate failures follow the same line. At the AT2 destination content non-inferiority
-        breaks for UNI v1 (Δ −0.0338) and Virchow2 (Δ −0.0366) against a −0.02 margin, and the
-        only three collapse failures anywhere in the grid appear there too — all in UNI v1, on
-        exactly the two scanners that were blurred hardest (GT450 variance trace 0.775, S60 0.865,
-        threshold 0.90).
+        This is section 5's negative result reappearing inside our own method development.
+        Removing high-frequency content lowers image-domain discrepancy while damaging
+        representation, and the pre-registered gates caught it in the models most sensitive to
+        it. It also bounds AT2's role: AT2 is the paired reference because it is the acquisition
+        anchor, not because it is a good destination for harmonization.
       </p>
     </div>
   </section>
 
+  <!-- ================= 10. RETRIEVAL ================= -->
   <section>
     <div class="sec-head">
-      <div class="label">Retrieval</div>
+      <div class="label">10 · Retrieval</div>
       <h2>What a patch's neighbours actually look like</h2>
     </div>
 
     <div class="prose">
       <p>
-        Scanner radius measures how far apart the six per-scanner centroids sit. It does not say
-        what a retrieval returns. So we asked directly: take one patch, look at its
-        {{NEIGHBOURS}} nearest neighbours among the 600 patches of its own slide, and count how
-        many came from the same scanner it did.
-      </p>
-      <p>
-        If the representation were perfectly scanner-invariant that share would fall to the chance
-        level of <strong>{{CHANCE}}</strong>. If the scanner dominates, it stays near one. The
-        companion question is the content check: the other five scanners photographed the identical
-        physical spot, so a representation encoding tissue rather than instrument should surface
+        Radius is a geometric summary. This asks the operational question directly: take one
+        patch, look at its {{NEIGHBOURS}} nearest neighbours among the 600 patches of its own
+        slide, and count how many came from the same scanner. Perfect invariance gives the chance
+        level of {{CHANCE}}. The complementary check is content: the other five scanners
+        photographed the identical spot, so a representation encoding tissue should surface
         exactly those.
       </p>
     </div>
@@ -625,56 +1033,44 @@
     </div>
 
     <div class="note">
-      Query is {{KNN_QUERY_SCANNER}} at location {{KNN_QUERY_LOCATION}} of the same slide. Every
-      location on this cohort clears a stain-fraction threshold, including near-empty fields, so
-      candidates are first restricted to the top third by mid-scale detail — this patch scores
-      {{KNN_QUERY_SCORE}} against a cohort median of {{KNN_MEDIAN_SCORE}} — and the query is then
-      the one sitting at the median raw same-scanner count under {{KNN_QUERY_MODEL}}, the usual
-      case rather than a flattering one. The same query is held fixed for both models.
-      Neighbours come from the already extracted embeddings; only the patches shown were rendered.
+      Query is {{KNN_QUERY_SCANNER}} at location {{KNN_QUERY_LOCATION}}. Candidates are restricted
+      to the top third by mid-scale detail — this patch scores {{KNN_QUERY_SCORE}} against a
+      cohort median of {{KNN_MEDIAN_SCORE}} — and the query is then the one at the median raw
+      same-scanner count under {{KNN_QUERY_MODEL}}, the usual case rather than a flattering one.
+      The same query is held fixed for both models.
     </div>
 
+{{KNN_NARRATIVE}}
+
     <div class="prose">
-      {{KNN_NARRATIVE}}
       <p>
-        The two tables move together, which is the whole point. At GT450 and S60 our correction
-        makes neighbours <em>less</em> scanner-bound and <em>more</em> content-accurate at the same
-        time — for ResNet50 aiming at GT450, the same-scanner share falls from 0.549 raw to 0.321
-        while same-location retrieval climbs from 0.568 to 0.847.
-      </p>
-      <p>
-        At AT2 both move the wrong way simultaneously. Neighbours become more scanner-bound than
-        under Reinhard alone <em>and</em> the correct physical location is found less often. That
-        is the signature of destroyed content rather than removed nuisance, and it is visible here
-        without reference to any threshold.
+        The two tables move together, which is the point. At GT450 and S60 our correction makes
+        neighbours less scanner-bound and more content-accurate at the same time; for ResNet50
+        aiming at GT450 the same-scanner share falls from 0.549 raw to 0.321 while same-location
+        retrieval climbs from 0.568 to 0.847. At AT2 both move the wrong way at once, which is
+        the signature of destroyed content rather than removed nuisance, visible here without
+        reference to any threshold.
       </p>
     </div>
   </section>
 
+  <!-- ================= 11. PROBE ================= -->
   <section>
     <div class="sec-head">
-      <div class="label">Probing</div>
-      <h2>The scanner is still written on the embedding</h2>
-    </div>
-
-    <div class="prose">
-      <p>
-        Radius asks how far the six acquisitions of one location drift from their own centroid.
-        A probe asks the adversarial version: fit a linear classifier on training slides and see
-        whether it can still name the scanner on slides it has never seen. Chance is
-        {{PROBE_CHANCE}}.
-      </p>
+      <div class="label">11 · Probing</div>
+      <h2>Image correction does not remove the scanner's signature</h2>
     </div>
 
     <div class="table-wrap">
       <table>
-        <caption>Scanner-probe balanced accuracy, slide-blocked — lower means harder to identify, chance is {{PROBE_CHANCE}}</caption>
+        <caption>Scanner-probe balanced accuracy, slide-blocked — chance is {{PROBE_CHANCE}}</caption>
         <thead>
           <tr>
             <th class="txt">Model</th><th>Raw</th>
             <th>AT2 Rein.</th><th>AT2 ours</th>
             <th>GT450 Rein.</th><th>GT450 ours</th>
             <th>S60 Rein.</th><th>S60 ours</th>
+            <th>CORAL</th><th>Procrustes</th>
           </tr>
         </thead>
         <tbody>
@@ -684,129 +1080,113 @@
     </div>
 
     <div class="callout">
-      <h3>Radius falls by a third; the probe barely moves</h3>
+      <h3>The decisive contrast in this report</h3>
       <p>
-        On raw embeddings a linear probe names the scanner at {{PROBE_RAW_MIN}} to
-        {{PROBE_RAW_MAX}} balanced accuracy. After the best correction available here it is still
-        0.885 at worst. ResNet50's scanner radius drops 32.9% aiming at GT450 while its probe
-        falls only from 0.970 to 0.890; UNI v1 and Virchow2 sit above 0.99 in every condition,
-        corrected or not.
+        A linear probe names the scanner at {{PROBE_RAW_MIN}} to {{PROBE_RAW_MAX}} on raw
+        embeddings. After the best image correction available here it is still
+        {{PROBE_IMAGE_BEST}} at worst. After feature-space correction it is
+        {{PROBE_FEATURE_MIN}} to {{PROBE_FEATURE_MAX}} — at or below the chance level of
+        {{PROBE_CHANCE}}. ResNet50's radius falls 32.9% under our image correction while its
+        probe moves only from 0.970 to 0.890; UNI v1 and Virchow2 stay above 0.99 in every image
+        condition and drop to 0.13 and 0.12 under Procrustes.
       </p>
     </div>
 
     <div class="prose">
       <p>
-        The two metrics are not in conflict — they measure different things. Radius is the
-        geometric spread of six points around their shared centre, and a correction can pull that
-        spread in substantially. The probe asks whether <em>any</em> linear direction still
-        separates the scanners, and one evidently survives even when the cloud has been
-        compressed. Image-space normalization moves the geometry; it does not delete the
-        signature.
+        Radius and probe measure different things. Radius is the geometric spread of six points
+        around their shared centre, and an image correction can pull that in substantially. The
+        probe asks whether <em>any</em> linear direction still separates the scanners, and after
+        image correction one plainly survives. Applying a different linear map per scanner, as
+        CORAL and Procrustes do, moves the distributions onto each other and that direction
+        disappears.
       </p>
       <p>
-        The direction still agrees with everything else: {{PROBE_LOWERED}} of 12 cells lower the
-        probe, and the AT2 destination raises it in all four models. But the magnitudes are a
-        warning about vocabulary. &ldquo;Scanner invariance&rdquo; is not one quantity, and a
-        method can improve one measure of it by a third while leaving another essentially
-        untouched.
+        <strong>This is the quantitative case for feature-space correction.</strong> It is
+        strongest exactly where the image methods are weakest: UNI v1's radius improves 6.0%
+        under Reinhard and 22.5% under Procrustes, and its probe falls 0.006 under our image
+        correction and 0.869 under Procrustes.
       </p>
       <p>
-        This endpoint is secondary by construction and is never read alone. A constant
-        representation would drive the probe to chance while destroying every patch, which is the
-        degeneracy the content and collapse gates exist to catch.
+        One anomaly should be recorded rather than smoothed over. CORAL lands
+        <em>below</em> chance, 0.077 to 0.103, consistently across all five folds. A classifier
+        performing worse than chance is systematically wrong, not merely uninformative; the
+        likely cause is that the leave-one-slide-out harmonization gives each slide a slightly
+        different transform, so a direction learned on training slides inverts on held-out ones.
+        Procrustes, which is a rotation and does not rescale, sits much closer to chance. This
+        does not make CORAL better than Procrustes — sub-chance is a measurement warning, not a
+        result — and the shared conclusion holds for both.
+      </p>
+      <p>
+        The probe is secondary by construction and is never read alone. A constant representation
+        would reach chance while destroying every patch, which is the degeneracy sections 1 and 5
+        exist to guard against.
       </p>
     </div>
   </section>
 
+  <!-- ================= 12. SYNTHESIS ================= -->
   <section>
     <div class="sec-head">
-      <div class="label">Across models</div>
-      <h2>Three ways the four models differ</h2>
+      <div class="label">12 · Synthesis</div>
+      <h2>Where image-space work ends</h2>
     </div>
 
-    <div class="table-wrap">
-      <table>
-        <caption>Scanner sensitivity, how much of it colour alone removes, and tolerance to blur</caption>
-        <thead>
-          <tr>
-            <th class="txt">Model</th><th>Raw radius</th><th>Reinhard removes</th>
-            <th>Gain at GT450</th><th>Loss at AT2</th><th class="txt">Blur tolerance</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td class="txt">ResNet50 <span class="dim">natural-image CNN</span></td><td>0.212</td><td>27.6%</td><td class="num-pos">+4.32pp</td><td class="num-neg">−8.11pp</td><td class="txt"><span class="flag flag-pass">holds</span></td></tr>
-          <tr><td class="txt">CONCH v1 <span class="dim">vision-language</span></td><td>0.263</td><td>11.9%</td><td class="num-pos">+5.04pp</td><td class="num-neg">−5.40pp</td><td class="txt"><span class="flag flag-pass">holds</span></td></tr>
-          <tr><td class="txt">Virchow2 <span class="dim">large pathology SSL</span></td><td>0.351</td><td>3.6%</td><td class="num-pos">+4.12pp</td><td class="num-neg">−11.01pp</td><td class="txt"><span class="flag flag-fail">content fails</span></td></tr>
-          <tr><td class="txt">UNI v1 <span class="dim">pathology SSL</span></td><td>0.483</td><td>6.1%</td><td class="num-pos">+2.82pp</td><td class="num-neg">−7.17pp</td><td class="txt"><span class="flag flag-fail">content + collapse</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="prose">
-      <p>
-        <strong>Sensitivity and correctability run opposite.</strong> UNI is the most
-        scanner-sensitive model at a raw radius of 0.483, yet colour matching removes the least
-        from it, 6.1%. ResNet50 is the reverse: least sensitive at 0.212, and 27.6% of that
-        disappears with colour alone. <em>ResNet50's scanner signal is mostly colour. The
-        pathology models' is not.</em>
-      </p>
-      <p>
-        <strong>The fragile models are the pathology-specific ones.</strong> The two that fail
-        content at the AT2 destination are UNI v1 and Virchow2, the self-supervised models trained
-        on fine pathology texture. ResNet50 and CONCH, trained on natural images and on
-        image-caption pairs, absorbed the same blur without breaking. That fits the reading that
-        erasing high frequency erases what the pathology models were trained to encode — but it is
-        a hypothesis from four models, not an established fact.
-      </p>
-      <p>
-        <strong>The direction agrees across all four.</strong> Aiming at GT450 or S60 helps every
-        model; aiming at AT2 hurts every model. The magnitudes differ, but no sign flips — which
-        is the strongest evidence that this is a property of the correction and not of one
-        architecture.
-      </p>
-    </div>
-  </section>
-
-  <section>
-    <div class="sec-head">
-      <div class="label">Summary</div>
-      <h2>Three sentences</h2>
-    </div>
     <ul class="tight">
       <li>
-        <strong>What Reinhard leaves behind is sharpness, and matching it band by band helps</strong> —
-        but only in the sharpening direction.
+        <strong>The scanner effect is spectral, content-dependent and not one-dimensional.</strong>
+        Six distinct transfer signatures, a tissue component that differs by instrument, and a
+        pre-specified scalar family rejected for all five scanners.
       </li>
       <li>
-        <strong>AT2 is the paired reference, not a good destination.</strong> Its post-Reinhard
-        detail energy is near the bottom of the panel, so aiming there means blurring almost
-        everything, and blurring costs content without buying invariance.
+        <strong>Reduced scanner separability is not evidence of success.</strong> Destructive
+        controls cut radius by up to half while destroying content; a paired oracle improves it
+        by a third as much and keeps content. Every verdict here is joint on radius, content and
+        collapse.
       </li>
       <li>
-        <strong>The pre-registered gates earned their keep.</strong> They caught this failure in
-        the models most sensitive to it, and the neighbour composition shows the same thing with
-        no threshold involved at all.
+        <strong>After colour, what remains is sharpness, and matching it band by band helps —
+        in the sharpening direction only.</strong> Aiming at a detail-poor destination removes
+        information and buys no invariance.
+      </li>
+      <li>
+        <strong>Image-space correction cannot remove the scanner's linear signature.</strong>
+        A probe still names the scanner at 0.89 or better after the best image method available;
+        feature-space correction takes it to chance. We regard our image method as close to the
+        practical ceiling of this family: it amplifies only existing structure, carries no
+        hallucination risk, and falls back to a validated baseline when its estimate is
+        untrustworthy.
+      </li>
+      <li>
+        <strong>The two levels are complementary, not competing.</strong> Image correction yields
+        an artefact a pathologist can inspect and is model-independent; feature correction is
+        fitted per model, produces nothing viewable, and cannot be audited for hallucination —
+        but it is the only one of the two that reaches the linear signature.
       </li>
     </ul>
 
     <div class="note">
-      <strong>Not claimed here</strong> — nothing about clinical or biological preference among
-      scanners. This condition does not enter the frozen five-method ranking and does not replace
-      the locked method. Three destinations in one 109-slide cohort; whether the amplification
-      advantage extends past GT450, or to another cohort, is untested.
+      <strong>Not claimed</strong> — no clinical or biological preference among scanners is
+      asserted, and nothing here is biological fidelity or clinical validation; the only
+      biological label available is normal tissue type, used as coarse secondary evidence. The
+      multi-target result covers three destinations in one 109-slide cohort; whether the
+      amplification advantage extends past GT450 or to another cohort is untested. The
+      image-level extension is a post-core method development and does not enter the frozen
+      five-method ranking. External validation on an independent multi-scanner resource remains
+      the outstanding gap.
     </div>
   </section>
 
   <footer>
     <div>
-      The locked core analysis is unchanged. Every condition was evaluated exactly once under a
-      contract frozen before its results existed.
+      Every condition was evaluated exactly once under a contract frozen before its results
+      existed. The locked core analysis is unchanged by anything in sections 7 to 11.
     </div>
     <div class="mono">
-      1,308 shards · 3 targets × 2 conditions × 4 models × 109 slides · slide bootstrap 5,000 · seed 20260803
+      65,400 registered acquisitions · 4 foundation models · slide-blocked bootstrap 5,000 · seed 20260803
     </div>
     <div class="mono">
-      docs/e5_rf1u_multitarget_contract.md · docs/e5_rf1u_multitarget_results.md
+      docs/final_study_protocol.md · docs/e5_rf1u_multitarget_contract.md · docs/e5_rf1u_multitarget_results.md
     </div>
   </footer>
 
