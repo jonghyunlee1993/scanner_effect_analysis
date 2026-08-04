@@ -653,6 +653,73 @@
 
   <section>
     <div class="sec-head">
+      <div class="label">Probing</div>
+      <h2>The scanner is still written on the embedding</h2>
+    </div>
+
+    <div class="prose">
+      <p>
+        Radius asks how far the six acquisitions of one location drift from their own centroid.
+        A probe asks the adversarial version: fit a linear classifier on training slides and see
+        whether it can still name the scanner on slides it has never seen. Chance is
+        {{PROBE_CHANCE}}.
+      </p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Scanner-probe balanced accuracy, slide-blocked — lower means harder to identify, chance is {{PROBE_CHANCE}}</caption>
+        <thead>
+          <tr>
+            <th class="txt">Model</th><th>Raw</th>
+            <th>AT2 Rein.</th><th>AT2 ours</th>
+            <th>GT450 Rein.</th><th>GT450 ours</th>
+            <th>S60 Rein.</th><th>S60 ours</th>
+          </tr>
+        </thead>
+        <tbody>
+{{PROBE_ROWS}}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <h3>Radius falls by a third; the probe barely moves</h3>
+      <p>
+        On raw embeddings a linear probe names the scanner at {{PROBE_RAW_MIN}} to
+        {{PROBE_RAW_MAX}} balanced accuracy. After the best correction available here it is still
+        0.885 at worst. ResNet50's scanner radius drops 32.9% aiming at GT450 while its probe
+        falls only from 0.970 to 0.890; UNI v1 and Virchow2 sit above 0.99 in every condition,
+        corrected or not.
+      </p>
+    </div>
+
+    <div class="prose">
+      <p>
+        The two metrics are not in conflict — they measure different things. Radius is the
+        geometric spread of six points around their shared centre, and a correction can pull that
+        spread in substantially. The probe asks whether <em>any</em> linear direction still
+        separates the scanners, and one evidently survives even when the cloud has been
+        compressed. Image-space normalization moves the geometry; it does not delete the
+        signature.
+      </p>
+      <p>
+        The direction still agrees with everything else: {{PROBE_LOWERED}} of 12 cells lower the
+        probe, and the AT2 destination raises it in all four models. But the magnitudes are a
+        warning about vocabulary. &ldquo;Scanner invariance&rdquo; is not one quantity, and a
+        method can improve one measure of it by a third while leaving another essentially
+        untouched.
+      </p>
+      <p>
+        This endpoint is secondary by construction and is never read alone. A constant
+        representation would drive the probe to chance while destroying every patch, which is the
+        degeneracy the content and collapse gates exist to catch.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
       <div class="label">Across models</div>
       <h2>Three ways the four models differ</h2>
     </div>
