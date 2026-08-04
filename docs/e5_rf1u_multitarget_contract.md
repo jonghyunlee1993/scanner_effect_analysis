@@ -96,8 +96,19 @@ Six rendered conditions, two per target:
 | `rf1u_T` | Reinhard toward `T` plus the shrunk band correction |
 
 The raw condition is the already audited `outputs/e0_pfm_features` population and is shared.
-`reinhard_at2` must reproduce the locked E5 Reinhard values; any disagreement is a defect to be
-resolved before interpretation.
+
+`reinhard_at2` is **not** expected to reproduce the locked E5 Reinhard values, and the earlier
+draft of this clause was wrong to require it. The locked E5 comparators are cross-fitted with
+109-fold leave-one-slide-out, fitting on 108 slides, whereas RF1U inherits the RF1 five-fold
+scheme and fits on about 87. Different training sets give slightly different pooled Lab
+statistics and therefore slightly different output. Measured over five slides of ResNet50, the
+two agree to a minimum cosine of 0.9972 and a maximum absolute feature difference of 0.045,
+consistent with that fold difference and far from a defect.
+
+This is why the comparator is re-rendered here rather than borrowed: RF1U and its Reinhard
+baseline are fitted on the same folds and encoded in the same pass, so the primary comparison is
+matched. Absolute RF1U numbers are therefore compared with the locked E5 table only as context,
+never as a like-for-like substitution.
 
 ## 5. Endpoints
 
