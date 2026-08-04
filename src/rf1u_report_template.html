@@ -268,8 +268,83 @@
   }
   footer .mono { font-family: var(--f-data); font-size: 0.78rem; }
 
+
+  /* ---- table of contents ---- */
+  .toc {
+    border: 1px solid var(--rule); background: var(--surface);
+    display: flex; flex-direction: column;
+  }
+  .toc-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.9rem 1.1rem; border-bottom: 1px solid var(--rule);
+  }
+  .toc-btn {
+    background: none; border: 1px solid var(--rule); color: var(--ink-soft);
+    font-family: var(--f-data); font-size: 0.7rem; letter-spacing: 0.05em;
+    padding: 0.25rem 0.6rem; cursor: pointer; border-radius: 2px;
+  }
+  .toc-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .toc-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .toc-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1px; background: var(--rule-soft);
+  }
+  .toc-row {
+    display: flex; gap: 0.75rem; align-items: baseline;
+    padding: 0.7rem 1.1rem; background: var(--surface);
+    text-decoration: none; color: inherit;
+  }
+  .toc-row:hover { background: var(--surface-sunk); }
+  .toc-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .toc-num {
+    font-family: var(--f-data); font-size: 0.78rem; font-weight: 700;
+    color: var(--accent); min-width: 1.4rem; flex-shrink: 0;
+  }
+  .toc-text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+  .toc-label {
+    font-family: var(--f-display); font-size: 0.68rem; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .toc-title {
+    font-family: var(--f-display); font-size: 0.86rem; font-weight: 600;
+    line-height: 1.3; color: var(--ink);
+  }
+
+  /* ---- collapsible sections ---- */
+  details.sec {
+    border-top: 1px solid var(--rule);
+    display: flex; flex-direction: column;
+  }
+  details.sec[open] { gap: 1.5rem; padding-bottom: 0.5rem; }
+  details.sec > summary {
+    list-style: none; cursor: pointer;
+    display: flex; gap: 1rem; align-items: baseline;
+    padding: 1.35rem 0.25rem 1.35rem 0;
+  }
+  details.sec > summary::-webkit-details-marker { display: none; }
+  details.sec > summary:hover .sec-h { color: var(--accent); }
+  details.sec > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .sec-num {
+    font-family: var(--f-data); font-size: 0.85rem; font-weight: 700;
+    color: var(--accent); min-width: 1.8rem; flex-shrink: 0;
+  }
+  .sec-titles { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 0; }
+  .sec-h {
+    font-family: var(--f-display); font-size: 1.5rem; line-height: 1.22;
+    letter-spacing: -0.018em; font-weight: 700; text-wrap: balance;
+  }
+  details.sec > summary::after {
+    content: "+"; font-family: var(--f-data); font-size: 1.15rem;
+    color: var(--ink-faint); align-self: center; flex-shrink: 0;
+  }
+  details.sec[open] > summary::after { content: "−"; }
+  details.sec :target { scroll-margin-top: 1rem; }
+  details.sec > *:not(summary) { max-width: 100%; }
+
   @media print {
     body { background: #fff; color: #000; font-size: 11pt; }
+    details.sec > summary::after { display: none; }
+    .toc-btn { display: none; }
     .theme-toggle { display: none; }
     .page { padding: 0; gap: 2rem; max-width: none; }
     section, figure, .table-wrap, .gallery-block { break-inside: avoid; }
@@ -293,6 +368,14 @@
       feature space reaches.
     </p>
   </header>
+
+  <nav class="toc" aria-label="Contents">
+    <div class="toc-head">
+      <span class="label">Contents</span>
+      <button type="button" id="expandAll" class="toc-btn">Expand all</button>
+    </div>
+    <div class="toc-grid"><a class="toc-row" href="#s1"><span class="toc-num">1</span><span class="toc-text"><span class="toc-label">How to read this</span><span class="toc-title">The six quantities everything below is measured in</span></span></a><a class="toc-row" href="#s2"><span class="toc-num">2</span><span class="toc-text"><span class="toc-label">The cohort</span><span class="toc-title">Why this dataset can answer the question</span></span></a><a class="toc-row" href="#s3"><span class="toc-num">3</span><span class="toc-text"><span class="toc-label">Characterization</span><span class="toc-title">The scanner effect is real, frequency-dependent, and not one number</span></span></a><a class="toc-row" href="#s4"><span class="toc-num">4</span><span class="toc-text"><span class="toc-label">White space</span><span class="toc-title">What the glass tells us, and what it does not</span></span></a><a class="toc-row" href="#s5"><span class="toc-num">5</span><span class="toc-text"><span class="toc-label">Bounds</span><span class="toc-title">Low scanner radius can mean alignment or destruction</span></span></a><a class="toc-row" href="#s6"><span class="toc-num">6</span><span class="toc-text"><span class="toc-label">Benchmark</span><span class="toc-title">Five deployable corrections under the frozen gates</span></span></a><a class="toc-row" href="#s7"><span class="toc-num">7</span><span class="toc-text"><span class="toc-label">The bridge</span><span class="toc-title">Correcting the residual, as cheaply as possible</span></span></a><a class="toc-row" href="#s8"><span class="toc-num">8</span><span class="toc-text"><span class="toc-label">Gallery</span><span class="toc-title">The same tissue, three destinations</span></span></a><a class="toc-row" href="#s9"><span class="toc-num">9</span><span class="toc-text"><span class="toc-label">The target finding</span><span class="toc-title">Where you aim decides whether correction helps</span></span></a><a class="toc-row" href="#s10"><span class="toc-num">10</span><span class="toc-text"><span class="toc-label">Retrieval</span><span class="toc-title">What a patch's neighbours actually look like</span></span></a><a class="toc-row" href="#s11"><span class="toc-num">11</span><span class="toc-text"><span class="toc-label">Probing</span><span class="toc-title">Image correction does not remove the scanner's signature</span></span></a><a class="toc-row" href="#s12"><span class="toc-num">12</span><span class="toc-text"><span class="toc-label">Synthesis</span><span class="toc-title">Frequency is the bottleneck; feature space is where the room is</span></span></a><a class="toc-row" href="#s13"><span class="toc-num">13</span><span class="toc-text"><span class="toc-label">Position</span><span class="toc-title">What the field already knows, and what is left</span></span></a><a class="toc-row" href="#s14"><span class="toc-num">14</span><span class="toc-text"><span class="toc-label">Next</span><span class="toc-title">What we would do next, in priority order</span></span></a></div>
+  </nav>
 
   <section>
     <div class="stats">
@@ -327,11 +410,11 @@
   </section>
 
   <!-- ================= 1. GLOSSARY ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">1 · How to read this</div>
-      <h2>The six quantities everything below is measured in</h2>
-    </div>
+  <details class="sec" id="s1" open>
+    <summary class="sec-head">
+      <span class="sec-num">1</span>
+      <span class="sec-titles"><span class="label">How to read this</span><span class="sec-h">The six quantities everything below is measured in</span></span>
+    </summary>
 
     <div class="prose">
       <p>
@@ -478,14 +561,14 @@
       5,000 replicates and seed 20260803; cross-validation splits slides. Patches within a slide
       are observations, not independent replicates, and are never treated as such.
     </div>
-  </section>
+  </details>
 
   <!-- ================= 2. COHORT ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">2 · The cohort</div>
-      <h2>Why this dataset can answer the question</h2>
-    </div>
+  <details class="sec" id="s2">
+    <summary class="sec-head">
+      <span class="sec-num">2</span>
+      <span class="sec-titles"><span class="label">The cohort</span><span class="sec-h">Why this dataset can answer the question</span></span>
+    </summary>
     <div class="prose">
       <p>
         109 physical slides spanning 37 tissue types, each scanned on all six instruments, with
@@ -503,6 +586,59 @@
         the worst observed alias-to-in-band ratio was 0.0154 for sinusoids and 0.0190 for
         broadband noise.
       </p>
+    </div>
+
+    <h3>How a patch is made</h3>
+    <div class="table-wrap">
+      <table>
+        <caption>From native slide to model input — every step and its frozen parameters</caption>
+        <thead>
+          <tr><th class="txt">Step</th><th class="txt">What happens</th><th class="txt">Frozen setting</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="txt">1 · Candidate locations</td>
+            <td class="txt">Start from each slide's 100 pre-existing locations, keep the original id and the five <code>index % 5</code> replicate groups</td>
+            <td class="txt">selection never inspects a model feature or an outcome</td>
+          </tr>
+          <tr>
+            <td class="txt">2 · Six-scanner geometry gate</td>
+            <td class="txt">A location survives only if every non-reference scanner passes integer alignment, residual phase shift, padding and in-bounds checks</td>
+            <td class="txt">shift ≤8 px · padding ≤1% · no search-boundary event · shifted 512 px FOV in bounds</td>
+          </tr>
+          <tr>
+            <td class="txt">3 · Deterministic replacement</td>
+            <td class="txt">Failed slots are refilled from the intersection of all six curated coordinate pools until exactly 100 valid centres exist</td>
+            <td class="txt">seed 20260802 · cap 3,000 evaluated candidates · median 23 evaluated, maximum 855</td>
+          </tr>
+          <tr>
+            <td class="txt">4 · Native render</td>
+            <td class="txt">One 512 px target-grid RGB patch per scanner and location, rendered from the native WSI; historical registered images are never opened</td>
+            <td class="txt">libvips Lanczos3 reduction at the smallest native-to-target affine singular value, then the residual bicubic affine</td>
+          </tr>
+          <tr>
+            <td class="txt">5 · Model crop</td>
+            <td class="txt">The stored 512 px grid is centre-cropped to each model's native field of view around the same canonical centre</td>
+            <td class="txt">ResNet50 256 px · UNI v1 256 px · CONCH v1 512 px · Virchow2 224 px · 0.5052 µm/px</td>
+          </tr>
+          <tr>
+            <td class="txt">6 · Audit</td>
+            <td class="txt">Every shard hash, scanner/location/centre/affine identity and every rendered patch is re-read; fully black or fully white renders are excluded</td>
+            <td class="txt">109/109 shards, 65,400/65,400 patches passed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose">
+      <p>
+        Two numbers are worth keeping in view. 8,203 of the 10,900 locations (75.3%) survived
+        from the original selection and 2,697 (24.7%) were replaced, with a median of 20
+        replacements per slide and a maximum of 89 on one slide. And the render chain matters as
+        much as the coordinates: resampling a scan changes its high-frequency content, which is
+        the quantity this report measures, so the anti-aliasing is explicit and was audited
+        against a pre-specified 5% alias limit rather than assumed.
+      </p>
       <p>
         The tissue labels are normal tissue types only. There is no independent biological or
         clinical outcome in this cohort, so nothing here is called biological fidelity or
@@ -510,14 +646,14 @@
         analyses are labelled coarse secondary evidence throughout.
       </p>
     </div>
-  </section>
+  </details>
 
   <!-- ================= 3. WHAT THE SCANNER DOES ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">3 · Characterization</div>
-      <h2>The scanner effect is real, frequency-dependent, and not one number</h2>
-    </div>
+  <details class="sec" id="s3">
+    <summary class="sec-head">
+      <span class="sec-num">3</span>
+      <span class="sec-titles"><span class="label">Characterization</span><span class="sec-h">The scanner effect is real, frequency-dependent, and not one number</span></span>
+    </summary>
 
     <div class="prose">
       <p>
@@ -634,14 +770,14 @@
       three bands rather than one gain. GT450 also hit the family's gain = 2 boundary in 90.8% of
       folds, so part of its residual reflects range rather than dimensionality.
     </div>
-  </section>
+  </details>
 
   <!-- ================= 4. BACKGROUND ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">4 · White space</div>
-      <h2>What the glass tells us, and what it does not</h2>
-    </div>
+  <details class="sec" id="s4">
+    <summary class="sec-head">
+      <span class="sec-num">4</span>
+      <span class="sec-titles"><span class="label">White space</span><span class="sec-h">What the glass tells us, and what it does not</span></span>
+    </summary>
     <div class="prose">
       <p>
         Empty background is the obvious place to characterize a scanner: no biology, just the
@@ -689,14 +825,14 @@
       require controlled uniform exposure and known input photon statistics, which a slide
       archive does not provide.
     </div>
-  </section>
+  </details>
 
   <!-- ================= 5. CONTROLS ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">5 · Bounds</div>
-      <h2>Low scanner radius can mean alignment or destruction</h2>
-    </div>
+  <details class="sec" id="s5">
+    <summary class="sec-head">
+      <span class="sec-num">5</span>
+      <span class="sec-titles"><span class="label">Bounds</span><span class="sec-h">Low scanner radius can mean alignment or destruction</span></span>
+    </summary>
     <div class="prose">
       <p>
         Before benchmarking real corrections we bounded the region with physical controls —
@@ -748,14 +884,14 @@
       deployable. Its role is to show that a fidelity-preserving invariance gain exists at all,
       and to give the achievable region a ceiling.
     </div>
-  </section>
+  </details>
 
   <!-- ================= 6. COMPARATORS ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">6 · Benchmark</div>
-      <h2>Five deployable corrections under the frozen gates</h2>
-    </div>
+  <details class="sec" id="s6">
+    <summary class="sec-head">
+      <span class="sec-num">6</span>
+      <span class="sec-titles"><span class="label">Benchmark</span><span class="sec-h">Five deployable corrections under the frozen gates</span></span>
+    </summary>
     <div class="prose">
       <p>
         Three image-space and two feature-space methods, cross-fitted by exact 109-fold
@@ -815,14 +951,14 @@
         agreement in all four models, and no correction improved every tissue metric.
       </p>
     </div>
-  </section>
+  </details>
 
   <!-- ================= 7. OUR METHOD ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">7 · The bridge</div>
-      <h2>Correcting the residual, as cheaply as possible</h2>
-    </div>
+  <details class="sec" id="s7">
+    <summary class="sec-head">
+      <span class="sec-num">7</span>
+      <span class="sec-titles"><span class="label">The bridge</span><span class="sec-h">Correcting the residual, as cheaply as possible</span></span>
+    </summary>
 
     <div class="prose">
       <p>
@@ -954,14 +1090,14 @@
         nothing for VERSA and S360 — the two scanners that needed it — and was not adopted.
       </p>
     </div>
-  </section>
+  </details>
 
   <!-- ================= 8. GALLERY ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">8 · Gallery</div>
-      <h2>The same tissue, three destinations</h2>
-    </div>
+  <details class="sec" id="s8">
+    <summary class="sec-head">
+      <span class="sec-num">8</span>
+      <span class="sec-titles"><span class="label">Gallery</span><span class="sec-h">The same tissue, three destinations</span></span>
+    </summary>
     <div class="prose">
       <p>
         One physical location, chosen by a salted hash of the cohort and restricted to the most
@@ -978,14 +1114,14 @@
       The two source scanners shown per destination are those whose fitted correction is largest,
       so the visible difference is at its most visible; the other three are corrected less.
     </div>
-  </section>
+  </details>
 
   <!-- ================= 9. TARGET ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">9 · The target finding</div>
-      <h2>Where you aim decides whether correction helps</h2>
-    </div>
+  <details class="sec" id="s9">
+    <summary class="sec-head">
+      <span class="sec-num">9</span>
+      <span class="sec-titles"><span class="label">The target finding</span><span class="sec-h">Where you aim decides whether correction helps</span></span>
+    </summary>
 
     <div class="prose">
       <p>
@@ -1091,14 +1227,14 @@
         anchor, not because it is a good destination for harmonization.
       </p>
     </div>
-  </section>
+  </details>
 
   <!-- ================= 10. RETRIEVAL ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">10 · Retrieval</div>
-      <h2>What a patch's neighbours actually look like</h2>
-    </div>
+  <details class="sec" id="s10">
+    <summary class="sec-head">
+      <span class="sec-num">10</span>
+      <span class="sec-titles"><span class="label">Retrieval</span><span class="sec-h">What a patch's neighbours actually look like</span></span>
+    </summary>
 
     <div class="prose">
       <p>
@@ -1173,14 +1309,14 @@
         reference to any threshold.
       </p>
     </div>
-  </section>
+  </details>
 
   <!-- ================= 11. PROBE ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">11 · Probing</div>
-      <h2>Image correction does not remove the scanner's signature</h2>
-    </div>
+  <details class="sec" id="s11">
+    <summary class="sec-head">
+      <span class="sec-num">11</span>
+      <span class="sec-titles"><span class="label">Probing</span><span class="sec-h">Image correction does not remove the scanner's signature</span></span>
+    </summary>
 
     <div class="table-wrap">
       <table>
@@ -1248,14 +1384,14 @@
         exist to guard against.
       </p>
     </div>
-  </section>
+  </details>
 
   <!-- ================= 12. SYNTHESIS ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">12 · Synthesis</div>
-      <h2>Frequency is the bottleneck; feature space is where the room is</h2>
-    </div>
+  <details class="sec" id="s12">
+    <summary class="sec-head">
+      <span class="sec-num">12</span>
+      <span class="sec-titles"><span class="label">Synthesis</span><span class="sec-h">Frequency is the bottleneck; feature space is where the room is</span></span>
+    </summary>
 
     <div class="prose">
       <p>
@@ -1309,14 +1445,14 @@
       five-method ranking. External validation on an independent multi-scanner resource remains
       the outstanding gap.
     </div>
-  </section>
+  </details>
 
   <!-- ================= 13. RELATED WORK ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">13 · Position</div>
-      <h2>What the field already knows, and what is left</h2>
-    </div>
+  <details class="sec" id="s13">
+    <summary class="sec-head">
+      <span class="sec-num">13</span>
+      <span class="sec-titles"><span class="label">Position</span><span class="sec-h">What the field already knows, and what is left</span></span>
+    </summary>
 
     <div class="prose">
       <p>
@@ -1456,14 +1592,14 @@
         buying invariance.
       </p>
     </div>
-  </section>
+  </details>
 
   <!-- ================= 14. FUTURE WORK ================= -->
-  <section>
-    <div class="sec-head">
-      <div class="label">14 · Next</div>
-      <h2>What we would do next, in priority order</h2>
-    </div>
+  <details class="sec" id="s14">
+    <summary class="sec-head">
+      <span class="sec-num">14</span>
+      <span class="sec-titles"><span class="label">Next</span><span class="sec-h">What we would do next, in priority order</span></span>
+    </summary>
 
     <div class="ladder">
       <div class="step">
@@ -1547,7 +1683,7 @@
       characterization, the control-bounded frontier and the destination result are ours
       regardless, but the feature-space framing is not a lane to enter slowly.
     </div>
-  </section>
+  </details>
 
   <footer>
     <div>
@@ -1565,6 +1701,48 @@
 </div>
 
 <script>
+  (function () {
+    // A collapsed section must open before the browser can scroll to it.
+    function reveal(hash) {
+      if (!hash) return null;
+      var target = document.querySelector(hash);
+      if (target && target.tagName === 'DETAILS') { target.open = true; }
+      return target;
+    }
+    document.querySelectorAll('.toc-row').forEach(function (row) {
+      row.addEventListener('click', function (event) {
+        var target = reveal(row.getAttribute('href'));
+        if (!target) return;
+        event.preventDefault();
+        history.replaceState(null, '', row.getAttribute('href'));
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+    var all = document.querySelectorAll('details.sec');
+    var button = document.getElementById('expandAll');
+    function sync() {
+      var open = Array.prototype.every.call(all, function (d) { return d.open; });
+      button.textContent = open ? 'Collapse all' : 'Expand all';
+      return open;
+    }
+    button.addEventListener('click', function () {
+      var open = sync();
+      all.forEach(function (d) { d.open = !open; });
+      sync();
+    });
+    all.forEach(function (d) { d.addEventListener('toggle', sync); });
+    // Printing needs everything visible; restore the reading state afterwards.
+    var before = null;
+    window.addEventListener('beforeprint', function () {
+      before = Array.prototype.map.call(all, function (d) { return d.open; });
+      all.forEach(function (d) { d.open = true; });
+    });
+    window.addEventListener('afterprint', function () {
+      if (before) { all.forEach(function (d, i) { d.open = before[i]; }); }
+    });
+    reveal(window.location.hash);
+  })();
+
   (function () {
     var buttons = document.querySelectorAll('.knn-btn');
     var panels = document.querySelectorAll('.knn-panel');
