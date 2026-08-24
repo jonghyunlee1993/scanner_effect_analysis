@@ -1,8 +1,9 @@
 """CORAL and orthogonal Procrustes on the PLISM core-grid embeddings.
 
 This replaces `analyze_plism_feature_correction.py`, which ran on the sparse
-sampling: 192-384 locations per section, four E0-panel encoders.  Two things
-changed and both matter to the conclusion.
+sampling -- 192-384 locations per section, four E0-panel encoders -- and was
+removed in the 2026-08-24 cleanup; see `docs/superseded_records_20260824.md` for
+where to read it.  Two things changed and both matter to the conclusion.
 
 **The panel.**  UNI2-h, CONCHv1.5 and H-optimus-1 -- the encoders a 2026 study
 would actually deploy -- in place of ResNet50, UNI v1, CONCH v1 and Virchow2.

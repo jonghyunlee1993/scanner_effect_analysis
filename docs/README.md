@@ -7,8 +7,6 @@ working draft는 2026-08-03에 제거했으며 삭제 전 상태는
 
 ## Coordination and manuscript basis
 
-- [RF1 improvement handoff](2026-08-03_rf1_improvement_handoff.md): 현재 결과, 해석,
-  live jobs, 다음 실행 순서와 cleanup history
 - [Manuscript storyline](storyline.md): 최종 핵심 주장과 claim--experiment--result 구조.
   2026-08-23에 E8(learned paired baseline)과 E9(PLISM external validation)를 반영했고,
   과거 판본의 E8/E9 ID 혼선(구: E8=PLISM, E9=background)을 실행 계약 기준으로 정정했다
@@ -119,3 +117,8 @@ working draft는 2026-08-03에 제거했으며 삭제 전 상태는
   canonical storyline, protocol, locked-results 문서에서 새로 생성한다.
 - superseded 문서를 다시 active tree로 복원하지 않는다. 과거 판단이 필요할 때만 Git
   bundle을 별도 경로에 clone해 조회한다.
+- 2026-08-24 정리에서 제거한 기록과 그 이유, 대체 위치는
+  [superseded records](superseded_records_20260824.md)에 있고 복구는
+  `checkpoints/prenorm_postcleanup_20260824.bundle`에서 한다. 그 문서는 삭제된 발표본이
+  담고 있던, 이후 반박된 두 주장(“scanner style은 분리 가능하다”, “feature-space 보정은
+  확장성이 없다”)도 기록한다.
