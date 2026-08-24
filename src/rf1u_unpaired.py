@@ -26,6 +26,23 @@ RF1U_BOOTSTRAP_SEED = 20260803
 RF1U_HARD_CAP = 4.0
 
 
+def resolve_base_target(target: str) -> str:
+    """Map a destination name to the physical scanner whose colour it adopts.
+
+    The E8 destination sweep names a synthetic destination `<base>_l<NNN>`: the
+    base scanner's colour with its post-Reinhard band power scaled by lambda.
+    Only the band energy differs, so the scanner index, the source set and the
+    Lab statistics are all the base scanner's. A locked target resolves to
+    itself, so this is a no-op on every locked path.
+    """
+    if target in RF1U_TARGETS:
+        return target
+    base = target.rsplit("_l", 1)[0]
+    if base != target and base in RF1U_TARGETS:
+        return base
+    raise ValueError(f"cannot resolve destination {target!r} to a scanner")
+
+
 def target_index(target: str) -> int:
     """Scanner index of a frozen target name."""
     if target not in RF1U_TARGETS:

@@ -45,6 +45,7 @@ from rf1u_unpaired import (
     RF1U_TARGETS,
     RF1U_VERSION,
     fitted_scanner_gains,
+    resolve_base_target,
     source_indices,
     target_index,
 )
@@ -72,7 +73,18 @@ def parse_args():
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--encoder-id")
     selection.add_argument("--encoder-index", type=int)
-    parser.add_argument("--target", choices=RF1U_TARGETS, required=True)
+    # Not restricted to RF1U_TARGETS: the destination sweep of
+    # `build_e8_lambda_energy.py` supplies synthetic targets under its own energy
+    # root. An unknown name is still rejected, one step later and more strictly,
+    # by load_band_energy(), which requires a band-energy file whose summary
+    # names this target, passes its gate and matches its own SHA-256. Locked
+    # outputs are keyed by target name and energy hash and are already written,
+    # so widening the accepted names cannot move any of them.
+    parser.add_argument(
+        "--target",
+        required=True,
+        help=f"destination name; the locked set is {', '.join(RF1U_TARGETS)}",
+    )
     parser.add_argument("--contract", default="outputs/e0_pfm_contract/checkpoint_manifest.json")
     parser.add_argument("--grid-audit", default="outputs/e0_native_aa_grid/audit/summary.json")
     parser.add_argument("--grid", default="outputs/e0_native_aa_grid/shards")
@@ -214,8 +226,11 @@ def main():
     fov = int(model["native_fov_px"])
     feature_dim = int(model["feature_dim"])
     target = args.target
-    reference = target_index(target)
-    sources = source_indices(target)
+    # A synthetic destination adopts its base scanner's colour and source set;
+    # only its band energy differs, so the indices resolve to the base.
+    base = resolve_base_target(target)
+    reference = target_index(base)
+    sources = source_indices(base)
     conditions = (f"reinhard_{target}", f"{RF1U_CONDITION}_{target}")
 
     _, e5_summary, statistics = load_e5_statistics(

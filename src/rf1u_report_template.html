@@ -1340,10 +1340,14 @@
       <h3>The decisive contrast in this report</h3>
       <p>
         A linear probe names the scanner at {{PROBE_RAW_MIN}} to {{PROBE_RAW_MAX}} on raw
-        embeddings. After the best image correction available here it is still
-        {{PROBE_IMAGE_BEST}} at worst. After feature-space correction it is
-        {{PROBE_FEATURE_MIN}} to {{PROBE_FEATURE_MAX}} — at or below the chance level of
-        {{PROBE_CHANCE}}. ResNet50's radius falls 32.9% under our image correction while its
+        embeddings. After the best image correction in this table it is still
+        {{PROBE_IMAGE_BEST}} at worst — and after the strongest image correction we were able to
+        build at all, a learned unconstrained residual trained on the pixel registration itself
+        (section 14), still 0.759. After feature-space correction it is
+        {{PROBE_FEATURE_MIN}} to {{PROBE_FEATURE_MAX}}, which is <strong>chance</strong>; the
+        excess below {{PROBE_CHANCE}} is diagnosed as a fold artefact rather than extra
+        invariance, and that diagnosis is two paragraphs down.
+        ResNet50's radius falls 32.9% under our image correction while its
         probe moves only from 0.970 to 0.890; UNI v1 and Virchow2 stay above 0.99 in every image
         condition and drop to 0.13 and 0.12 under Procrustes.
       </p>
@@ -1369,14 +1373,39 @@
         rescan.
       </p>
       <p>
-        One anomaly should be recorded rather than smoothed over. CORAL lands
-        <em>below</em> chance, 0.077 to 0.103, consistently across all five folds. A classifier
-        performing worse than chance is systematically wrong, not merely uninformative; the
-        likely cause is that the leave-one-slide-out harmonization gives each slide a slightly
-        different transform, so a direction learned on training slides inverts on held-out ones.
-        Procrustes, which is a rotation and does not rescale, sits much closer to chance. This
-        does not make CORAL better than Procrustes — sub-chance is a measurement warning, not a
-        result — and the shared conclusion holds for both.
+        One anomaly should be recorded rather than smoothed over, and it has since been
+        diagnosed rather than guessed at. CORAL lands <em>below</em> chance, 0.077 to 0.103,
+        consistently across all five folds. A classifier performing worse than chance is
+        systematically wrong, not merely uninformative. Permuting the labels within fold and
+        refitting confirms chance is calibrated where it should be, and the confusion matrices
+        show what is actually happening: after CORAL the diagonal is the smallest entry in
+        <strong>16 of 24</strong> scanner rows, and <strong>19 of 24</strong> rows put their
+        highest mass on AKOYA. The classifier is actively avoiding the true class, because
+        leave-one-slide-out harmonization gives each slide a slightly different transform and a
+        direction learned on training slides inverts on held-out ones. So the correct statement
+        is that feature-space correction takes the linear probe <em>to</em> chance; reporting it
+        as &ldquo;at or below chance&rdquo; overstates the result in one direction and understates
+        the diagnosis in the other.
+      </p>
+      <p>
+        <strong>A second qualification, and it separates the two feature methods this section has
+        so far treated together.</strong> Everything above is a <em>linear</em> probe. Re-running
+        it as a 256-unit MLP leaves CORAL at 0.07–0.27 but lifts Procrustes to
+        <strong>0.61–0.78</strong>. The reason is the same property this section already noted in
+        passing — Procrustes is a rotation and does not rescale. A rigid per-scanner rotation
+        preserves every within-scanner distance exactly, so it can move the clouds onto each other
+        without changing their shape, and a nonlinear decoder still reads the untouched local
+        geometry. CORAL whitens the source second moment and recolours it with the target's,
+        which alters that shape.
+      </p>
+      <p>
+        Two things follow. Sub-chance does not make CORAL better than Procrustes — that remains a
+        measurement warning, not a result — but the <em>nonlinear</em> probe does, and it points
+        the same way. And the method with the largest radius reduction is the one that leaves the
+        most scanner information recoverable, which is this report's own degeneracy argument
+        reappearing inside feature space with no content destroyed at all. Where sections 12 and
+        13 recommend correcting in feature space, the specific recommendation is
+        <strong>CORAL</strong>.
       </p>
       <p>
         The probe is secondary by construction and is never read alone. A constant representation
@@ -1419,19 +1448,41 @@
         <strong>But the direction matters, and the image domain caps out.</strong> Aim at a
         detail-poor destination and the same estimator destroys content while buying no
         invariance. Aim well and it helps — and a linear probe still names the scanner at 0.885
-        or better. That ceiling is not a property of our implementation: a variant with seven
-        times the image-domain gain was blocked by our own no-harm gate, a slide-adaptive
-        estimator helped only the scanners that did not need it, and three destinations were
-        tried.
+        or better. That ceiling is not a property of our implementation, and it is now bounded
+        from three directions rather than argued from ours. An <em>oracle</em> that substitutes
+        another scanner's true registered detail — ground truth this cohort's pixel registration
+        makes available and no deployable method has — leaves the probe at 0.93–0.99. A
+        <em>learned</em>, unconstrained paired residual, trained on those registrations and
+        pre-registered as a ceiling probe, clears content and collapse in all four models and
+        beats every analytic method on radius (+47.9% in ResNet50, the largest figure anywhere
+        in this report, feature space included) — and still leaves the probe at 0.76–0.97.
+        Alongside those: a variant with seven times the image-domain gain was blocked by our own
+        no-harm gate, a slide-adaptive estimator helped only the scanners that did not need it,
+        and three destinations were tried. The limit is a property of the domain, not of the
+        correction family and not of how hard the correction was optimized.
       </li>
       <li>
-        <strong>So the headroom is in feature space.</strong> Procrustes reaches +20 to +44%
-        radius reduction where the best image method reaches +4 to +33%, and takes the probe from
-        0.99 to 0.12. The recommendation this report ends on is therefore not to adopt our
-        correction but to correct where the room is — while noting that the two levels are
+        <strong>So the headroom is in feature space</strong> — but which method, and on which
+        probe, turns out to matter. Procrustes reaches +20 to +44% radius reduction where the
+        best image method reaches +4 to +33%, and takes the <em>linear</em> probe from 0.99 to
+        0.12. Under a nonlinear probe the two feature methods separate sharply: a 256-unit MLP
+        recovers the scanner from Procrustes-corrected embeddings at 0.61–0.78, and from
+        CORAL-corrected embeddings at only 0.07–0.27. The mechanism is the parameterization.
+        Procrustes is a rigid rotation fitted per scanner, so it preserves every within-scanner
+        distance exactly — it can align the clouds but cannot change their shape, and a
+        nonlinear decoder still reads the untouched local geometry. CORAL whitens the source
+        second moment and recolours it with the target's, which alters that shape.
+        <strong>So the method with the largest radius reduction is the one that leaves the most
+        scanner information recoverable</strong>, and the linear probe alone would have hidden
+        it. That is this report's own thesis a fourth time, now inside feature space and with no
+        content destroyed: an invariance metric and actual scanner removal dissociate.
+
+        The recommendation this report ends on is therefore not to adopt our correction but to
+        correct where the room is, with CORAL as the specific deployable option rather than
+        feature-space correction generically — while noting that the two levels are
         complementary: image correction is model-independent and produces an artefact a
         pathologist can inspect, feature correction is fitted per model and produces nothing
-        viewable, and only the second reaches the linear signature.
+        viewable, and only the second reaches the scanner signature at all.
       </li>
     </ol>
 
@@ -1522,15 +1573,42 @@
         the conclusion drawn from them is a boundary statement about image space, not a proposal
         for a new harmonizer. What is novel on this axis is the other half of the contrast:
         <strong>feature correction measured against a fully optimized image correction on the
-        same embeddings and the same slides</strong>, which we did not find reported.
+        same embeddings and the same slides</strong>, which we did not find reported. That
+        comparison has since been made as strong as this cohort allows: the image side is not
+        only our analytic method but a learned, unconstrained residual trained on the pixel
+        registration itself, under a reading pre-registered before any embedding existed
+        (section 14). It clears the fidelity gates in all four models, produces the largest
+        radius reduction in this report, and still does not reach the feature methods on the
+        scanner probe.
       </p>
       <p>
         Our version is also the sharper one for the scanner question specifically. ComBat removed
         <em>institution</em> on TCGA, where scanner, staining protocol and site are confounded and
         cannot be separated; this design scans one physical slide on six instruments, so the label
         being removed is the scanner and nothing else. The caveat the ComBat authors state
-        transfers directly and we adopt it: batch effects living in <em>feature interactions</em>
+        transfers directly and we adopted it: batch effects living in <em>feature interactions</em>
         may survive a linear correction, and a linear probe would not see them.
+      </p>
+      <p>
+        <strong>We have since measured that caveat rather than only adopting it, and it bites —
+        selectively.</strong> Re-running the scanner probe as a 256-unit MLP instead of a linear
+        model splits the two feature methods that the linear probe had ranked together.
+        Orthogonal Procrustes falls from 0.12–0.16 linear to <strong>0.61–0.78</strong>
+        nonlinear; CORAL moves only to 0.07–0.27. The reason is the parameterization, not the
+        cohort: Procrustes is a rigid rotation fitted per scanner, so it preserves every
+        within-scanner distance exactly — it can align the clouds but cannot change their shape,
+        and a nonlinear decoder still reads the untouched local geometry. CORAL whitens the
+        source second moment and recolours it with the target's, which alters that shape.
+      </p>
+      <p>
+        Two consequences, and neither is comfortable. The method with the <em>largest</em> radius
+        reduction is the one that leaves the <em>most</em> scanner information recoverable — the
+        invariance–fidelity degeneracy this report is built on, reappearing inside feature space
+        with no content destroyed at all. And the ComBat caveat is not a theoretical hedge to be
+        carried politely in a discussion section; on these embeddings it is the difference
+        between a method that removes the scanner and one that rotates it out of a linear
+        decoder's view. Where section 12 recommends correcting in feature space, the specific
+        recommendation is <strong>CORAL</strong>.
       </p>
     </div>
 
@@ -1605,22 +1683,39 @@
       <div class="step">
         <div class="step-tag">
           <div class="step-name">External</div>
-          <div class="step-state">highest value</div>
+          <div class="step-state">done — this is Part IV</div>
         </div>
         <div class="step-body">
           <p>
-            <strong>PLISM as external mechanistic validation.</strong> An independent registered
-            resource of 46 tissue types across 13 stain conditions and 13 devices, with 3,417
-            aligned image groups, overlapping our panel on several instruments. Band boundaries,
-            transform family, gates and success criteria would be frozen from this cohort before
-            PLISM is opened, and the tiles would not be used to refit anything.
+            <strong>PLISM as external mechanistic validation.</strong> This was the top item, and
+            it has been carried out; sections 15 to 19 are the result. The plan was honoured in
+            the order it was written: band boundaries, transform family, gates and success
+            criteria were frozen from this cohort before PLISM was opened, and no PLISM tile was
+            used to refit anything of ours.
           </p>
           <p>
-            One prerequisite: PLISM tiles are Elastix-registered and resampled to a common
-            reference, so interpolation can alter exactly the high-frequency content we measure.
-            An identity/resampling audit runs first, and if native scans are unavailable the
-            result is reported as effective transfer <em>after PLISM preprocessing</em>, not as
-            scanner transfer.
+            <strong>The prerequisite dissolved rather than merely passing.</strong> The concern
+            was that PLISM's published tiles are Elastix-registered and resampled to a common
+            reference, so interpolation could alter exactly the high-frequency content we measure
+            — and that without native scans the result would have to be reported as effective
+            transfer <em>after PLISM preprocessing</em>. Native scans exist: 91 md5-verified WSIs,
+            seven scanners crossed with 13 staining conditions, every one of them run at 40× with
+            a native pixel size of 0.220–0.262 µm. The spectrum is therefore measured at native
+            resolution <strong>with no resampling and no registration at all</strong>, so the
+            fallback naming never had to be invoked. The one limit we keep is different and
+            narrower: this is effective transfer measured on tissue, not an MTF.
+          </p>
+          <p>
+            Registration does still enter, but for a separate job — putting the seven scanners on
+            a common set of locations for the paired and feature-space analyses. That is audited
+            on its own terms: 700,986 non-reference measurements, median residual 0.091–0.113 µm,
+            99.57 % clearing the 1 µm gate.
+          </p>
+          <p>
+            What it settled, and what it did not, is section 19. Five of eight claims replicated;
+            the destination rule reproduced strongly at Spearman +0.964 over seven destinations
+            while failing to carry into encoder benefit; and two claims from the previous edition
+            were corrected rather than quietly dropped.
           </p>
         </div>
       </div>
@@ -1650,28 +1745,45 @@
       <div class="step">
         <div class="step-tag">
           <div class="step-name">Generative</div>
-          <div class="step-state">built on this, not instead of it</div>
+          <div class="step-state">built, pre-registered, and it hit the ceiling</div>
         </div>
         <div class="step-body">
           <p>
-            <strong>A learned residual stacked on the analytic correction.</strong> The band gains
-            are three numbers per scanner; a network could predict a spatially varying residual on
-            top of them, which is exactly the part the analytic form cannot express — the
-            scanner × tissue interaction section 3.2 measures and a scalar gain cannot follow.
+            <strong>This item has been executed, and it is reported here rather than proposed.</strong>
+            The plan was a learned residual stacked on the analytic correction: the band gains are
+            three numbers per scanner, and a network predicts a spatially varying residual on top
+            of them — exactly the part the analytic form cannot express, the scanner × tissue
+            interaction section 3.2 measures and a scalar gain cannot follow. It was run under its
+            own frozen contract with paired scanner-conditioned training, image-only model
+            selection with no access to features or outcomes, an explicit hallucination audit
+            against the paired acquisition, and — this is the part that makes the result worth
+            anything — a <strong>pre-registered</strong> reading fixed before any embedding
+            existed, declaring in advance what would support and what would falsify section 12's
+            ceiling claim.
           </p>
           <p>
-            The design that keeps the current guarantees is a residual model, not a generator:
-            the analytic output stays the base, the network predicts a correction to it, and the
-            same exact gamut projection closes the pipeline. Then the worst case is still a
-            bounded, inspectable change to structure that is already present, and switching the
-            network off returns exactly what section 7 produces.
+            <strong>Arm A, the guarantee-preserving version, did not survive its own gate.</strong>
+            The spatially varying gain field kept every property that makes the analytic method
+            defensible — zero band violations, gains bounded in [0.25, 4.0], residual exactness 5e-06 on
+            average — and cleared 3 of the 5 required folds. It failed on a conjunction worth naming:
+            pooled paired error improved on every fold, but on two folds only 3 of 5 source
+            scanners improved individually where the gate requires 4. It was rejected for being
+            unevenly good across scanners, not for being worse on average, and its features were
+            never encoded. Within this parameterization, the three-number analytic gain is
+            sufficient and the scanner × tissue interaction is not established as worth modelling.
           </p>
           <p>
-            It would need its own frozen contract before any endpoint is opened: paired
-            scanner-conditioned training, image-only model selection, an explicit hallucination
-            audit against the paired acquisition, and external validation. The property worth
-            protecting is the one that makes the current method defensible — that it can only
-            rescale structure the scanner actually recorded.
+            <strong>Arm B, the unconstrained ceiling probe, is the reason this section changed.</strong>
+            Given full paired supervision and no structural constraint, it passed content
+            non-inferiority and the collapse gate in all four models and produced the largest
+            radius reduction in this report — and left the linear scanner probe at 0.76–0.97
+            against feature space's 0.08–0.16. The pre-registered verdict is
+            <strong>supported</strong>: the falsification band, below 0.30 in two or more models,
+            was not approached in any of them. One caveat belongs beside it. Arm B is measurably
+            less phase-faithful than the analytic method it outperforms — mean phase correlation
+            0.69 against RF1U's 0.95 — so the honest statement is that the ceiling survives even a
+            correction permitted to be structurally aggressive, not that a conservative learned
+            model was tested and failed.
           </p>
         </div>
       </div>
