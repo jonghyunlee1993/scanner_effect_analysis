@@ -1,6 +1,8 @@
 # PanNormal storyline completion audit
 
-**Status:** PanNormal core E0--E7 complete and independently result-locked on 2026-08-03  
+**Status:** PanNormal core E0--E7 complete and independently result-locked on 2026-08-03.
+Post-core E8 and E9 executed 2026-08-06 and 2026-08-22/23; they are audited here under their
+own contracts and touch no core lock.  
 **Scope:** requirement-by-requirement evidence for [`storyline.md`](storyline.md)  
 **Top-level lock:** `outputs/pannormal_core_results_lock/summary.json`
 
@@ -25,6 +27,25 @@
 | E6 unseen-tissue transfer | `outputs/e6_loto_results_lock/summary.json` | exact 37-fold LOTO, 1,308,000 embeddings, 0/20 decision changes | Complete |
 | E7 coarse tissue evidence | `outputs/e7_tissue_probe_results_lock/summary.json` | 36 tissues/108 slides, 5,000 hierarchical bootstrap, full/minimum-three results, Figure 6 | Complete |
 
+## Post-core extensions
+
+These are not E0--E7 requirements. They are audited to the same standard because two of them
+carry claims the manuscript now rests on.
+
+| Requirement | Authoritative evidence | Observed gate | Verdict |
+|---|---|---|---|
+| E8 pre-registered ceiling reading | `outputs/e8_residual/reading/gt450/summary.json` | verdict `supported`; arm B probe floor 0.759 against a §10 support floor of 0.50 and a falsification ceiling of 0.30 | Complete |
+| E8 image-only arm gate | `outputs/e8_residual/audit/gt450/summary.json` | arm A 3/5 folds, gate needs 4 — encoding blocked; arm B 5/5 folds, all 5 sources improved | Complete |
+| E8 arm B feature population | `outputs/e8_residual/features/gt450/*/manifest.json` | 436 shards, 261,600 embeddings, 109/109 slides encoded, 0 skipped, 6 scanners | Complete |
+| E8 frontier and probe | `outputs/e8_residual/frontier/gt450/`, `outputs/e8_residual/probe/` | arm B safe + improved 4/4; linear/MLP/k-NN probes on frozen RF1 slide folds | Complete |
+| E8 hallucination audit | same audit summary | both arms inside the 1e-3 invented-fraction budget; arm A exact properties hold; arm B phase correlation 0.694 recorded as a caveat, not hidden | Complete |
+| E8 arm B external validation | — | not run; named as the remaining gap in contract §11 | **Outstanding** |
+| E9 alignment/interpolation audit | `outputs/plism_core_registration`, `e9_plism_core_results.md` §1 | 700,986 non-reference measurements, median residual 0.091--0.113 µm, 99.57% clearing the 1 µm gate, mask Dice 0.82--0.86 | Complete |
+| E9 core-grid cohort | `outputs/plism_core_*` | 116,831 locations, 817,817 scanner-to-reference measurements, 88.2% tissue coverage, 46 named tissues, 13 stain × 7 scanner | Complete |
+| E9 condition integrity | `scripts/_verify_conditions.py` | 2,177,672 condition vectors checked against the checkpoint contract, finiteness and the frozen evaluation grid; PROBLEMS 0 | Complete |
+| E9 external replication | `e9_plism_core_results.md`, report Part IV | 5 of 8 claims replicated; 2 corrections to the previous edition recorded rather than silently swapped | Complete |
+| E9 core-panel reproduction | — | E9 uses a 2026 encoder panel (UNI2-h, CONCHv1.5, H-optimus-1), not the frozen core four; reproduction on the core panel is not run | **Outstanding** |
+
 ## Cross-cutting contracts
 
 | Contract | Evidence | Verdict |
@@ -36,7 +57,9 @@
 | Fidelity before invariance ranking | E4/E5 result locks recompute content/collapse and safe+improved decisions | Satisfied |
 | No post-outcome comparator expansion | primary methods match the frozen decision record; Macenko remains Supplement-only | Satisfied |
 | Limited biology claim | only tissue type is used; no nucleus, morphology, biological non-inferiority or clinical claim | Satisfied |
-| PLISM separation | explicitly deferred and absent from PanNormal core locks | Satisfied |
+| PLISM separation | deferred until after the core locks, then executed as E9 on outputs written beside the locked ones (`plism_core_*`) rather than over them; no core lock recomputed | Satisfied |
+| E8/E9 pre-registration | E8's support/falsification thresholds fixed in contract §10 before any embedding existed and unrevised after; E9's estimator, bands, thresholds and bootstrap unchanged under Amendment 3 | Satisfied |
+| Post-core claims kept out of the primary ranking | neither E8 nor E9 enters the frozen five-method E5 ranking; both are labelled post-core wherever quoted | Satisfied |
 
 ## Figures, reproducibility and current boundaries
 
@@ -46,7 +69,10 @@ The final full test run (`16056716`) passed 130 tests; the only messages were 14
 Matplotlib/PyParsing deprecation warnings. Markdown local-link checks found zero missing links,
 and the manuscript DOCX contains all 11 referenced main/supplementary images.
 
-The scientific core has no remaining planned experiment. Items still requiring author or
+The scientific core has no remaining planned experiment. Three post-core gaps are open and
+named above rather than left implicit: E8 arm B has no external validation, E9 has no
+core-panel reproduction, and no labeled downstream endpoint exists in either cohort — the last
+being the one that would move the work from representation geometry to changed decisions. Items still requiring author or
 institutional input are author order/affiliations, IRB wording, funding, conflicts, CRediT,
 restricted-data access language, public repository/release identifiers and scanner fields not
 present in native headers. Journal-portal formatting must be rechecked at submission. Additional

@@ -186,3 +186,20 @@ nucleus/spatial analysis from the PanNormal core.
 
 Any amendment after this point must be dated, identify the changed text and state which E4--E7
 outcomes had already been accessed.
+
+## Amendment A — post-outcome status note (2026-08-23)
+
+**Outcome data had been accessed when this amendment was written.** It therefore changes no
+decision, definition, threshold or endpoint, and none of the seven frozen decisions is reopened.
+It exists only so a reader does not mistake a frozen decision for current status.
+
+The frozen fact "PLISM: excluded from PanNormal completion and deferred to a separate post-core
+protocol" is an accurate record of what was decided on 2026-08-03, and it was honoured. PLISM
+was kept out of PanNormal completion, and the separate protocol was written and executed
+afterwards as **E9** ([`e9_plism_native_ert_contract.md`](e9_plism_native_ert_contract.md),
+results in [`e9_plism_core_results.md`](e9_plism_core_results.md)).
+
+A second post-core condition, **E8**
+([`e8_paired_residual_contract.md`](e8_paired_residual_contract.md)), was added after this
+record was frozen, under its own pre-registration. Neither E8 nor E9 enters the frozen
+five-method E5 primary ranking, and neither recomputed a locked artifact.

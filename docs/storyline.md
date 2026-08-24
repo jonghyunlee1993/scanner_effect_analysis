@@ -1,9 +1,19 @@
 # Fidelity-constrained scanner harmonization: manuscript storyline
 
-**Status:** PanNormal core E0--E7 completed and result-locked; manuscript working draft
-synchronized
+**Status:** PanNormal core E0--E7 completed and result-locked. Two post-core extensions have
+since been executed and are no longer deferred: **E8**, the learned paired residual baseline,
+whose §10 pre-registered ceiling reading returned `supported`; and **E9**, PLISM external
+validation, rebuilt on a 116,831-location core grid with a 2026 encoder panel.
 
-**Updated:** 2026-08-03
+**Updated:** 2026-08-23
+
+> **ID note.** Earlier revisions of this document used `E8` for the PLISM extension and `E9` for
+> background characterization. The executed contracts renumbered them: **E8 = learned paired
+> residual baseline** ([`e8_paired_residual_contract.md`](e8_paired_residual_contract.md)),
+> **E9 = PLISM external validation**
+> ([`e9_plism_native_ert_contract.md`](e9_plism_native_ert_contract.md)). Background
+> characterization keeps its supplemental role but no longer carries an experiment ID. §6 and
+> §5.3 below follow the executed numbering.
 
 **Target journal:** *Medical Image Analysis*
 **Working title:** *Fidelity-constrained evaluation of scanner harmonization in computational pathology: a paired frequency-resolved framework*
@@ -81,8 +91,10 @@ Part I의 scanner spectrum 분석은 독립적인 characterization story가 아�
 14. 현재 사용할 수 있는 biological label은 normal tissue type뿐이다. 따라서 PanNormal의
     hard gate를 `biological fidelity`라고 부르지 않고 **content/representation fidelity**로
     제한하며, tissue type은 secondary coarse-content endpoint로 사용한다.
-15. PLISM은 PanNormal core 연구의 완료 조건에서 제외하고 후속 frozen extension으로
-    보류한다.
+15. ~~PLISM은 PanNormal core 연구의 완료 조건에서 제외하고 후속 frozen extension으로
+    보류한다.~~ — 유지되었고, 그 extension이 2026-08-22/23에 **E9**로 실행됐다. Core의
+    endpoint, margin, alignment contract와 correction benchmark를 먼저 동결한 뒤 시작한다는
+    조건은 지켜졌다. 결과는 [`e9_plism_core_results.md`](e9_plism_core_results.md).
 
 ### 3.2 결과를 보기 전에 추가로 동결할 선택
 
@@ -515,18 +527,22 @@ minimum-slide sensitivity를 함께 보고한다. 별도의 labeled cohort가 �
 - Main role은 acquisition QC와 registered-domain noise-floor sensitivity
 - Detector NPS, DQE 또는 absolute MTF로 부르지 않음
 
-#### 2.14 PLISM deferred extension
+#### 2.14 PLISM external extension — 실행 완료 (E9)
 
-PLISM은 PanNormal core 분석과 원고의 완료 조건이 아니다. PanNormal의 endpoint, margin,
-alignment contract와 correction benchmark를 먼저 동결하고 완료한 뒤 별도 frozen extension으로
-시작한다. 그때 적용할 원칙은 다음과 같다.
+PLISM은 PanNormal core 분석과 원고의 완료 조건이 아니었고, 그 순서는 지켜졌다. PanNormal의
+endpoint, margin, alignment contract와 correction benchmark를 먼저 동결·완료한 뒤 별도
+frozen extension으로 2026-08-22/23에 실행했다. 아래는 실행 전에 정한 원칙과 그 결과다.
 
-- PanNormal outcome과 threshold를 PLISM 결과 확인 전에 동결
-- 한 stain condition의 scanner-only contrast를 primary로 지정
-- Scanner × stain은 secondary
-- Aligned tile group/core를 blocking unit으로 사용
-- HF 결과보다 interpolation audit를 먼저 제시
-- Native scan이 없으면 `effective transfer after PLISM preprocessing`으로 명명
+| 사전 원칙 | 결과 |
+|---|---|
+| PanNormal outcome과 threshold를 PLISM 결과 확인 전에 동결 | 지켜짐. Amendment 3에서도 estimator/band/threshold/bootstrap 불변, cohort만 교체 |
+| 한 stain condition의 scanner-only contrast를 primary로 지정 | 지켜짐 |
+| Scanner × stain은 secondary | 지켜짐. Nesting을 두 방향(staining condition 상위 / tissue type 상위)으로 모두 보고 |
+| Aligned tile group/core를 blocking unit으로 사용 | 지켜짐. Blocking 단위는 section과 core-grid location |
+| HF 결과보다 interpolation audit를 먼저 제시 | 지켜짐. 비참조 measurement 700,986건, median residual 0.091–0.113 µm, 1 µm gate 99.57% |
+| Native scan이 없으면 `effective transfer after PLISM preprocessing`으로 명명 | **발동하지 않음.** 91개 native WSI를 resampling 없이 native resolution으로 읽었다. 다만 tissue 위 effective transfer이지 MTF가 아니라는 제한은 유지 |
+
+결과는 §5.3의 3.10과 [`e9_plism_core_results.md`](e9_plism_core_results.md)에 있다.
 
 #### 2.15 통계와 재현성
 
@@ -719,13 +735,71 @@ Figure 6과 전체 결과/provenance는
 tissue type만으로 독립 biological fidelity를 확정하지 않으며 nucleus/spatial endpoint는
 annotation/QC 계약이 없어 PanNormal core에서 생략한다.
 
-#### 3.9 PLISM post-core extension — E8, 현재 보류
+#### 3.9 Image-space의 천장은 방법이 아니라 도메인의 성질이다 — E8
 
-이 절은 PanNormal core 원고의 필수 결과가 아니다. 후속 extension을 시작할 경우에만
-interpolation audit, 한 stain의 scanner-only primary, scanner × stain secondary와
-internal–external effect comparison을 사전 동결 계획에 따라 추가한다.
+이 절은 core 원고의 필수 결과가 아니지만, §4의 degeneracy 명제와 §3.6의 image/feature 대비를
+**사전등록된 학습 baseline**으로 마감한다. 계약 §10은 embedding이 존재하기 전에 지지/반증
+조건을 고정했고, 어떤 threshold도 endpoint를 본 뒤 수정하지 않았다.
 
-#### 3.10 Background 결과 — E9, Supplement 중심
+- **Arm A `gainfield`** (RF1U 위의 공간가변 band gain, 보장 유지)는 image-only gate에서
+  탈락했다. Pooled paired MAE는 다섯 fold 모두 개선했으나 두 fold에서 5개 source 중 3개만
+  개선해 4개 요건(`E8_GATE_MIN_SOURCES`)을 못 채웠고, arm gate의 4/5 fold 요건에 3/5로
+  미달했다. **평균적으로 나빠서가 아니라 scanner 사이에서 고르지 못해 기각됐다.** 따라서
+  §2.11의 scanner × tissue interaction은 이 parameterization 안에서는 모델링 가치가
+  확립되지 않았고, 세 숫자짜리 analytic gain이 자기 family 안에서 충분하다.
+- **Arm B `free`** (무제약 OD residual, ceiling probe)는 네 PFM 모두 content
+  non-inferiority와 collapse gate를 통과하면서 ResNet50 RR **+47.87%** — feature space를
+  포함해 이 연구 전체 최대치 — 를 냈고, linear scanner probe는 **0.759--0.967**에 머물렀다.
+  같은 조건의 CORAL/Procrustes는 0.082--0.162다. 사전등록 판정은 **supported**이며 반증
+  구간(2개 이상 모델에서 0.30 미만)에는 어떤 모델도 접근하지 않았다.
+- **천장의 상한.** E4의 destructive control(0.808--0.950), paired oracle(0.928--0.992),
+  그리고 arm B(0.759--0.967)가 세 방향에서 같은 벽을 가리킨다. 한계는 correction family의
+  성질도, 최적화 강도의 성질도 아니다.
+- **비선형 probe가 두 feature 방법을 가른다.** MLP probe에서 Procrustes는 0.614--0.778,
+  CORAL은 0.074--0.269다. Procrustes는 scanner별 강체 회전이라 within-scanner 거리를 정확히
+  보존하므로 국소 기하가 그대로 남고, CORAL은 2차 모멘트를 whitening·recolouring해 그 모양을
+  바꾼다. **radius를 가장 많이 줄인 방법이 scanner 정보를 가장 많이 남긴다** — invariance
+  지표와 실제 scanner 제거의 괴리가 feature space 안에서, content 손실 없이 재현된 것이다.
+  따라서 배포 권고는 "feature space"가 아니라 **CORAL**로 좁혀야 한다.
+- **정직한 단서.** Arm B의 phase correlation 평균은 0.694로 RF1U의 0.946보다 낮다. 천장은
+  구조적으로 공격적인 correction까지 견딘다는 뜻이지, 보수적인 학습 모델을 시험해 실패했다는
+  뜻이 아니다.
+
+전체 수치와 provenance는 [`e8_paired_residual_results.md`](e8_paired_residual_results.md)에
+있고, condition 계열(moment ladder, destination sweep, variance components, acquisition
+provenance)은 [`e8_results_digest.md`](e8_results_digest.md)에 있다.
+
+#### 3.10 외부 코호트에서의 재현과 두 건의 정정 — E9
+
+PLISM을 116,831 location, 817,817 scanner-to-reference measurement, 46개 명명 tissue,
+13 staining condition × 7 scanner, tissue coverage 88.2%로 재구축하고 2026년 encoder
+panel(UNI2-h, CONCHv1.5, H-optimus-1)로 다시 측정했다. 여덟 개 주장 중 다섯이 재현됐다.
+
+- **목적지 규칙은 강하게 재현된다.** Destination detail power 대 fitted mean log gain의
+  Spearman은 7개 목적지에서 **+0.964**이고, AT2는 패널에서 detail power가 가장 낮으며
+  18개 cell 중 15개가 AT2 쪽으로 감쇠한다.
+- **그러나 encoder 이득으로는 넘어가지 않는다.** "detail이 풍부한 목적지를 겨냥하면 encoder가
+  더 이득"은 3개 모델 중 1개에서만 성립해 **unconfirmed**다. 축소된 형태가 §3.9와 정확히
+  맞물린다: 목적지 규칙은 이미지에 관한 법칙이지 표현에 관한 법칙이 아니다.
+- **정정 1 — 3항 분해는 살아남지 못한다.** Raw fine-band power를 optical-density **표준편차**의
+  제곱으로 나눈 contrast audit에서 초과분은 PLISM 1.40×, PanNormal 1.36×로 사실상 같다.
+  sampling을 맞추면 사라진다는 8월판의 결론은 철회한다. 살아남는 것은 raw band power가
+  contrast에 지배된다는 사실이다.
+- **정정 2 — CORAL 실패는 추정 아티팩트였다.** "고차원 encoder에서 CORAL이 실패한다"는 단서는
+  재현되지 않는다. 표본이 충분하면 3/3에서 safe + improved이고, break-even은 768차원에서
+  6.5 samples/dim, 1536차원 두 encoder에서 32.5로 **encoder마다 측정해야 한다**.
+- **색을 맞추기 전에는 주파수가 식별되지 않는다.** Raw band power의 scanner 순위는 잠긴 transfer
+  순위와 **ρ = −1.000**이고, Reinhard 이후 **+0.800**이 된다. 이는 §3.6의 RF1 ordering 결과
+  (주파수 보정은 단독으로는 0에 가깝고 Reinhard 뒤에서만 유용하다)와 **같은 사실**이며, 두
+  코호트에서 반대 방향으로 측정된 것이다. Methods의 규칙으로 승격한다.
+- **단일 지렛대점.** `HR` 섹션(다른 어느 섹션보다 3 표준편차 이상 짙은 염색)이 세 분석을
+  떠받친다: stain covariate가 6개 scanner 중 1개만 전 fold 생존하고 나머지 둘은 `HR` 없이
+  무너지며, feature 보정이 아무 효과가 없는 유일한 섹션이다. 각주가 아니라 본문에 둔다.
+
+결과는 [`e9_plism_core_results.md`](e9_plism_core_results.md), 계약과 Amendment 3은
+[`e9_plism_native_ert_contract.md`](e9_plism_native_ert_contract.md)에 있다.
+
+#### 3.11 Background 결과 — Supplement 중심
 
 - Background feature가 tissue ERT의 held-out prediction을 일관되게 개선하지 않음
 - Noise/QC characterization으로서의 제한된 역할
@@ -788,8 +862,9 @@ internal–external effect comparison을 사전 동결 계획에 따라 추가�
 | E5 | Correction benchmark | Protocol이 실제 방법 선택을 바꾸는가? | **완료** | Results 3.6 | 872 shards, 1,308,000 embeddings, five-method LOSO frontier와 Figure 5 |
 | E6 | Content-dependent correction | Correction benefit이 tissue/slide에 따라 달라지는가? | **완료** | Results 3.7 | 240 REML fit + 37-fold exact LOTO transfer lock |
 | E7 | Content/tissue fidelity | Invariance gain이 representation과 coarse tissue content를 보존하는가? | **완료** | Results 3.8 | 36-class grouped probe + 5,000 hierarchical bootstrap + Figure 6 |
-| E8 | PLISM post-core extension | 결론이 외부 scanner/stain에서 재현되는가? | **보류** | Future/Results 3.9 | PanNormal 완료 후 별도 frozen plan |
-| E9 | Background characterization | Background가 tissue ERT를 설명하는가? | 완료 | Supplement/Results 3.10 | 기존 null + registered noise sensitivity |
+| E8 | Learned paired residual baseline | 학습된 image-space correction이 천장을 넘는가? | **완료** | Results 3.9 | §10 사전등록 판정 `supported`; arm A gate 탈락, arm B 4/4 safe |
+| E9 | PLISM external validation | 결론이 외부 scanner/stain에서 재현되는가? | **완료** | Results 3.10 | 116,831-location core grid, 8개 주장 중 5개 재현, 2건 정정 |
+| — | Background characterization | Background가 tissue ERT를 설명하는가? | 완료 | Supplement/Results 3.11 | 기존 null + registered noise sensitivity |
 
 ## 7. Figure와 Table 설계
 
@@ -1004,7 +1079,7 @@ native-AA GT450 1.478, AKOYA 0.335와 scanner별 nested tissue/slide variance co
 - Elsevier highlights/AI disclosure 정책은 확인했고, MedIA submission portal의
   journal-specific abstract/figure 조건은 실제 투고 직전에 재확인
 
-### Post-core extensions — E5-RF1 result-locked; 추가 PFM과 PLISM은 보류
+### Post-core extensions — E5-RF1, E8과 E9 실행 완료; 추가 PFM은 보류
 
 1. **E5-RF1 result-locked:** five-fold cross-fitted Reinhard 이후 72-bin mean-OD residual
    spectrum을 shared-OD gamut projection으로 교정했다. Input-only gate가 선택한 gain cap은
@@ -1015,15 +1090,26 @@ native-AA GT450 1.478, AKOYA 0.335와 scanner별 nested tissue/slide variance co
    모두 추가 감소했지만 크기는 +0.61--+2.75 RR percentage point의 점진적 개선이었다.
 3. Tissue-type secondary top-1은 UNI에서만 full/min-3 모두 Reinhard 대비 개선됐고,
    나머지는 혼합 또는 null이었다. 따라서 biological claim은 확대하지 않는다.
-4. 현재 원고에서는 CycleGAN을 추가하지 않는다. Learned residual generator가 필요하면
-   paired scanner-conditioned residual, image-only nested selection, hallucination audit와
-   PLISM external validation을 포함한 새 계약을 먼저 동결한다.
-5. Core 결과와 무관하게 추가 PFM panel 및 checkpoint contract를 별도 동결
-6. 추가 PFM에서 core endpoint와 claim rule을 그대로 재현
-7. PLISM interpolation audit
-8. 한 stain scanner-only primary
-9. Scanner × stain secondary
-10. Internal–external effect comparison
+4. 현재 원고에서는 CycleGAN을 추가하지 않는다. 이 조건은 유지되며 그 근거는
+   [`e8_paired_residual_contract.md`](e8_paired_residual_contract.md) §11에 명시했다:
+   unpaired adversarial objective는 이 코호트의 pixel registration — 가장 큰 자산 — 을
+   버리고, ceiling question에서는 paired arm에 지배당한다.
+5. **완료 — E8.** 요구했던 새 계약(paired scanner-conditioned residual, image-only nested
+   selection, hallucination audit, 사전등록 reading)을 먼저 동결한 뒤 실행했다. Arm A는
+   image-only gate에서 탈락했고 arm B는 §10 판정 `supported`를 냈다. PLISM external
+   validation은 arm B에 대해 여전히 미실행이며, 이것이 E8의 남은 공백이다.
+6. **완료 — E9.** PLISM interpolation/alignment audit(비참조 measurement 700,986건에서
+   median residual 0.091--0.113 µm, 1 µm gate 통과율 99.57%), 한 stain의 scanner-only
+   primary, scanner × stain secondary, internal--external effect comparison을 모두 수행했다.
+   SQ file-swap 정정이 core grid 전반에 적용됐고, Amendment 2의 per-patch `response >= 0.3`
+   권고는 Amendment 3에서 block-level exclusion + 두 variant 병기로 대체돼 철회됐다.
+7. Core 결과와 무관하게 추가 PFM panel 및 checkpoint contract를 별도 동결 — E9가 UNI2-h,
+   CONCHv1.5, H-optimus-1로 사실상 착수했으나 PanNormal core에서의 재현은 미실행
+8. 추가 PFM에서 core endpoint와 claim rule을 그대로 재현 — 보류
+9. **남은 최대 공백:** labeled downstream endpoint. 이 코호트의 유일한 biological label이
+   normal tissue type이므로 모든 fidelity 측정이 representation 수준에 머문다. 목적지 효과가
+   downstream task로 이어지는지 — detail-poor target을 겨냥하면 subtype/biomarker 정확도가
+   실제로 떨어지는지 — 가 "careful measurement"를 "decisions change"로 바꿀 단일 변경이다.
 
 ## 11. 예상 초록의 구조
 
@@ -1047,12 +1133,19 @@ Destructive controls와 paired oracle은 낮은 scanner radius가 collapse와 ge
 양쪽에서 생길 수 있음을 보였다. Actual LOSO에서 Reinhard, CORAL와 Procrustes는 네 PFM
 모두 safe + improved였고 exact LOTO에서도 판정 변화가 없었다. Tissue secondary에서는
 Procrustes가 네 PFM의 paired centroid-profile agreement를 높였지만 어떤 correction도 모든
-tissue metric을 보존하거나 개선하지는 않았다.
+tissue metric을 보존하거나 개선하지는 않았다. 사전등록된 learned paired residual baseline은
+네 PFM 모두 fidelity gate를 통과하고 최대 radius 감소를 내면서도 linear scanner probe를
+0.76 아래로 내리지 못했고, ground-truth paired oracle 역시 넘지 못했다 — image-space의
+한계는 correction family의 성질이 아니라 도메인의 성질이다. 독립 공개 코호트(13 staining
+condition × 7 scanner, 2026 encoder panel)에서 여덟 주장 중 다섯이 재현됐다.
 
 ### Conclusion
 
 Scanner harmonization은 scanner signal을 최소화하는 문제가 아니라 content fidelity를
 보존하면서 scanner-associated variation을 줄이는 constrained evaluation problem이다.
+Image space에는 oracle과 학습 baseline이 함께 가리키는 한계가 있고, 남은 여유는 feature
+space — 구체적으로 CORAL — 에 있으나 그 공간은 invariance-only 평가가 가장 신뢰할 수 없는
+공간이므로, 기여는 둘을 가려내는 fidelity-constrained protocol과 벽의 위치를 그린 지도다.
 
 ## 12. Highlights 초안
 
@@ -1060,7 +1153,8 @@ Scanner harmonization은 scanner signal을 최소화하는 문제가 아니라 c
 - Paired spectra reveal frequency- and content-dependent scanner signatures.
 - Physical controls bound the attainable invariance–fidelity region.
 - Corrections are ranked only after passing a prespecified fidelity constraint.
-- The framework is tested across four PFMs and tissue/slide strata.
+- A pre-registered learned baseline and a paired oracle meet the same image-space ceiling.
+- The framework is tested across seven PFMs, two cohorts and tissue/slide strata.
 
 Highlights는 제출 시 Elsevier의 최신 글자 수 제한을 다시 확인한다.
 

@@ -1,11 +1,14 @@
 # Scanner Spectrum: final study protocol
 
-**Status:** PanNormal core E0--E7 completed and result-locked, 2026-08-03;
-PLISM remains a deferred post-core extension
+**Status:** PanNormal core E0--E7 completed and result-locked, 2026-08-03. Two post-core
+extensions have since been executed: **E8**, the learned paired residual baseline
+(§5b), and **E9**, PLISM external validation (§5), rebuilt on a core grid 2026-08-22/23.
+PLISM is no longer deferred.
 
 **Primary target:** *Medical Image Analysis*
 **Role of this document:** 논문 주장, 분석 단위, 내부 비교군과 PanNormal 완료 조건을
-동결하는 기준 문서. PLISM은 core 완료 후 별도 protocol로 시작한다.
+동결하는 기준 문서. PLISM은 core 완료 후 별도 protocol로 시작했고, 그 실행 결과는 §5.4에
+있다. 서사적 기준은 [`storyline.md`](storyline.md)이며 충돌 시 storyline을 우선한다.
 
 ## 1. 한 문장 결론
 
@@ -391,11 +394,13 @@ Procrustes로 동일했다. 이 null top-rank disagreement는 선택적으로 �
 Feature-space 결과는 frozen representation 정렬의 근거이며 independent biological
 restoration 또는 clinical utility의 증거가 아니다.
 
-## 5. PLISM post-core extension — 보류
+## 5. E9 — PLISM external extension (실행 완료)
 
-PLISM은 PanNormal core 분석과 원고의 완료 조건이 아니다. E4--E7 및 내부 manuscript
-lock을 먼저 끝낸 뒤 별도의 frozen protocol과 decision record로 시작한다. 아래 내용은 그때
-재검토할 설계 메모이며 현재 실행을 승인하지 않는다.
+PLISM은 PanNormal core 분석과 원고의 완료 조건이 아니었다. 그 조건은 지켜졌다: E4--E7과
+내부 manuscript lock을 먼저 끝낸 뒤 별도의 frozen contract
+([`e9_plism_native_ert_contract.md`](e9_plism_native_ert_contract.md))로 시작했고,
+2026-08-22/23에 core grid로 재구축했다. §5.1--5.3은 실행 **전에** 동결한 설계이며 원문
+그대로 둔다. 실제로 무엇이 지켜졌고 무엇이 바뀌었는지는 §5.4에 있다.
 
 ### 5.1 왜 PLISM인가
 
@@ -453,6 +458,64 @@ interpolation이 HF spectrum을 바꿀 수 있다. 따라서:
 또한 [PLISM benchmark](https://github.com/owkin/plism-benchmark)는 이미 다수의
 extractor를 순위화한다. 본 연구는 그 leaderboard를 반복하지 않고, paired physics와
 invariance–fidelity mechanism을 외부에서 검증하는 데 PLISM을 사용한다.
+
+### 5.4 실행 결과와 계약 준수 (2026-08-23)
+
+**지켜진 것.**
+
+- Band boundary, transform family, endpoint와 gate는 PLISM 결과를 보기 전에 동결됐고
+  Amendment 3에서도 estimator/band/threshold/bootstrap은 바뀌지 않았다. 바뀐 것은 그
+  아래의 cohort다.
+- PLISM으로 내부 threshold나 gain을 재학습하지 않았다.
+- Tile row를 독립 표본으로 세지 않았다. Blocking 단위는 section과 core-grid location이다.
+- Interpolation audit을 HF 결과보다 먼저 수행했다: 비참조 measurement 700,986건에서
+  median residual 0.091--0.113 µm, 1 µm gate 통과율 99.57%, canvas fit이 각 section에서
+  Hamamatsu pitch를 0.2188--0.2219 µm/unit로 독립 복원, 회전 |3.25°| 이내, mask Dice
+  0.82--0.86.
+
+**바뀐 것, 그리고 그 이유.**
+
+- **Native scan을 확보해 fallback naming rule이 발동하지 않았다.** §5.3은 native/non-warped
+  scan을 못 쓰면 `effective transfer after PLISM preprocessing`이라고 명명하라고 요구했다.
+  E9는 `data/PLISM_dataset/original_wsi`의 91개 native WSI를 md5 검증 후 **resampling 없이
+  native resolution**으로 읽으므로 그 조건이 성립하지 않는다. 다만 tissue 위에서 측정한
+  effective transfer이지 MTF가 아니라는 제한은 그대로 유지한다.
+- **Cohort scale.** location 116,831개, scanner-to-reference measurement 817,817건, tissue
+  coverage 88.2%, 46개 published tissue name, 13 staining condition × 7 scanner.
+- **Encoder panel.** core의 네 모델 대신 UNI2-h, CONCHv1.5, H-optimus-1. 따라서 E9는 core
+  panel의 재현이 아니라 **2026년 panel에서의 재현**이다.
+- **SQ file-swap 정정**이 core grid 전반에 적용됐다.
+- **Amendment 2의 per-patch `response >= 0.3` 권고는 철회**되고 block-level exclusion과
+  두 variant 병기로 대체됐다 (Amendment 3).
+
+**결과 요약.** 여덟 개 주장 중 다섯이 재현됐고 두 건이 정정됐다(3항 contrast/sampling/optics
+분해 철회, "고차원 encoder에서 CORAL 실패"는 추정 아티팩트). 목적지 규칙은 Spearman +0.964로
+강하게 재현되나 encoder 이득으로는 넘어가지 않는다. 전체는
+[`e9_plism_core_results.md`](e9_plism_core_results.md).
+
+## 5b. E8 — learned paired residual baseline (실행 완료)
+
+§4.3의 intervention matrix와 §5.3의 external 계획 바깥에 있던 조건이며, §8의 "fully
+optimized image correction" 유보 조항을 사전등록으로 마감하기 위해 추가됐다. 계약은
+[`e8_paired_residual_contract.md`](e8_paired_residual_contract.md)이고, §10이 embedding이
+존재하기 전에 지지/반증 조건을 고정했다.
+
+- **Arm A `gainfield`** — RF1U 위의 공간가변 band gain, 보장 유지. Image-only gate에서 3/5
+  fold만 통과해 탈락했고 feature encoding이 차단됐다. Pooled paired MAE는 다섯 fold 모두
+  개선했으나 두 fold에서 5개 source 중 3개만 개선해 4개 요건을 못 채웠다 — 평균적으로
+  나빠서가 아니라 scanner 사이에서 고르지 못해 기각됐다.
+- **Arm B `free`** — 무제약 OD residual, ceiling probe. 네 PFM 모두 content
+  non-inferiority와 collapse gate 통과, ResNet50 RR **+47.87%**(feature space 포함 최대치),
+  linear scanner probe **0.759--0.967**. 같은 조건의 CORAL/Procrustes는 0.082--0.162.
+- **사전등록 판정: `supported`.** 반증 구간(2개 이상 모델에서 0.30 미만)에는 어떤 모델도
+  접근하지 않았다.
+- **비선형 probe.** MLP에서 Procrustes 0.614--0.778, CORAL 0.074--0.269. §8의 배포 권고는
+  "feature space"가 아니라 **CORAL**로 좁혀야 한다.
+- **남은 공백.** Arm B의 PLISM external validation은 미실행이며 계약 §11이 이를 명시한다.
+
+전체 수치와 provenance는
+[`e8_paired_residual_results.md`](e8_paired_residual_results.md), condition 계열은
+[`e8_results_digest.md`](e8_results_digest.md).
 
 ## 6. 선행 연구와 위치
 
@@ -560,12 +623,16 @@ PanNormal core 통합 audit에 기록했다.
 - ~~tissue-type secondary와 sample-size limitation~~
 - ~~locked figures/tables와 claim terminology audit~~
 
-### Post-core — frozen PLISM extension, 현재 보류
+### Post-core — E8과 E9 실행 완료
 
-- 한 stain scanner-only primary
-- scanner × stain secondary
-- interpolation audit 선행
-- internal--external effect comparison
+- ~~interpolation audit 선행~~ — 완료, HF 결과보다 먼저 수행 (§5.4)
+- ~~한 stain scanner-only primary~~ — 완료
+- ~~scanner × stain secondary~~ — 완료, nesting 두 방향 모두 보고
+- ~~internal--external effect comparison~~ — 완료, 8개 주장 중 5개 재현, 2건 정정
+- ~~learned paired residual baseline과 사전등록된 ceiling reading~~ — 완료, 판정
+  `supported` (§5b)
+- **미실행:** E8 arm B의 PLISM external validation; core panel에서의 추가 PFM 재현;
+  labeled downstream endpoint
 
 ## 10. 구현 및 provenance
 

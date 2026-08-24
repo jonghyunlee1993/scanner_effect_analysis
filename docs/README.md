@@ -9,7 +9,9 @@ working draft는 2026-08-03에 제거했으며 삭제 전 상태는
 
 - [RF1 improvement handoff](2026-08-03_rf1_improvement_handoff.md): 현재 결과, 해석,
   live jobs, 다음 실행 순서와 cleanup history
-- [Manuscript storyline](storyline.md): 최종 핵심 주장과 claim--experiment--result 구조
+- [Manuscript storyline](storyline.md): 최종 핵심 주장과 claim--experiment--result 구조.
+  2026-08-23에 E8(learned paired baseline)과 E9(PLISM external validation)를 반영했고,
+  과거 판본의 E8/E9 ID 혼선(구: E8=PLISM, E9=background)을 실행 계약 기준으로 정정했다
 - [Final study protocol](final_study_protocol.md): 데이터, 분석, 통계와 실행 계약
 - [Storyline completion audit](storyline_completion_audit.md): E0--E7 lock 및 artifact 완료 근거
 
@@ -31,7 +33,9 @@ working draft는 2026-08-03에 제거했으며 삭제 전 상태는
 
 ## E4: physical controls
 
-- [Pre-outcome decision record](e4_e7_decision_record.md): E4--E7 endpoint와 claim rule
+- [Pre-outcome decision record](e4_e7_decision_record.md): E4--E7 endpoint와 claim rule.
+  FROZEN 문서이므로 본문을 수정하지 않고 **Amendment A (2026-08-23)**로 post-core 상태만
+  덧붙였다 — 원문의 "PLISM 제외·후속 protocol로 연기"는 실제로 지켜진 결정 기록이다
 - [Control-population contract](e4_control_population_contract.md)
 - [Control-population results](e4_control_population_results.md)
 
@@ -66,6 +70,46 @@ working draft는 2026-08-03에 제거했으며 삭제 전 상태는
 - [Grouped tissue-probe results](e7_tissue_probe_results.md)
 - [PanNormal core audit code](../src/audit_pannormal_core_results.py): E0--E7 locks와
   Main Figure 1--6 통합 drift gate
+
+## E8: learned paired baseline
+
+- [Paired residual execution contract](e8_paired_residual_contract.md): pix2pix 계열
+  paired residual regression baseline. Arm A `gainfield`는 RF1U 위의 공간가변 band gain
+  (보장 유지), arm B `free`는 무제약 OD residual = **ceiling probe**. §10에 §12 ceiling
+  주장의 지지/반증 조건을 사전 등록했고, CycleGAN 제외 근거를 명시했다. **Amendment 1
+  (2026-08-23)**: 미실행으로 남은 PLISM external validation의 범위를 사전 고정했다 — scanner
+  교집합은 4개(`AT2, GT450, S360, S60`)뿐이라 zero-shot 경로만 external validation이고
+  chance는 0.25, arm B는 ceiling probe이므로 "성공"은 probe가 **높게 유지**되는 것이며,
+  encoder panel 불일치 때문에 두 panel을 모두 추출해야 한다.
+- [Paired residual results](e8_paired_residual_results.md): §10 사전등록 판정 **supported** —
+  arm B(무제약 학습 residual)는 4/4 PFM에서 content/collapse gate를 통과하고 ResNet50에서
+  RR +47.87%로 패널 최고인데도 linear scanner probe가 0.759 아래로 내려가지 않았다. arm A
+  `gainfield`는 per-source leg에서 3/5 fold만 통과해 encoding이 차단됐다. §5는 MLP probe에서
+  Procrustes 0.614–0.778 vs CORAL 0.074–0.269로 두 feature 방법이 갈라짐을 기록한다.
+- [E8 results digest](e8_results_digest.md): condition 계열(ceiling control, moment ladder,
+  destination sweep, variance components, acquisition provenance)의 원자료
+- 실행: [`build_e8_cache.py`](../src/build_e8_cache.py) →
+  [`train_e8_residual.py`](../src/train_e8_residual.py) →
+  [`audit_e8_residual.py`](../src/audit_e8_residual.py) (게이트+hallucination, encoding 차단) →
+  [`extract_e8_residual_features.py`](../src/extract_e8_residual_features.py) →
+  [`analyze_e8_frontier.py`](../src/analyze_e8_frontier.py)
+- 검증: [`_verify_e8_results_doc.py`](../scripts/_verify_e8_results_doc.py)가 results 문서에
+  인용된 82개 수치를 artifact와 대조하고,
+  [`_verify_cross_doc.py`](../scripts/_verify_cross_doc.py)가 storyline/protocol/audit/README/
+  report가 같은 E8·E9 수치에 동의하는지 35개 assertion으로 대조한다
+
+## E9: PLISM external validation
+
+- [Native ERT contract](e9_plism_native_ert_contract.md): interpolation/alignment audit,
+  effective-transfer 명명 규칙, Amendment 1--3. Amendment 3이 core-grid 재구축과 함께
+  Amendment 2의 per-patch `response >= 0.3` 권고를 철회하고 block-level exclusion으로 대체
+- [Core-grid results](e9_plism_core_results.md): 116,831 location, 817,817 measurement,
+  tissue coverage 88.2%, 46개 명명 tissue, 13 stain × 7 scanner, encoder panel UNI2-h /
+  CONCHv1.5 / H-optimus-1. 8개 주장 중 5개 재현, 2건 정정(3항 분해 철회, CORAL 실패는
+  추정 아티팩트). `src/build_e9_core_results.py`가 분석 출력에서 직접 생성한다
+- 실행: `scripts/e9_core_results_doc.sbatch` (문서 생성은 login node OOM으로 SLURM 필수)
+- 검증: [`_verify_conditions.py`](../scripts/_verify_conditions.py)가 2,177,672개 condition
+  vector를 checkpoint contract/finiteness/frozen eval grid에 대조
 
 ## Document boundary
 
