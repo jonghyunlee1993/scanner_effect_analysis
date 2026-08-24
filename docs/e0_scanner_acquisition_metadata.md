@@ -46,6 +46,34 @@ Acquisition dates and scanner/computer identifiers are available in some headers
 required for the primary scanner-effect table and can contain operational identifiers. They
 are kept in the ignored audit output rather than copied into the manuscript.
 
+## Operator-supplied acquisition notes
+
+Recorded 2026-08-10 as **operator recollection, not a retrieved experiment record**. It is
+kept here because it bears on how AKOYA is described and because nothing in the headers
+carries it. Before this appears in a manuscript the underlying record should be located and
+cited, or the claim softened to what can be evidenced.
+
+- **AKOYA was re-scanned and reproduced the same result.** The low high-band transfer is
+  therefore not a one-off acquisition error.
+- **No instrument fault was found.**
+- **The acquisition used the clinic's production setting**, not a configuration chosen for
+  this study, so the setting is the deployed one rather than a research artefact.
+
+This matters because AKOYA is the extreme point of the panel at a high-band transfer of
+0.335 against AT2. The 2026-08-10 contrast audit removes the competing explanations from
+the data side: the value survives contrast normalisation (residual 0.358 against AT2),
+AKOYA samples at 0.4999 µm/px against AT2's 0.5052 so it is not a sampling effect, and the
+per-slide residual shows no time trend across a 36-day acquisition window
+(Spearman +0.110, p = 0.25) while varying strongly with tissue type (ANOVA p = 5.5e-04,
+tissue medians spanning 5.7×). Low objective numerical aperture remains the only account
+consistent with all of it, and the header's 10× objective string is the candidate — but NA
+itself is still not recoverable, so the optical mechanism stays a hypothesis.
+
+The practical consequence is the opposite of a caveat: a 3× softer acquisition is something
+a deployed clinical configuration actually produces, which is the case a harmonization
+method has to handle rather than an outlier to be excused. PLISM contains no comparable
+instrument, so that is a coverage gap in the external cohort and not a weakness here.
+
 ## Provenance
 
 - Population output: `outputs/e0_scanner_acquisition_metadata/`
