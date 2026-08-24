@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>What a scanner does to a foundation model — PanNormal harmonization report</title>
+<title>What a scanner does to a foundation model — PanNormal, with external validation on PLISM</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
@@ -148,6 +148,29 @@
   .num-pos { color: var(--pass); font-weight: 600; }
   .num-neg { color: var(--fail); font-weight: 600; }
   .dim { color: var(--ink-faint); }
+
+  .viz { --viz-1: #0d8b7a; --viz-2: #b25e10; --viz-3: #7d3ba3; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .viz { --viz-1: #2c9f8b; --viz-2: #c87f2e; --viz-3: #9a68d6; }
+  }
+  :root[data-theme="dark"] .viz { --viz-1: #2c9f8b; --viz-2: #c87f2e; --viz-3: #9a68d6; }
+  .viz { padding: 0.25rem 0 0; }
+  .viz svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .viz .grid { stroke: var(--rule-soft); stroke-width: 1; }
+  .viz .zero { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 3 3; }
+  .viz .axis { stroke: var(--rule); stroke-width: 1; }
+  .viz .tick { fill: var(--ink-faint); font-family: var(--f-data); font-size: 11px; }
+  .viz .axis-title { fill: var(--ink-soft); font-family: var(--f-display);
+                     font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+  .viz .series { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .viz .dot { stroke: var(--surface); stroke-width: 2; }
+  .viz .series-label { font-family: var(--f-display); font-size: 12px; font-weight: 600; }
+  .viz .note { fill: var(--ink-faint); font-family: var(--f-body); font-size: 11.5px; }
+  .viz-legend { display: flex; flex-wrap: wrap; gap: 1.1rem; margin-top: 0.6rem;
+                font-family: var(--f-display); font-size: 0.82rem; color: var(--ink-soft); }
+  .viz-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .viz-legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+
 
   .flag {
     font-family: var(--f-data); font-size: 0.74rem; padding: 0.1rem 0.45rem;
@@ -390,7 +413,7 @@
 
   <header class="masthead">
     <button class="theme-toggle" type="button" id="themeToggle" aria-label="Switch theme">THEME</button>
-    <div class="label">PanNormal · scanner harmonization · report for PI review · 2026-08-04</div>
+    <div class="label">PanNormal · scanner harmonization · with PLISM external validation · 2026-08-23</div>
     <h1>What a scanner does to a foundation model,<br>and how far images can undo it</h1>
     <p class="deck">
       A 109-slide cohort in which every slide was imaged by all six scanners at the same
@@ -408,7 +431,7 @@
       <span class="label">Contents</span>
       <button type="button" id="expandAll" class="toc-btn">Expand all</button>
     </div>
-    <div class="toc-grid"><div class="toc-group"><span class="toc-group-title">Foundation</span><span class="toc-group-note">what was measured, and on what</span></div><a class="toc-row" href="#s1"><span class="toc-num">1</span><span class="toc-text"><span class="toc-label">How to read this</span><span class="toc-title">The six quantities everything below is measured in</span></span></a><a class="toc-row" href="#s2"><span class="toc-num">2</span><span class="toc-text"><span class="toc-label">The cohort</span><span class="toc-title">Why this dataset can answer the question</span></span></a><div class="toc-group"><span class="toc-group-title">Part I · Characterization</span><span class="toc-group-note">what the scanner does to an image</span></div><a class="toc-row" href="#s3"><span class="toc-num">3</span><span class="toc-text"><span class="toc-label">Characterization</span><span class="toc-title">The scanner effect is real, frequency-dependent, and not one number</span></span></a><a class="toc-row" href="#s4"><span class="toc-num">4</span><span class="toc-text"><span class="toc-label">White space</span><span class="toc-title">What the glass tells us, and what it does not</span></span></a><a class="toc-row" href="#s5"><span class="toc-num">5</span><span class="toc-text"><span class="toc-label">Bounds</span><span class="toc-title">Low scanner radius can mean alignment or destruction</span></span></a><div class="toc-group"><span class="toc-group-title">Part II · The test</span><span class="toc-group-note">correcting the residual, and where to aim</span></div><a class="toc-row" href="#s6"><span class="toc-num">6</span><span class="toc-text"><span class="toc-label">Benchmark</span><span class="toc-title">Five deployable corrections under the frozen gates</span></span></a><a class="toc-row" href="#s7"><span class="toc-num">7</span><span class="toc-text"><span class="toc-label">The bridge</span><span class="toc-title">Correcting the residual, as cheaply as possible</span></span></a><a class="toc-row" href="#s8"><span class="toc-num">8</span><span class="toc-text"><span class="toc-label">Gallery</span><span class="toc-title">The same tissue, three destinations</span></span></a><a class="toc-row" href="#s9"><span class="toc-num">9</span><span class="toc-text"><span class="toc-label">The target finding</span><span class="toc-title">Where you aim decides whether correction helps</span></span></a><a class="toc-row" href="#s10"><span class="toc-num">10</span><span class="toc-text"><span class="toc-label">Retrieval</span><span class="toc-title">What a patch's neighbours actually look like</span></span></a><div class="toc-group"><span class="toc-group-title">Part III · The consequence</span><span class="toc-group-note">where the image domain runs out</span></div><a class="toc-row" href="#s11"><span class="toc-num">11</span><span class="toc-text"><span class="toc-label">Probing</span><span class="toc-title">Image correction does not remove the scanner's signature</span></span></a><a class="toc-row" href="#s12"><span class="toc-num">12</span><span class="toc-text"><span class="toc-label">Synthesis</span><span class="toc-title">Frequency is the bottleneck; feature space is where the room is</span></span></a><div class="toc-group"><span class="toc-group-title">Closing</span><span class="toc-group-note">position, and what would come next</span></div><a class="toc-row" href="#s13"><span class="toc-num">13</span><span class="toc-text"><span class="toc-label">Position</span><span class="toc-title">What the field already knows, and what is left</span></span></a><a class="toc-row" href="#s14"><span class="toc-num">14</span><span class="toc-text"><span class="toc-label">Next</span><span class="toc-title">What we would do next, in priority order</span></span></a></div>
+    <div class="toc-grid"><div class="toc-group"><span class="toc-group-title">Foundation</span><span class="toc-group-note">what was measured, and on what</span></div><a class="toc-row" href="#s1"><span class="toc-num">1</span><span class="toc-text"><span class="toc-label">How to read this</span><span class="toc-title">The six quantities everything below is measured in</span></span></a><a class="toc-row" href="#s2"><span class="toc-num">2</span><span class="toc-text"><span class="toc-label">The cohort</span><span class="toc-title">Why this dataset can answer the question</span></span></a><div class="toc-group"><span class="toc-group-title">Part I · Characterization</span><span class="toc-group-note">what the scanner does to an image</span></div><a class="toc-row" href="#s3"><span class="toc-num">3</span><span class="toc-text"><span class="toc-label">Characterization</span><span class="toc-title">The scanner effect is real, frequency-dependent, and not one number</span></span></a><a class="toc-row" href="#s4"><span class="toc-num">4</span><span class="toc-text"><span class="toc-label">White space</span><span class="toc-title">What the glass tells us, and what it does not</span></span></a><a class="toc-row" href="#s5"><span class="toc-num">5</span><span class="toc-text"><span class="toc-label">Bounds</span><span class="toc-title">Low scanner radius can mean alignment or destruction</span></span></a><div class="toc-group"><span class="toc-group-title">Part II · The test</span><span class="toc-group-note">correcting the residual, and where to aim</span></div><a class="toc-row" href="#s6"><span class="toc-num">6</span><span class="toc-text"><span class="toc-label">Benchmark</span><span class="toc-title">Five deployable corrections under the frozen gates</span></span></a><a class="toc-row" href="#s7"><span class="toc-num">7</span><span class="toc-text"><span class="toc-label">The bridge</span><span class="toc-title">Correcting the residual, as cheaply as possible</span></span></a><a class="toc-row" href="#s8"><span class="toc-num">8</span><span class="toc-text"><span class="toc-label">Gallery</span><span class="toc-title">The same tissue, three destinations</span></span></a><a class="toc-row" href="#s9"><span class="toc-num">9</span><span class="toc-text"><span class="toc-label">The target finding</span><span class="toc-title">Where you aim decides whether correction helps</span></span></a><a class="toc-row" href="#s10"><span class="toc-num">10</span><span class="toc-text"><span class="toc-label">Retrieval</span><span class="toc-title">What a patch's neighbours actually look like</span></span></a><div class="toc-group"><span class="toc-group-title">Part III · The consequence</span><span class="toc-group-note">where the image domain runs out</span></div><a class="toc-row" href="#s11"><span class="toc-num">11</span><span class="toc-text"><span class="toc-label">Probing</span><span class="toc-title">Image correction does not remove the scanner's signature</span></span></a><a class="toc-row" href="#s12"><span class="toc-num">12</span><span class="toc-text"><span class="toc-label">Synthesis</span><span class="toc-title">Frequency is the bottleneck; feature space is where the room is</span></span></a><div class="toc-group"><span class="toc-group-title">Closing</span><span class="toc-group-note">position, and what would come next</span></div><a class="toc-row" href="#s13"><span class="toc-num">13</span><span class="toc-text"><span class="toc-label">Position</span><span class="toc-title">What the field already knows, and what is left</span></span></a><a class="toc-row" href="#s14"><span class="toc-num">14</span><span class="toc-text"><span class="toc-label">Next</span><span class="toc-title">What we would do next, in priority order</span></span></a><div class="toc-group"><span class="toc-group-title">Part IV · External validation</span><span class="toc-group-note">PLISM, and what it settles</span></div><a class="toc-row" href="#s15"><span class="toc-num">15</span><span class="toc-text"><span class="toc-label">The external cohort</span><span class="toc-title">A second cohort where optics and sampling come apart</span></span></a><a class="toc-row" href="#s16"><span class="toc-num">16</span><span class="toc-text"><span class="toc-label">What band power measures</span><span class="toc-title">Contrast, sampling and optics, finally separated</span></span></a><a class="toc-row" href="#s17"><span class="toc-num">17</span><span class="toc-text"><span class="toc-label">The destination rule</span><span class="toc-title">The same estimator, aimed seven ways</span></span></a><a class="toc-row" href="#s18"><span class="toc-num">18</span><span class="toc-text"><span class="toc-label">Feature space, externally</span><span class="toc-title">The conclusion this report ends on, in a cohort it never saw</span></span></a><a class="toc-row" href="#s19"><span class="toc-num">19</span><span class="toc-text"><span class="toc-label">What it settles</span><span class="toc-title">And what it now settles that it could not before</span></span></a></div>
   </nav>
 
   <section>
@@ -420,6 +443,10 @@
       <div class="stat">
         <div class="stat-value">4</div>
         <div class="stat-label">frozen foundation models: ResNet50, UNI v1, CONCH v1, Virchow2</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" style="color:var(--accent)">5 <span class="dim" style="font-size:1.1rem">/ 8</span></div>
+        <div class="stat-label">claims replicated on PLISM, an independent public 13 × 7 cohort, at 88 % tissue coverage and on a 2026 encoder panel</div>
       </div>
       <div class="stat">
         <div class="stat-value">7<span class="dim" style="font-size:1.1rem"> / 12</span></div>
@@ -438,7 +465,9 @@
         white space can and cannot tell us, and how far any correction could go. Sections 6 to 11
         are the correction benchmark, our extension of it, and what a retrieval and a linear
         probe say about both. Section 12 states where we think image-space work ends, and sections 13 and 14 place the work
-        against the current literature and say what we would do next.
+        against the current literature and say what we would do next. Sections 15 to 19 are new:
+        they report what happened when the external validation section 14 asked for was carried
+        out on PLISM, a public cohort of 13 staining conditions crossed with 7 scanners.
       </p>
     </div>
   </section>
@@ -1889,6 +1918,401 @@
     </div>
   </details>
 
+  <div class="chapter" id="ch-part-iv">
+    <span class="chapter-eyebrow">Part IV · External validation</span>
+    <span class="chapter-title">The same questions, asked of a cohort we did not build</span>
+    <p class="chapter-note">Section 14 named PLISM as the highest-value next step and attached a prerequisite. This is what happened when it was done — and then done again on the whole cohort rather than a 6&nbsp;% sample of it, which changed one of the answers.</p>
+    <span class="chapter-weight">sections 15–19</span>
+  </div>
+
+  <details class="sec" id="s15" open>
+    <summary class="sec-head">
+      <span class="sec-num">15</span>
+      <span class="sec-titles"><span class="label">The external cohort</span><span class="sec-h">A second cohort where optics and sampling come apart</span></span>
+    </summary>
+
+    <div class="prose">
+<p>Section 14 named PLISM as the highest-value external check and attached one prerequisite: its published tiles are warped onto a common reference and resampled, so interpolation could alter the exact quantity this report measures. The prerequisite is moot. The <strong>91 original, unregistered whole-slide images are public</strong> (figshare+, 180.8&nbsp;GB, CC&nbsp;BY&nbsp;4.0), so nothing downstream depends on someone else's render chain.</p>
+<p>PLISM is one tissue microarray block cut into 13 serial sections, each stained under a different H&amp;E condition and each scanned on all seven instruments — a fully crossed 13&nbsp;×&nbsp;7 design. Within a stain the seven scanners image the <em>same physical section</em>, so a scanner contrast is content-matched by construction.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>The property that makes this cohort worth the trouble</caption>
+        <thead><tr><th class="txt"></th><th>PanNormal</th><th>PLISM</th></tr></thead>
+        <tbody>
+<tr><td class="txt">Native sampling</td><td>mixed: 0.2624–0.5052 µm/px</td><td>uniform 40×: 0.2208–0.2621 µm/px</td></tr>
+<tr><td class="txt">Nyquist span</td><td>0.99 – 1.91 cyc/µm</td><td>1.91 – 2.27 cyc/µm</td></tr>
+<tr><td class="txt">High band 0.10–0.99 cyc/µm</td><td>reaches AT2's own Nyquist</td><td>well inside every scanner's</td></tr>
+<tr><td class="txt">Sampling vs measured transfer</td><td><span class="flag flag-fail">rank-correlated 0.90</span></td><td><span class="flag flag-pass">equalised by design</span></td></tr>
+<tr><td class="txt">Independent colour axis</td><td>none</td><td>13 staining conditions</td></tr>
+<tr><td class="txt">Tissue axis</td><td>10 organ types across 109 slides</td><td>46 named cores on one block</td></tr>
+<tr><td class="txt">Replicate unit</td><td>109 physical slides</td><td>13 serial sections</td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">In PanNormal the top of the high band <em>is</em> AT2's Nyquist while GT450 sits at half of its own, so optics and sampling density cannot be separated there. That is the one thing PLISM can do and we cannot.</div>
+    <div class="callout">
+      <h3>Registration decides where to read, and nothing else</h3>
+<p>Each section's seven scanners were brought into correspondence at 16 µm/px, then each location was refined against the section's AT2 reference by phase correlation and the correction applied as an <strong>integer pixel shift</strong>. Every analysed patch is an integer crop at level 0 on the scanner's own grid: no analysed pixel is interpolated, warped or resampled.</p>
+<p>Across 700,986 scanner-to-reference measurements the median residual is <strong>0.091–0.113 µm</strong> — under a tenth of a percent of the 129 µm patch — and 99.57 % of measurements clear a 1 µm gate. The rest are dropped for that scanner rather than entering the estimate.</p>
+    </div>
+
+    <div class="prose">
+<p><strong>This part of the report has been rebuilt since the August edition, and the rebuild is the reason to read it again.</strong> The first pass sampled locations at random and reached <span class="dim">2.9 %</span> of the tissue by the same footprint measure. This one lays a lattice at the 129 µm patch pitch and reaches <strong>85–90 %</strong> of it: 116,831 locations against 3,816, a 31-fold increase in what every number below is computed from. That matters most in section 18, where the sparse version could not distinguish a method failing from an estimator starved of samples.</p>
+<p>The cores can also now be named. PLISM's 46 tissue labels live in the authors' Elastix canvas, and the August edition treated them as unreachable without the warp this work avoids. That was too strong: naming a core does not need pixel accuracy — a core is 2.5 mm across on a 3.6 mm pitch — so a single global similarity between the canvas occupancy lattice and the section's own tissue mask suffices, and it carries only a <em>name</em> inward. No analysed pixel is placed by it.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Alignment on the rebuilt grid, per scanner against its section's AT2</caption>
+        <thead><tr><th class="txt">Scanner</th><th>Median residual, µm</th><th>p90, µm</th><th>Median response</th><th>Usable</th></tr></thead>
+        <tbody>
+<tr><td class="txt"><code>GT450</code></td><td>0.113</td><td>0.163</td><td>1.02</td><td>99.99 %</td></tr>
+<tr><td class="txt"><code>S210</code></td><td>0.093</td><td>0.143</td><td>1.01</td><td>100.00 %</td></tr>
+<tr><td class="txt"><code>S60</code></td><td>0.091</td><td>0.145</td><td>0.98</td><td>94.41 %</td></tr>
+<tr><td class="txt"><code>Philips</code></td><td>0.105</td><td>0.203</td><td>0.91</td><td>99.44 %</td></tr>
+<tr><td class="txt"><code>S360</code></td><td>0.102</td><td>0.152</td><td>1.05</td><td>99.99 %</td></tr>
+<tr><td class="txt"><code>SQ</code></td><td>0.094</td><td>0.157</td><td>1.01</td><td>99.38 %</td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">116,831 lattice locations over 13 sections. <em>Response</em> is the phase-correlation peak height, carried through rather than gated on; <em>usable</em> is the share clearing both the 1 µm residual gate and a 0.3 response floor.</div>
+    <div class="callout">
+      <h3>The canvas fit is right, not merely converged</h3>
+<p>Fitted independently on each of the 13 sections, the canvas pixel comes out at <strong>0.2188–0.2219 µm</strong>, recovering the Hamamatsu 0.220 µm pitch the canvas was built on and which the fit was never given. The rotation lands within 3.25° of zero every time, and the mask overlap is Dice 0.82–0.86. Three independent checks, none of them the objective being optimised.</p>
+    </div>
+
+    <div class="prose">
+<p>Rebuilding the cohort also turned up <strong>three defects in the published dataset</strong>, none of which is visible in any header, and all three are recorded in <code>PROVENANCE.md</code> of the public folder rather than only here.</p>
+<p><strong>Two files hold each other's section.</strong> <code>GIVH_SQ.ndpi</code> ⇄ <code>HRH_SQ.ndpi</code>, <code>HRH_SQ.ndpi</code> ⇄ <code>GIVH_SQ.ndpi</code>. Matched against the AT2 reference of all thirteen sections, each scores 0.75–0.83 against the other's label and 0.11–0.13 against its own, while the remaining eleven sections score 0.09–0.32; over eight cores the verdict is unanimous, 16 of 16, and S360 through the identical comparison is correct 16 of 16. Four alternatives were excluded first — wrong core, a large offset, a scale error, and blur. Under the published labels these two blocks retained <span class="num-neg">0 %</span> of their locations. Corrected, they retain <span class="num-pos">99.1 %</span> and <span class="num-pos">97.8 %</span>.</p>
+<p><strong>One scan is out of focus.</strong> <code>HRH_S60</code> is correctly labelled and correctly registered — patches sit 4–11 µm from the reference and blur-tolerant cross-correlation confirms the tissue — but its high-band power is down five- to tenfold. That is a real property of the scan, so it stays in the dataset. It is excluded from the sharpness statistics of sections 16 to 19, and only those, because the endpoint of this study <em>is</em> high-band power: a per-section sharpness number that includes it measures a focus failure rather than a scanner. The exclusion is at block level and never per patch — rejecting individual patches for looking blurred is precisely the detail-based selection this study's own protocol forbids, and it would remove the evidence along with the problem.</p>
+    </div>
+
+    <div class="prose">
+<p>One more thing the rebuild settled. Every downstream analysis gates on residual alone, and phase correlation always returns a peak — on unrelated content that peak is noise, biased toward zero shift by the Hann window. Measured over the whole refinement, 0.70 % of non-reference measurements clear the 1 µm gate while their response says the alignment could not be verified at all. Before the file correction the two SQ blocks were made <em>entirely</em> of such leaks. That is now a fraction of a percent, and <code>response</code> is stored per location so any analysis can tighten the gate without re-measuring anything.</p>
+    </div>
+
+  </details>
+
+  <details class="sec" id="s16" open>
+    <summary class="sec-head">
+      <span class="sec-num">16</span>
+      <span class="sec-titles"><span class="label">What band power measures</span><span class="sec-h">Contrast, sampling and optics, finally separated</span></span>
+    </summary>
+
+    <div class="prose">
+<p>Measured the way section 3.1 measures it, PLISM inverts this report's ordering completely: rank correlation with the locked transfer across the 4 shared scanners is <strong>-1.000</strong>. GT450, the sharpest instrument in our panel, comes out the softest.</p>
+<p>The cause is not sharpness. Across all seven scanners the raw band-power ratio against AT2 tracks the <em>squared</em> optical-density spread: GT450 renders tissue at roughly half AT2's contrast, and its darkest one per cent of pixels only reaches 150 of 255. Raw band power measures how darkly a scanner draws the stain at least as much as how sharply it resolves it.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Fine-band power against AT2 — the same patches, before and after colour matching</caption>
+        <thead><tr><th class="txt">Scanner</th><th>Raw</th><th>After Reinhard</th><th>Locked transfer</th></tr></thead>
+        <tbody>
+<tr><td class="txt"><code>GT450</code></td><td><span class="num-neg">0.307</span></td><td><span class="num-pos"><strong>2.244</strong></span></td><td>1.478</td></tr>
+<tr><td class="txt"><code>S210</code></td><td>0.941</td><td><span class="num-pos">1.780</span></td><td>—</td></tr>
+<tr><td class="txt"><code>S60</code></td><td><span class="num-neg">0.655</span></td><td><span class="num-pos">1.571</span></td><td>1.044</td></tr>
+<tr><td class="txt"><code>Philips</code></td><td><span class="num-neg">0.192</span></td><td><span class="num-pos">1.430</span></td><td>—</td></tr>
+<tr><td class="txt"><code>S360</code></td><td>1.166</td><td>1.185</td><td>0.842</td></tr>
+<tr><td class="txt"><code>SQ</code></td><td>0.805</td><td><span class="num-pos">1.543</span></td><td>—</td></tr>
+<tr><td class="txt"><code>AT2</code></td><td><span class="dim">1.000</span></td><td><span class="dim">1.000</span></td><td><span class="dim">1.000</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">814,811 patches over 13 sections. Rank correlation with the locked ordering over the 4 shared scanners: <span class="flag flag-fail">raw -1.000</span> <span class="flag flag-pass">after Reinhard +0.800</span>. Reinhard here is the frozen implementation — CIE Lab moments closed by source-ray gamut projection, not per-channel clipping. The out-of-focus <code>HRH/S60</code> block is excluded; with it in, S60 reads 0.613 raw and 1.463 after Reinhard.</div>
+    <div class="callout">
+      <h3>This is the mechanism behind section 12's hinge</h3>
+<p>Section 6 records that frequency calibration on raw images is worth nothing — +0.5 %, −0.1 %, −0.5 %, +0.3 % — while the same correction after Reinhard is worth +2.8 to +5.0 points. This report states that as an observation and does not explain it.</p>
+<p>PLISM supplies the explanation. <strong>The raw band-power gap between scanners is mostly a contrast gap.</strong> Fitting band gains on raw energies therefore corrects contrast, which Reinhard removes anyway, so it adds nothing. Only after colour is matched is what remains in the bands an optical residual — and correcting that pays.</p>
+    </div>
+
+    <div class="prose">
+<p>The obvious worry is that section 3.1 is then measuring contrast too. The audit that settles it divides each scanner's raw fine-band power by the square of its optical-density spread, which is what band power in a fixed band scales with, and asks what is left. On our own cohort the residual reproduces the locked ordering exactly — rank correlation +1.000 — so section 3.1 is not measuring contrast.</p>
+<p>Running the same audit on PLISM is where the August edition went wrong, and the rebuilt cohort is what makes the error visible.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>The same contrast audit, run on both cohorts</caption>
+        <thead><tr><th class="txt"></th><th>GT450 raw fine band vs AT2</th><th>Predicted by contrast alone</th><th>Excess</th></tr></thead>
+        <tbody>
+<tr><td class="txt">PLISM (sampling equalised, 807,536 locations)</td><td>0.307</td><td>0.220</td><td><span class="num-pos"><strong>1.40×</strong></span></td></tr>
+<tr><td class="txt">PanNormal (GT450 sampled 1.93× finer)</td><td>0.293</td><td>0.215</td><td><span class="num-pos"><strong>1.36×</strong></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">Contrast is the optical-density standard deviation, not its mean: the mean says how dark the render is, the spread says how much signal there is to resolve, and it is the spread that band power is made of.</div>
+    <div class="callout">
+      <h3>A correction to the August edition</h3>
+<p>That edition put PLISM's excess at 0.90× and concluded that where sampling is equalised, contrast accounts for the whole ratio — which made the 1.36× on our own cohort a sampling effect and supported a clean split of GT450's advantage into roughly half optics, half sampling density. <strong>On the rebuilt cohort the excess is 1.40×, statistically indistinguishable from PanNormal's 1.36×.</strong> Equalising sampling does not remove it.</p>
+<p>So the excess is optics, not sampling density, and the split does not stand as stated. What survives, and is the load-bearing part of section 16, is the first claim: <strong>raw band power is dominated by contrast</strong>, which is why calibrating bands before colour is worth nothing and after colour is worth several points. The decomposition into three multiplicative terms is a weaker result than the August edition claimed, and this table is why.</p>
+    </div>
+
+    <div class="prose">
+<p>There is a second reason not to lean on the decomposition. The two normalisations disagree about how much sampling contributes. Compared post-Reinhard, GT450 sits at 2.24× AT2 on PLISM against 4.14× here, which reads as a large sampling effect; compared through the contrast audit, the residual is the same in both cohorts, which reads as none. Reinhard matches moments to a reference population and projects the gamut, so it is not the same normalisation as dividing by the spread, and the cohorts differ in where their finest band sits relative to Nyquist. Both numbers are measurements; the inference between them is not settled here.</p>
+<p>The ordering does not transfer past GT450 either. Over the four scanners the cohorts share, the contrast-normalised residual reproduces the locked ordering on PanNormal (+1.000) but not on PLISM (+0.200): S360 and S60 change places. Four scanners is a short list for a rank correlation, but it is enough to say the residual is not a single scanner property that both cohorts recover.</p>
+    </div>
+
+    <div class="prose">
+<p>One scanner resists all three explanations. <strong>AKOYA</strong> stays at 0.358 after contrast normalisation, samples at 0.4999 µm/px against AT2's 0.5052 so sampling cannot help it, shows no time trend across a 36-day acquisition window (ρ = +0.110, p = 0.25), and varies strongly with tissue type (ANOVA p = 5.5e-04, tissue medians spanning 5.7×). Its slides were re-scanned and reproduced the same result, no instrument fault was found, and the acquisition used the clinic's production setting. A low-numerical-aperture objective is the only account left standing, and the header's 10× objective string is the candidate — but numerical aperture is not recoverable from headers, so the optical mechanism remains a hypothesis. What is <em>not</em> a hypothesis is that a deployed clinical configuration produces images three times softer than the panel reference.</p>
+    </div>
+
+  </details>
+
+  <details class="sec" id="s17" open>
+    <summary class="sec-head">
+      <span class="sec-num">17</span>
+      <span class="sec-titles"><span class="label">The destination rule</span><span class="sec-h">The same estimator, aimed seven ways, in a cohort that never saw ours</span></span>
+    </summary>
+
+    <div class="prose">
+<p>Section 9's claim is not that our correction works. It is that <em>where you aim it</em> decides whether it helps, and that the quantity governing this is the target's post-Reinhard detail power. PLISM offers seven destinations instead of three, with sampling equalised, and the frozen RF1U rule — pooled population gains, shrinkage by the ratio's own bootstrap standard error, the same hard cap — applied unchanged.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Fitted band gains by destination, 18 source-band cells each</caption>
+        <thead><tr><th class="txt">Destination</th><th>Post-Reinhard detail</th><th>Amplify</th><th>Attenuate</th><th>Mean log gain</th><th>Regime</th></tr></thead>
+        <tbody>
+<tr><td class="txt"><code>GT450</code></td><td>2.244</td><td><span class="num-pos"><strong>11</strong></span></td><td>1</td><td>+0.115</td><td><span class="flag flag-pass">amplify</span></td></tr>
+<tr><td class="txt"><code>S210</code></td><td>1.780</td><td><span class="num-pos"><strong>8</strong></span></td><td>1</td><td>+0.086</td><td><span class="flag flag-pass">amplify</span></td></tr>
+<tr><td class="txt"><code>S60</code></td><td>1.571</td><td><span class="num-pos"><strong>6</strong></span></td><td>1</td><td>+0.039</td><td><span class="flag flag-pass">amplify</span></td></tr>
+<tr><td class="txt"><code>SQ</code></td><td>1.543</td><td><span class="num-pos"><strong>6</strong></span></td><td>1</td><td>+0.049</td><td><span class="flag flag-pass">amplify</span></td></tr>
+<tr><td class="txt"><code>Philips</code></td><td>1.430</td><td>4</td><td><span class="num-neg"><strong>5</strong></span></td><td>+0.008</td><td><span class="flag flag-pass">amplify</span></td></tr>
+<tr><td class="txt"><code>S360</code></td><td>1.185</td><td>1</td><td><span class="num-neg"><strong>12</strong></span></td><td>-0.129</td><td><span class="flag flag-fail">attenuate</span></td></tr>
+<tr><td class="txt"><code>AT2</code></td><td><span class="dim">1.000</span></td><td>0</td><td><span class="num-neg"><strong>15</strong></span></td><td>-0.166</td><td><span class="flag flag-fail">attenuate</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">Destination detail power against mean fitted log gain: <strong>Spearman +0.964</strong> over 7 destinations. This report finds 12 of 15 scanner-band gains attenuating toward AT2 and 12 of 15 amplifying toward GT450 or S60; PLISM reproduces the split on a different block, a different institution and four instruments we have never touched.</div>
+    <div class="callout">
+      <h3>AT2 is the worst destination in a panel it does not belong to</h3>
+<p>AT2 enters this report as the paired acquisition anchor, and section 9 warns that this is not the same as being a good destination. PLISM reaches that conclusion without our cohort: among its seven scanners <code>AT2</code> has the lowest post-Reinhard detail power, so every fitted gain toward it attenuates.</p>
+    </div>
+
+    <div class="prose">
+<p>Carried into representation space, the same split appears in the endpoints. Each condition was rendered onto the study's 0.5052 µm/px grid through the frozen libvips chain and encoded with the three E9 foundation models — the pinned TRIDENT checkout, the frozen checkpoints, each model's official eval transform, its native field of view. The correction is applied to the whole rendered tile, as at deployment, and the encoder's centre crop is taken from the result.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>RF1U in representation space, bootstrap over 13 sections</caption>
+        <thead><tr><th class="txt">Model</th><th>Toward AT2</th><th>Toward GT450</th><th>Probe → AT2</th><th>Probe → GT450</th></tr></thead>
+        <tbody>
+<tr><td class="txt">UNI2-h</td><td><span class="num-pos"><strong>+12.0 %</strong></span></td><td><span class="num-pos"><strong>+10.6 %</strong></span></td><td>0.961</td><td>0.947</td></tr>
+<tr><td class="txt">CONCHv1.5</td><td><span class="num-pos">+7.4 %</span></td><td><span class="num-pos"><strong>+13.5 %</strong></span></td><td>0.822</td><td>0.775</td></tr>
+<tr><td class="txt">H-optimus-1</td><td><span class="dim">-1.4 %</span></td><td><span class="dim">-1.8 %</span></td><td>0.980</td><td>0.962</td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">Relative scanner-radius reduction. Aiming at GT450 is safe and improved in <strong>2 of 3</strong> models against <strong>2 of 3</strong> toward AT2. Dimmed cells have a confidence interval containing zero.</div>
+    <div class="callout">
+      <h3>The rule holds where it is fitted and does not carry into representation space</h3>
+<p>Section 9's ordering is about two things at once — which way the gains point, and whether the resulting image helps a foundation model — and this cohort separates them. <strong>On the energies the gains are fitted from, the rule is exact: ρ = +0.964 over seven destinations, and AT2 is the worst destination in the panel.</strong> Carried into representation space on the E9 encoders it does not order the same way: GT450 wins for 1 of 3 models, AT2 for the rest, and the margin between the two destinations is a few points either way.</p>
+<p>The August edition read 4 of 4 toward GT450 against 1 of 4 toward AT2 on the E0 panel. That panel is not this one, and neither is the sampling, so the honest reading is that <strong>the destination rule is established on band energies and unconfirmed downstream</strong> — not that it has been overturned.</p>
+    </div>
+
+    <div class="prose">
+<p><strong>One encoder shows no image-space benefit at all.</strong> For H-optimus-1 no image condition clears zero — its best is +3.6 % with a confidence interval from -1.4 % to +6.7 %. That is not a failure of the correction so much as a statement about where that encoder keeps its scanner information: its raw scanner probe is the highest in the panel, so the identity is plainly there, and section 18 shows a linear map on its embedding removing almost all of it. An encoder can be highly sensitive to the scanner in directions that colour and band correction never touch.</p>
+<p>The other thing that did not replicate is arithmetic rather than biology. In this report, aiming at AT2 breaks content non-inferiority and the collapse guardrail; in PLISM every AT2-aimed condition stays safe. With 13 sections the bootstrap standard error on each gain is large, so RF1U's reliability brake pulls the gains toward identity — where this cohort fitted 0.51–0.66. The heavy blur that does the damage here never happens there. <strong>PLISM confirms that aiming badly costs you the benefit; it has no power to test whether aiming badly destroys the representation.</strong> Thirty-one times more locations per section do not change that: the shortage is in sections, not in patches, and the replicate unit for a section-level bootstrap is still 13.</p>
+    </div>
+
+  </details>
+
+  <details class="sec" id="s18" open>
+    <summary class="sec-head">
+      <span class="sec-num">18</span>
+      <span class="sec-titles"><span class="label">Feature space, externally</span><span class="sec-h">The conclusion this report ends on, in a cohort it never saw</span></span>
+    </summary>
+
+    <div class="prose">
+<p>Before any correction is fitted, it is worth asking what the batch effect looks like in these embeddings at all — and the answer depends entirely on which question is asked of them. <strong>No encoder clusters by scanner.</strong> Silhouette by scanner is within ±0.02 of zero for all three, and in the embedding plots the seven machines cover the same ground. A study that checks for scanner clusters would stop here and report that there is nothing to fix.</p>
+<p>Ask instead whether a given patch can be found again on another scanner and the picture changes. Of all locations of a core on the reference, the worst scanner misses the matching location <strong>17 times in a hundred</strong> (<code>Philips</code>, CONCHv1.5). The scanner effect is invisible in the global structure and plainly present in the correspondence — which is the case for a correction that acts on the embedding rather than on the picture.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Top-1 retrieval against the section's own AT2 acquisition, no correction</caption>
+        <thead><tr><th class="txt">Scanner</th><th>UNI2-h</th><th>CONCHv1.5</th><th>H-optimus-1</th></tr></thead>
+        <tbody>
+<tr><td class="txt"><code>GT450</code></td><td><strong>0.940</strong></td><td>0.907</td><td>0.905</td></tr>
+<tr><td class="txt"><code>S210</code></td><td>0.910</td><td>0.946</td><td><strong>0.992</strong></td></tr>
+<tr><td class="txt"><code>S60</code></td><td>0.882</td><td>0.917</td><td><strong>0.949</strong></td></tr>
+<tr><td class="txt"><code>Philips</code></td><td>0.875</td><td>0.833</td><td><strong>0.942</strong></td></tr>
+<tr><td class="txt"><code>S360</code></td><td>0.988</td><td>0.985</td><td><strong>0.997</strong></td></tr>
+<tr><td class="txt"><code>SQ</code></td><td>0.872</td><td>0.938</td><td><strong>0.977</strong></td></tr>
+<tr><td class="txt"><strong>mean</strong></td><td><strong>0.911</strong></td><td><strong>0.921</strong></td><td><strong>0.960</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">Of all locations of a TMA core on the reference scanner, the share whose nearest neighbour on the other scanner is the matching location. A rank statistic, so it compares across encoders where raw cosine does not.</div>
+    <div class="callout">
+      <h3>The scanners do not rank the same way for every encoder</h3>
+<p>CONCHv1.5 and H-optimus-1 agree almost completely (Spearman +0.94); H-optimus-1 against UNI2-h is +0.26. Only the extremes are common to all three. Take a single ranking of "which scanner is hardest" from one encoder and it will not transfer to the next — which is a caution against tuning a deployment to whichever encoder was benchmarked.</p>
+    </div>
+
+    <div class="prose">
+<p>Section 12 ends on a boundary statement: image correction caps out, and the headroom is a per-scanner linear map on the embedding. That is the claim most worth checking elsewhere, and it is also the cheapest — CORAL and orthogonal Procrustes are linear algebra on features that already exist. Both are fitted leave-one-section-out toward AT2, so no section contributes to the transform applied to it.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Scanner probe on PLISM — chance is 0.143 for seven scanners</caption>
+        <thead><tr><th class="txt">Model</th><th>Raw</th><th>Best image correction</th><th>CORAL</th><th>Procrustes</th></tr></thead>
+        <tbody>
+<tr><td class="txt">UNI2-h</td><td><span class="dim">0.974</span></td><td>0.961</td><td><span class="num-pos"><strong>0.036</strong></span></td><td><span class="num-pos"><strong>0.048</strong></span></td></tr>
+<tr><td class="txt">CONCHv1.5</td><td><span class="dim">0.872</span></td><td>0.775</td><td><span class="num-pos"><strong>0.075</strong></span></td><td><span class="num-pos"><strong>0.119</strong></span></td></tr>
+<tr><td class="txt">H-optimus-1</td><td><span class="dim">0.979</span></td><td>0.968</td><td><span class="num-pos"><strong>0.040</strong></span></td><td><span class="num-pos"><strong>0.064</strong></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">Image conditions barely move the probe. Feature-space conditions move it to near chance. Section 11 reports 0.005–0.080 against 0.807–0.920 on our own cohort — the same two orders of magnitude, on different instruments and a different encoder generation.</div>    <div class="table-wrap">
+      <table>
+        <caption>Feature-space radius reduction toward AT2, leave-one-section-out</caption>
+        <thead><tr><th class="txt">Model</th><th>CORAL</th><th>Procrustes</th><th>Best image condition</th></tr></thead>
+        <tbody>
+<tr><td class="txt">UNI2-h</td><td><span class="num-pos">+10.6 %</span></td><td><span class="num-pos"><strong>+30.5 %</strong></span></td><td>+12.0 %</td></tr>
+<tr><td class="txt">CONCHv1.5</td><td><span class="num-pos">+12.0 %</span></td><td><span class="num-pos"><strong>+12.5 %</strong></span></td><td>+13.5 %</td></tr>
+<tr><td class="txt">H-optimus-1</td><td><span class="num-pos">+18.3 %</span></td><td><span class="num-pos"><strong>+31.2 %</strong></span></td><td>+3.6 %</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <h3>The report's closing recommendation survives its first external test, with one edge</h3>
+<p>Orthogonal Procrustes is safe and improved in 3 of 3 models on PLISM and beats the best image-space figure on the same patches in 2 of 3. The part of the ordering this cohort can test — feature correction above image correction, and a linear probe that only feature correction can move — is reproduced on a cohort assembled by other people for other reasons, with encoders that did not exist when it was written.</p>
+<p><strong>What it cannot test is which feature method to deploy.</strong> Procrustes leads CORAL on radius here as it does on our own cohort, but section 11 is the reason that is not the deployment answer: radius and scanner removal dissociate, and under a nonlinear probe Procrustes retains the scanner where CORAL does not. Every probe on this cohort is a linear logistic regression, the same estimator the locked analysis uses, so PLISM reproduces the image-versus-feature boundary without adjudicating Procrustes against CORAL. Settling it externally is cheap and outstanding: it is the same MLP probe re-run on corrected features that already exist, with no rendering and no encoding.</p>
+<p>The exception is worth naming rather than rounding away: for CONCHv1.5 the best image condition reaches +13.5 % against Procrustes' +12.5 %. That is the encoder with by far the widest field of view and the lowest raw scanner probe in the panel — the one where the scanner effect is least concentrated in the embedding to begin with, and so the one with the least for a linear map to remove. The probe still moves two orders of magnitude further in feature space than in image space for it, as for the others.</p>
+    </div>
+
+    <div class="prose">
+<p>That leaves the one claim this report carries about CORAL, and it is the reason the cohort was rebuilt. The August edition found CORAL failing on PLISM for the two highest-dimensional encoders — UNI v1 -4.7 % and Virchow2 -31.8 %, the latter unsafe — and offered a diagnosis: <em>estimation, not method</em>. CORAL fits a full covariance, Virchow2's is 2560 × 2560, and a PLISM section supplied 192–384 samples, so the dimension exceeded the sample count by seven to thirteen times.</p>
+<p><strong>That was an inference, not a measurement</strong>, and the sparse cohort had no way to make it one: there were no more samples to add. There are now. The sweep below refits CORAL at growing training sizes and reads off where — and whether — the failure stops.</p>
+    </div>
+
+    <figure>
+      <div class="fig-frame"><div class="viz"><svg viewBox="0 0 720 380" role="img" aria-label="scanner-radius reduction against training samples per embedding dimension, one line per encoder"><line class="grid" x1="62" y1="285.6" x2="602" y2="285.6"/><text class="tick" x="52" y="289.6" text-anchor="end">-40%</text><line class="grid" x1="62" y1="204.7" x2="602" y2="204.7"/><text class="tick" x="52" y="208.7" text-anchor="end">-20%</text><line class="grid" x1="62" y1="123.9" x2="602" y2="123.9"/><text class="tick" x="52" y="127.9" text-anchor="end">+0%</text><line class="grid" x1="62" y1="43.0" x2="602" y2="43.0"/><text class="tick" x="52" y="47.0" text-anchor="end">+20%</text><line class="zero" x1="62" y1="123.9" x2="602" y2="123.9"/><text class="tick" x="236.0" y="346" text-anchor="middle">1</text><text class="tick" x="324.5" y="346" text-anchor="middle">3</text><text class="tick" x="421.4" y="346" text-anchor="middle">10</text><text class="tick" x="509.9" y="346" text-anchor="middle">30</text><line class="axis" x1="62" y1="326" x2="602" y2="326"/><text class="axis-title" x="332" y="368" text-anchor="middle">training samples per embedding dimension</text><text class="axis-title" transform="translate(16,172) rotate(-90)" text-anchor="middle">scanner-radius reduction</text><polyline class="series" points="86.5,326.0 144.3,326.0 201.1,326.0 275.1,315.5 330.9,232.1 386.8,200.2 460.6,161.5 516.4,122.1 576.3,80.8" stroke="var(--viz-1)"/><path class="dot" d="M 81.0 319.0 h 11 l -5.5 8 z" fill="var(--viz-1)"><title>UNI2-h: -71.1% at 0.2 samples per dimension (below the axis floor)</title></path><text class="note" x="86.5" y="340.0" text-anchor="middle" fill="var(--viz-1)">-71%</text><path class="dot" d="M 138.8 319.0 h 11 l -5.5 8 z" fill="var(--viz-1)"><title>UNI2-h: -76.2% at 0.3 samples per dimension (below the axis floor)</title></path><text class="note" x="144.3" y="340.0" text-anchor="middle" fill="var(--viz-1)">-76%</text><path class="dot" d="M 195.6 319.0 h 11 l -5.5 8 z" fill="var(--viz-1)"><title>UNI2-h: -86.4% at 0.6 samples per dimension (below the axis floor)</title></path><text class="note" x="201.1" y="340.0" text-anchor="middle" fill="var(--viz-1)">-86%</text><circle class="dot" cx="275.1" cy="315.5" r="4.5" fill="var(--viz-1)"><title>UNI2-h: -47.4% at 1.6 samples per dimension</title></circle><circle class="dot" cx="330.9" cy="232.1" r="4.5" fill="var(--viz-1)"><title>UNI2-h: -26.8% at 3.2 samples per dimension</title></circle><circle class="dot" cx="386.8" cy="200.2" r="4.5" fill="var(--viz-1)"><title>UNI2-h: -18.9% at 6.5 samples per dimension</title></circle><circle class="dot" cx="460.6" cy="161.5" r="4.5" fill="var(--viz-1)"><title>UNI2-h: -9.3% at 16.3 samples per dimension</title></circle><circle class="dot" cx="516.4" cy="122.1" r="4.5" fill="var(--viz-1)"><title>UNI2-h: +0.5% at 32.5 samples per dimension</title></circle><circle class="dot" cx="576.3" cy="80.8" r="4.5" fill="var(--viz-1)"><title>UNI2-h: +10.6% at 68.4 samples per dimension</title></circle><text class="series-label" x="588.3" y="84.8" fill="var(--viz-1)">UNI2-h</text><polyline class="series" points="142.3,326.0 200.1,326.0 256.9,197.5 330.9,138.2 386.7,116.8 442.6,96.9 515.1,75.7 520.4,75.3" stroke="var(--viz-2)"/><path class="dot" d="M 136.8 319.0 h 11 l -5.5 8 z" fill="var(--viz-2)"><title>CONCHv1.5: -287.1% at 0.3 samples per dimension (below the axis floor)</title></path><text class="note" x="142.3" y="340.0" text-anchor="middle" fill="var(--viz-2)">-287%</text><path class="dot" d="M 194.6 319.0 h 11 l -5.5 8 z" fill="var(--viz-2)"><title>CONCHv1.5: -209.3% at 0.6 samples per dimension (below the axis floor)</title></path><text class="note" x="200.1" y="340.0" text-anchor="middle" fill="var(--viz-2)">-209%</text><circle class="dot" cx="256.9" cy="197.5" r="4.5" fill="var(--viz-2)"><title>CONCHv1.5: -18.2% at 1.3 samples per dimension</title></circle><circle class="dot" cx="330.9" cy="138.2" r="4.5" fill="var(--viz-2)"><title>CONCHv1.5: -3.5% at 3.2 samples per dimension</title></circle><circle class="dot" cx="386.7" cy="116.8" r="4.5" fill="var(--viz-2)"><title>CONCHv1.5: +1.8% at 6.5 samples per dimension</title></circle><circle class="dot" cx="442.6" cy="96.9" r="4.5" fill="var(--viz-2)"><title>CONCHv1.5: +6.7% at 13.0 samples per dimension</title></circle><circle class="dot" cx="515.1" cy="75.7" r="4.5" fill="var(--viz-2)"><title>CONCHv1.5: +11.9% at 32.0 samples per dimension</title></circle><circle class="dot" cx="520.4" cy="75.3" r="4.5" fill="var(--viz-2)"><title>CONCHv1.5: +12.0% at 34.2 samples per dimension</title></circle><text class="series-label" x="532.4" y="79.3" fill="var(--viz-2)">CONCHv1.5</text><polyline class="series" points="86.5,326.0 144.3,326.0 201.1,326.0 275.1,326.0 330.9,279.4 386.8,212.4 460.6,158.8 516.4,103.0 576.3,49.9" stroke="var(--viz-3)"/><path class="dot" d="M 81.0 319.0 h 11 l -5.5 8 z" fill="var(--viz-3)"><title>H-optimus-1: -117.0% at 0.2 samples per dimension (below the axis floor)</title></path><text class="note" x="86.5" y="340.0" text-anchor="middle" fill="var(--viz-3)">-117%</text><path class="dot" d="M 138.8 319.0 h 11 l -5.5 8 z" fill="var(--viz-3)"><title>H-optimus-1: -123.5% at 0.3 samples per dimension (below the axis floor)</title></path><text class="note" x="144.3" y="340.0" text-anchor="middle" fill="var(--viz-3)">-123%</text><path class="dot" d="M 195.6 319.0 h 11 l -5.5 8 z" fill="var(--viz-3)"><title>H-optimus-1: -139.7% at 0.6 samples per dimension (below the axis floor)</title></path><text class="note" x="201.1" y="340.0" text-anchor="middle" fill="var(--viz-3)">-140%</text><path class="dot" d="M 269.6 319.0 h 11 l -5.5 8 z" fill="var(--viz-3)"><title>H-optimus-1: -71.6% at 1.6 samples per dimension (below the axis floor)</title></path><text class="note" x="275.1" y="340.0" text-anchor="middle" fill="var(--viz-3)">-72%</text><circle class="dot" cx="330.9" cy="279.4" r="4.5" fill="var(--viz-3)"><title>H-optimus-1: -38.5% at 3.2 samples per dimension</title></circle><circle class="dot" cx="386.8" cy="212.4" r="4.5" fill="var(--viz-3)"><title>H-optimus-1: -21.9% at 6.5 samples per dimension</title></circle><circle class="dot" cx="460.6" cy="158.8" r="4.5" fill="var(--viz-3)"><title>H-optimus-1: -8.6% at 16.3 samples per dimension</title></circle><circle class="dot" cx="516.4" cy="103.0" r="4.5" fill="var(--viz-3)"><title>H-optimus-1: +5.2% at 32.5 samples per dimension</title></circle><circle class="dot" cx="576.3" cy="49.9" r="4.5" fill="var(--viz-3)"><title>H-optimus-1: +18.3% at 68.4 samples per dimension</title></circle><text class="series-label" x="588.3" y="53.9" fill="var(--viz-3)">H-optimus-1</text><text class="note" x="68" y="318">▼ below the axis floor; true value printed</text></svg><div class="viz-legend"><span><i style="background:var(--viz-1)"></i>UNI2-h</span><span><i style="background:var(--viz-2)"></i>CONCHv1.5</span><span><i style="background:var(--viz-3)"></i>H-optimus-1</span></div></div></div>
+      <figcaption>CORAL refitted leave-one-section-out at growing training sizes, toward AT2. Each point is the mean relative scanner-radius reduction over the 13 held-out sections; above zero the correction helps, below zero it makes the scanner spread worse. The x axis is training samples per embedding dimension, which is the quantity the estimation argument is about. The smallest fits fail by whole multiples and would flatten everything else against the top of the frame, so they are drawn as triangles on the axis floor with their true values printed — the value is moved, not hidden.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <caption>CORAL at the sparse regime and at full density</caption>
+        <thead><tr><th class="txt">Model</th><th>Samples/dim, smallest fit</th><th>Radius reduction</th><th>Samples/dim, full fit</th><th>Radius reduction</th><th>Crosses zero at</th></tr></thead>
+        <tbody>
+<tr><td class="txt">UNI2-h</td><td>0.16</td><td><span class="num-neg">-71.1 %</span></td><td>68</td><td><span class="num-pos"><strong>+10.6 %</strong></span></td><td>33</td></tr>
+<tr><td class="txt">CONCHv1.5</td><td>0.31</td><td><span class="num-neg">-287.1 %</span></td><td>34</td><td><span class="num-pos"><strong>+12.0 %</strong></span></td><td>6</td></tr>
+<tr><td class="txt">H-optimus-1</td><td>0.16</td><td><span class="num-neg">-117.0 %</span></td><td>68</td><td><span class="num-pos"><strong>+18.3 %</strong></span></td><td>33</td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">At full density CORAL is safe and improved in 3 of 3 models. The crossing column is the first swept training size at which the mean reduction is positive, in samples per embedding dimension.</div>
+    <div class="callout">
+      <h3>What the sweep settles</h3>
+<p><strong>The qualification was an estimation artefact, and the sweep says so directly.</strong> All three — UNI2-h, CONCHv1.5, H-optimus-1 — start below zero at the smallest training sizes — the regime the August edition was stuck in, where it makes the scanner spread <em>worse</em> by whole multiples — then climbs through zero and flattens. CORAL was never failing; it was being fitted from a covariance it did not have the samples to estimate. <strong>But the threshold is not a constant, and that is the second finding.</strong> The x axis already divides by the embedding dimension, so if the requirement were simply "n samples per parameter" the curves would cross together. They do not: CONCHv1.5 breaks even at 6 samples per dimension and UNI2-h needs 33, a 5-fold difference. How hard a covariance is to estimate depends on how its eigenvalues are spread, not only on how many there are, so the number has to be measured for the encoder in hand rather than carried over from another.</p>
+    </div>
+
+    <div class="prose">
+<p>The practical form of the recommendation is therefore sharper than "CORAL when the fitting population is large", and it is also more demanding. <strong>Every encoder has a break-even sample count, it is reached well after the point where the covariance is merely invertible, and it has to be measured per encoder.</strong> The curve above is the measurement, and running it costs nothing beyond refitting on subsamples of features that already exist — no new encoding pass, no new acquisition. A site choosing between CORAL and doing nothing can plot its own version before committing.</p>
+<p>Procrustes, an orthogonal matrix with far fewer free parameters, is stable across the whole range. But it is fitted on paired same-location embeddings, which is exactly what a deployment site does not have — which is why it is reported here as the paired upper bound rather than as a deployable method, and why knowing when CORAL becomes safe is what decides whether a site can harmonise at all.</p>
+    </div>
+
+  </details>
+
+  <details class="sec" id="s19" open>
+    <summary class="sec-head">
+      <span class="sec-num">19</span>
+      <span class="sec-titles"><span class="label">What the external cohort settles</span><span class="sec-h">And what it now settles that it could not before</span></span>
+    </summary>
+    <div class="table-wrap">
+      <table>
+        <caption>Every claim in this report, against PLISM</caption>
+        <thead><tr><th class="txt">Claim</th><th>Where</th><th>Outcome</th></tr></thead>
+        <tbody>
+<tr><td class="txt">Aiming decides which way the fitted gains point</td><td>9</td><td><span class="flag flag-pass">replicated</span> — ρ = +0.964 over seven destinations; AT2 is the worst destination in a panel it does not belong to</td></tr>
+<tr><td class="txt">Aiming at the detail-rich destination helps the encoder more</td><td>9</td><td><span class="flag flag-fail">unconfirmed</span> — GT450 beats AT2 in 1 of 3 models (2 of 3 safe and improved against 2 of 3); the E0 panel read 4 of 4 against 1 of 4</td></tr>
+<tr><td class="txt">Image correction cannot move the scanner probe</td><td>11</td><td><span class="flag flag-pass">replicated</span> — the best image condition moves it by at most 0.097 within an encoder</td></tr>
+<tr><td class="txt">The headroom is in feature space</td><td>12</td><td><span class="flag flag-pass">replicated</span> — a linear map on the embedding moves the same probe by 0.80–0.94; Procrustes safe and improved in 3 of 3</td></tr>
+<tr><td class="txt">The scanner effect is not a detachable global style</td><td>3.2</td><td><span class="flag flag-pass">replicated</span> — and now shown to vary by named tissue as well as by section</td></tr>
+<tr><td class="txt">Raw transfer is the scanner's spectral signature</td><td>3.1</td><td><span class="flag flag-fail">restated</span> — raw band power is dominated by contrast; the three-term decomposition offered in August does not survive the rebuilt cohort</td></tr>
+<tr><td class="txt">CORAL is the deployable feature-space option</td><td>6</td><td><span class="flag flag-pass">replicated</span> — 3 of 3 at full density; the August failure was the sample count, and the sweep measures where it stops</td></tr>
+<tr><td class="txt">Aiming badly destroys the representation</td><td>9</td><td><span class="dim">untested</span> — 13 sections cannot produce the required blur, at any patch density</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose">
+<p>Two axes are left, and PLISM is the only cohort that can put them side by side, because the same 46 cores are cut into all 13 sections. The nesting is fitted twice on the identical rows — once with the <strong>staining condition</strong> on top and the core inside it, once with the <strong>tissue type</strong> on top and the section inside it. The second is section 3.2's own model, and it could not be run here before the cores were named.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Where a scanner's spectral slope varies, by what it is nested under</caption>
+        <thead><tr><th class="txt">Scanner</th><th>log2 ERT</th><th>Variance from staining condition</th><th>Variance from tissue type</th></tr></thead>
+        <tbody>
+<tr><td class="txt"><code>GT450</code></td><td>-2.122</td><td>13 %</td><td>21 %</td></tr>
+<tr><td class="txt"><code>Philips</code></td><td>-2.504</td><td>39 %</td><td>38 %</td></tr>
+<tr><td class="txt"><code>S210</code></td><td>-0.200</td><td>67 %</td><td>2 %</td></tr>
+<tr><td class="txt"><code>S360</code></td><td>+0.067</td><td>44 %</td><td>13 %</td></tr>
+<tr><td class="txt"><code>S60</code></td><td>-0.630</td><td>55 %</td><td>19 %</td></tr>
+<tr><td class="txt"><code>SQ</code></td><td>-0.338</td><td>59 %</td><td>2 %</td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">Share of the between-group slope variance sitting at the top level of each fit; the remainder sits in the level below. Same locations, same estimator, same profiled REML and boundary-mixture test used for the tissue analysis in section 3.2. Significant top-level variance (q &lt; 0.05): 6 of 6 scanners under staining condition, 4 of 6 under tissue type.</div>
+    <div class="prose">
+<p>That leaves the question of whether the staining term means anything. If the section-level variance were staining chemistry, a scanner's slope should track how the stain actually renders — how dark it is, how much contrast it carries, how much fine detail survives it. All three are measurable on the section's own AT2 reference, and so are scanner-independent by construction.</p>
+<p>With 12 sections a single one has enormous leverage, so the full-data coefficient is not the answer on its own — the fit has to survive dropping each section in turn. That check is what the August edition rested its conclusion on, and it was run by hand on one scanner and never written down. Here it runs on every scanner and every covariate.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Does the stain's own darkness predict the scanner's spectral slope?</caption>
+        <thead><tr><th class="txt">Scanner</th><th>β</th><th>z</th><th>Section variance explained</th><th>Folds significant</th><th>Leave-one-section-out</th></tr></thead>
+        <tbody>
+<tr><td class="txt"><code>GT450</code></td><td><span class="dim">-0.002</span></td><td><span class="dim">-0.18</span></td><td><span class="dim">—</span></td><td>0 / 12</td><td><span class="dim">—</span></td></tr>
+<tr><td class="txt"><code>S210</code></td><td>-0.104</td><td>-3.03</td><td>43 %</td><td>11 / 12</td><td>breaks without <code>HR</code></td></tr>
+<tr><td class="txt"><code>S60</code></td><td><span class="dim">-0.076</span></td><td><span class="dim">-1.24</span></td><td><span class="dim">—</span></td><td>1 / 12</td><td><span class="dim">—</span></td></tr>
+<tr><td class="txt"><code>Philips</code></td><td>+0.063</td><td>+4.04</td><td>61 %</td><td>11 / 12</td><td>breaks without <code>HR</code></td></tr>
+<tr><td class="txt"><code>S360</code></td><td>-0.067</td><td>-8.57</td><td>89 %</td><td>12 / 12</td><td><span class="flag flag-pass">stable</span></td></tr>
+<tr><td class="txt"><code>SQ</code></td><td><span class="dim">-0.043</span></td><td><span class="dim">-0.60</span></td><td><span class="dim">—</span></td><td>0 / 12</td><td><span class="dim">—</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">The covariate is the section's mean optical density on its AT2 reference, standardised; contrast and detail behave the same way and are in <code>stain_covariate_high.csv</code>. A coefficient counts as stable only if it keeps its sign and its significance in every fold. Dimmed rows are not significant on the full data to begin with.</div>
+    <div class="callout">
+      <h3>What the leave-one-out pass settles</h3>
+<p><strong>1 of 6 survive.</strong> <code>S360</code> keeps its sign and its significance in every fold, while <code>Philips</code> and <code>S210</code> do not. The August edition generalised from the one scanner it checked by hand and concluded that staining condition is a label rather than an explanatory variable. <strong>For at least one scanner it is an explanatory variable, and the check that decides this is now in the code.</strong> The section doing the damage is named: withhold <code>HR</code>, and Philips and S210 lose significance. That is the same section whose staining is three standard deviations darker than any other, and the same one where the feature-space corrections of section 18 do nothing. <strong>One extreme condition out of 12 is carrying most of what looked like a stain effect</strong> — which is exactly the failure mode the August edition suspected, now located rather than inferred.</p>
+    </div>
+
+    <div class="prose">
+<p>The tissue axis answers this differently again, and it is an axis the August edition could not use at all: with the cores unnamed, PLISM's tissue labels were treated as a nuisance index. Named, they show that the cross-scanner match does not fail uniformly. Within one block, one stain and one set of instruments, top-1 retrieval runs from <strong>0.762 to 0.995</strong> across the 46 tissue types.</p>
+<p><strong>It fails where the tissue has no architecture to anchor a match.</strong> Liver, skeletal muscle, collagenous fibre and left ventricle sit at the bottom — homogeneous, repetitive, few landmarks. Gallbladder, bronchus, colonic adenocarcinoma and ileum sit at the top, and they are the structurally rich ones. Read with section 3.2, which reports the scanner effect varying with tissue type on our own cohort, this says what that variation is <em>made of</em>: a scanner's distortion costs most where there is least structure to survive it.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>Top-1 retrieval by tissue — the five hardest and the four easiest</caption>
+        <thead><tr><th class="txt">Tissue</th><th>UNI2-h</th><th>CONCHv1.5</th><th>H-optimus-1</th><th>mean</th></tr></thead>
+        <tbody>
+<tr><td class="txt"><code>liver</code></td><td>0.559</td><td>0.858</td><td>0.871</td><td><span class="num-neg">0.762</span></td></tr>
+<tr><td class="txt"><code>skeletal muscle</code></td><td>0.610</td><td>0.867</td><td>0.832</td><td><span class="num-neg">0.770</span></td></tr>
+<tr><td class="txt"><code>collagenous fiber</code></td><td>0.770</td><td>0.757</td><td>0.864</td><td><span class="num-neg">0.797</span></td></tr>
+<tr><td class="txt"><code>left ventricle</code></td><td>0.690</td><td>0.937</td><td>0.825</td><td><span class="num-neg">0.817</span></td></tr>
+<tr><td class="txt"><code>GIST</code></td><td>0.871</td><td>0.761</td><td>0.890</td><td><span class="num-neg">0.841</span></td></tr>
+<tr><td class="txt"><span class="dim">…</span></td><td><span class="dim"></span></td><td><span class="dim"></span></td><td><span class="dim"></span></td><td><span class="dim"></span></td></tr>
+<tr><td class="txt"><code>ileum</code></td><td>0.989</td><td>0.981</td><td>0.999</td><td><span class="num-pos">0.990</span></td></tr>
+<tr><td class="txt"><code>colon adenocarcionma</code></td><td>0.992</td><td>0.987</td><td>0.998</td><td><span class="num-pos">0.992</span></td></tr>
+<tr><td class="txt"><code>broncus</code></td><td>0.990</td><td>0.997</td><td>0.998</td><td><span class="num-pos">0.995</span></td></tr>
+<tr><td class="txt"><code>gallbladder</code></td><td>0.993</td><td>0.992</td><td>1.000</td><td><span class="num-pos">0.995</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+<div class="note">Pooled over the six non-reference scanners and all 13 sections. The ordering is the encoders' shared one: the hardest tissues are hardest for all three, even where the encoders disagree about which scanner is hardest.</div>
+    <div class="callout">
+      <h3>What PLISM still cannot do for this report</h3>
+<p><strong>Power, in sections.</strong> Thirteen serial sections against 109 physical slides. Rebuilding the cohort multiplied the patches by 31 and left the replicate count untouched, so every section-level interval is still wide, RF1U's shrinkage still dominates its own gains, and the destructive regime still never occurs. What the extra patches bought was the <em>fitting</em> problem in section 18, not the bootstrap.</p>
+<p><strong>Coverage.</strong> PLISM has no instrument like AKOYA — its softest scanner sits far above where AKOYA sits after Reinhard. Since AKOYA is a reproduced clinical production setting rather than an acquisition error, that is a gap in the external benchmark, not a weakness here.</p>
+<p><strong>Confounding.</strong> Its 13 stains are on 13 different serial sections, so a section-level term cannot be attributed to chemistry even when it is significant. The tissue axis does not have this problem, which is why naming the cores was worth the trouble.</p>
+<p><strong>Endpoints.</strong> PLISM carries tissue-type labels and nothing else. The gap section 14 calls the real one — a molecular or clinical readout — is still open, and no public multi-scanner cohort closes it.</p>
+    </div>
+
+    <div class="prose">
+<p>What changed is the standard of evidence. The acquisition-provenance argument against a resampling explanation is now a measurement; the hinge in section 12 has a mechanism instead of an observation; the destination rule has been run on four instruments we have never handled; the closing recommendation has been tested somewhere else and on encoders that postdate it; and the qualification this report carried against CORAL has been converted from a plausible story about estimation into a curve with a threshold on it. The cost was a restatement of section 3.1, which makes the report more precise rather than less.</p>
+    </div>
+
+  </details>
+
   <footer>
     <div>
       Every condition was evaluated exactly once under a contract frozen before its results
@@ -1898,7 +2322,7 @@
       65,400 registered acquisitions · 4 foundation models · slide-blocked bootstrap 5,000 · seed 20260803
     </div>
     <div class="mono">
-      docs/final_study_protocol.md · docs/e5_rf1u_multitarget_contract.md · docs/e5_rf1u_multitarget_results.md
+      docs/final_study_protocol.md · docs/e5_rf1u_multitarget_contract.md · docs/e5_rf1u_multitarget_results.md · docs/e9_plism_native_ert_contract.md
     </div>
   </footer>
 
