@@ -1,0 +1,702 @@
+{
+  "schema_version": "final_output_retention_v1",
+  "date": "2026-09-16",
+  "policy": "core-lock artifacts plus direct final-report sources",
+  "mode": "apply",
+  "retained": {
+    "files": 155,
+    "bytes": 828894137,
+    "by_top_level": {
+      "e0_alias_audit_final_geometry": {
+        "files": 3,
+        "bytes": 122874
+      },
+      "e0_e3_locked_results": {
+        "files": 2,
+        "bytes": 4488
+      },
+      "e0_e3_main_figures": {
+        "files": 7,
+        "bytes": 1526872
+      },
+      "e0_native_aa_grid": {
+        "files": 2,
+        "bytes": 4466
+      },
+      "e0_native_geometry_final": {
+        "files": 4,
+        "bytes": 52904736
+      },
+      "e0_pfm_contract": {
+        "files": 1,
+        "bytes": 3548
+      },
+      "e0_pfm_features": {
+        "files": 1,
+        "bytes": 439
+      },
+      "e0_scanner_acquisition_metadata": {
+        "files": 3,
+        "bytes": 4868
+      },
+      "e0d_same_chain_background": {
+        "files": 2,
+        "bytes": 13221
+      },
+      "e1_native_aa_spectral_109": {
+        "files": 3,
+        "bytes": 24239
+      },
+      "e3_native_aa_scalar_reducibility": {
+        "files": 2,
+        "bytes": 1817
+      },
+      "e4_control_features": {
+        "files": 1,
+        "bytes": 645
+      },
+      "e4_control_figure": {
+        "files": 3,
+        "bytes": 481608
+      },
+      "e4_control_frontier": {
+        "files": 8,
+        "bytes": 9136835
+      },
+      "e4_control_results_lock": {
+        "files": 2,
+        "bytes": 2421
+      },
+      "e5_comparator_features": {
+        "files": 2,
+        "bytes": 74200
+      },
+      "e5_comparator_figure": {
+        "files": 3,
+        "bytes": 712974
+      },
+      "e5_comparator_frontier": {
+        "files": 11,
+        "bytes": 6125450
+      },
+      "e5_comparator_results_lock": {
+        "files": 2,
+        "bytes": 6637
+      },
+      "e5_feature_statistics": {
+        "files": 8,
+        "bytes": 735512167
+      },
+      "e5_image_statistics": {
+        "files": 6,
+        "bytes": 1311840
+      },
+      "e5_input_stability": {
+        "files": 1,
+        "bytes": 2710
+      },
+      "e5_macenko_features": {
+        "files": 1,
+        "bytes": 397
+      },
+      "e5_macenko_supplement": {
+        "files": 8,
+        "bytes": 1274893
+      },
+      "e5_macenko_supplement_lock": {
+        "files": 2,
+        "bytes": 5437
+      },
+      "e6_baseline_spectrum_predictor": {
+        "files": 8,
+        "bytes": 1264297
+      },
+      "e6_baseline_spectrum_predictor_lock": {
+        "files": 2,
+        "bytes": 14217
+      },
+      "e6_heterogeneity_results_lock": {
+        "files": 2,
+        "bytes": 5950
+      },
+      "e6_loso_heterogeneity": {
+        "files": 9,
+        "bytes": 5875116
+      },
+      "e6_loso_replicate_contrasts": {
+        "files": 1,
+        "bytes": 834
+      },
+      "e6_loto_features": {
+        "files": 1,
+        "bytes": 799
+      },
+      "e6_loto_frontier": {
+        "files": 14,
+        "bytes": 7266662
+      },
+      "e6_loto_results_lock": {
+        "files": 2,
+        "bytes": 26337
+      },
+      "e7_tissue_probe": {
+        "files": 11,
+        "bytes": 5080317
+      },
+      "e7_tissue_probe_results_lock": {
+        "files": 2,
+        "bytes": 27428
+      },
+      "e8_residual": {
+        "files": 7,
+        "bytes": 34102
+      },
+      "pannormal_core_results_lock": {
+        "files": 3,
+        "bytes": 24131
+      },
+      "plism_core_native_ert": {
+        "files": 2,
+        "bytes": 2819
+      },
+      "rf1u_multitarget": {
+        "files": 3,
+        "bytes": 11346
+      }
+    }
+  },
+  "removed": {
+    "files": 33663,
+    "bytes": 303002081643,
+    "by_top_level": {
+      "e0_alias_audit": {
+        "files": 21,
+        "bytes": 3227272
+      },
+      "e0_alias_audit_final_geometry": {
+        "files": 20,
+        "bytes": 3216359
+      },
+      "e0_candidate_execution_plan_final": {
+        "files": 6,
+        "bytes": 5997
+      },
+      "e0_candidate_execution_plan_known": {
+        "files": 9,
+        "bytes": 18561
+      },
+      "e0_candidate_execution_plan_new4": {
+        "files": 9,
+        "bytes": 7105
+      },
+      "e0_candidate_execution_plan_new_8_12_8": {
+        "files": 9,
+        "bytes": 4502
+      },
+      "e0_candidate_execution_plan_route_min": {
+        "files": 9,
+        "bytes": 18565
+      },
+      "e0_candidate_reserve": {
+        "files": 110,
+        "bytes": 12717490
+      },
+      "e0_e3_locked_results": {
+        "files": 3,
+        "bytes": 8376
+      },
+      "e0_feature_manifest_109": {
+        "files": 443,
+        "bytes": 29091204
+      },
+      "e0_native_aa_ert_sensitivity": {
+        "files": 5,
+        "bytes": 1018094
+      },
+      "e0_native_aa_grid": {
+        "files": 218,
+        "bytes": 47493357897
+      },
+      "e0_native_fallback_actions": {
+        "files": 7,
+        "bytes": 12850
+      },
+      "e0_native_finalization_plan": {
+        "files": 3,
+        "bytes": 37378
+      },
+      "e0_native_fromscratch_outcomes": {
+        "files": 4,
+        "bytes": 6699
+      },
+      "e0_native_fromscratch_outcomes_route_min": {
+        "files": 5,
+        "bytes": 4624
+      },
+      "e0_native_geometry_cohort": {
+        "files": 1542,
+        "bytes": 158189418
+      },
+      "e0_native_geometry_final": {
+        "files": 3,
+        "bytes": 8925703
+      },
+      "e0_native_geometry_sentinel": {
+        "files": 20,
+        "bytes": 97936241
+      },
+      "e0_pfm_contract": {
+        "files": 13,
+        "bytes": 4643443112
+      },
+      "e0_pfm_features": {
+        "files": 878,
+        "bytes": 943060147
+      },
+      "e0_primary_transform_recovery_pilot": {
+        "files": 11,
+        "bytes": 39863897
+      },
+      "e0_registration_cohort_109": {
+        "files": 557,
+        "bytes": 31286309
+      },
+      "e0_registration_sentinel": {
+        "files": 87,
+        "bytes": 8739593
+      },
+      "e0_resampling_provenance": {
+        "files": 5,
+        "bytes": 375956
+      },
+      "e0_rigid_alignment": {
+        "files": 290,
+        "bytes": 1679078
+      },
+      "e0_rigid_native_fallback": {
+        "files": 290,
+        "bytes": 8590610
+      },
+      "e0_scanner_acquisition_metadata": {
+        "files": 1,
+        "bytes": 265040
+      },
+      "e0_valis_from_scratch": {
+        "files": 12,
+        "bytes": 1902812
+      },
+      "e0_valis_from_scratch_affine": {
+        "files": 46,
+        "bytes": 11009833933
+      },
+      "e0_valis_from_scratch_affine_alignment": {
+        "files": 15,
+        "bytes": 88310
+      },
+      "e0_valis_from_scratch_affine_native": {
+        "files": 15,
+        "bytes": 475684
+      },
+      "e0_valis_from_scratch_alignment": {
+        "files": 10,
+        "bytes": 60924
+      },
+      "e0_valis_from_scratch_alignment_full": {
+        "files": 100,
+        "bytes": 588787
+      },
+      "e0_valis_from_scratch_native_full": {
+        "files": 100,
+        "bytes": 3204871
+      },
+      "e0_valis_from_scratch_v2": {
+        "files": 300,
+        "bytes": 55869531578
+      },
+      "e0d_same_chain_background": {
+        "files": 553,
+        "bytes": 57050478
+      },
+      "e1_native_aa_spectral_109": {
+        "files": 895,
+        "bytes": 34253830
+      },
+      "e3_native_aa_scalar_reducibility": {
+        "files": 2,
+        "bytes": 1290176
+      },
+      "e4_control_features": {
+        "files": 947,
+        "bytes": 8302976611
+      },
+      "e4_control_references": {
+        "files": 6,
+        "bytes": 9380439
+      },
+      "e5_feature_harmonization": {
+        "files": 872,
+        "bytes": 2393958077
+      },
+      "e5_image_features": {
+        "files": 876,
+        "bytes": 2766009429
+      },
+      "e5_input_stability": {
+        "files": 3,
+        "bytes": 34994
+      },
+      "e5_macenko_features": {
+        "files": 877,
+        "bytes": 927346626
+      },
+      "e5_macenko_references": {
+        "files": 6,
+        "bytes": 15946
+      },
+      "e5_rf1_features": {
+        "files": 878,
+        "bytes": 932504842
+      },
+      "e5_rf1_fold_statistics": {
+        "files": 30,
+        "bytes": 142428
+      },
+      "e5_rf1_frontier": {
+        "files": 11,
+        "bytes": 2060802
+      },
+      "e5_rf1_input_fold_audit": {
+        "files": 30,
+        "bytes": 15975885
+      },
+      "e5_rf1_input_stability": {
+        "files": 2,
+        "bytes": 40358
+      },
+      "e5_rf1_results_lock": {
+        "files": 2,
+        "bytes": 10184
+      },
+      "e5_rf1_tissue_probe": {
+        "files": 9,
+        "bytes": 1232293
+      },
+      "e5_rf1_tissue_probe_rows": {
+        "files": 12,
+        "bytes": 598893
+      },
+      "e5_rf1_visual_audit": {
+        "files": 5,
+        "bytes": 19159040
+      },
+      "e5_rf1_visual_comparison": {
+        "files": 22,
+        "bytes": 35286537
+      },
+      "e6_loso_replicate_contrasts": {
+        "files": 2,
+        "bytes": 5008061
+      },
+      "e6_loto_feature_harmonization": {
+        "files": 872,
+        "bytes": 2394031815
+      },
+      "e6_loto_features": {
+        "files": 1,
+        "bytes": 89166
+      },
+      "e6_loto_image_features": {
+        "files": 876,
+        "bytes": 2765988952
+      },
+      "e7_tissue_probe_rows": {
+        "files": 12,
+        "bytes": 3498392
+      },
+      "e8_acquisition_provenance": {
+        "files": 3,
+        "bytes": 104071
+      },
+      "e8_condition_frontier": {
+        "files": 12,
+        "bytes": 298192
+      },
+      "e8_control_probe": {
+        "files": 12,
+        "bytes": 340220
+      },
+      "e8_frontier_sensitivity_loose": {
+        "files": 12,
+        "bytes": 67619
+      },
+      "e8_frontier_sensitivity_tight": {
+        "files": 12,
+        "bytes": 67548
+      },
+      "e8_ladder_probe": {
+        "files": 12,
+        "bytes": 309050
+      },
+      "e8_lambda_energy": {
+        "files": 26,
+        "bytes": 663995
+      },
+      "e8_lambda_features": {
+        "files": 2616,
+        "bytes": 5327174219
+      },
+      "e8_lambda_frontier": {
+        "files": 12,
+        "bytes": 145993
+      },
+      "e8_lambda_probe": {
+        "files": 12,
+        "bytes": 218860
+      },
+      "e8_manifold_distance": {
+        "files": 4,
+        "bytes": 5878
+      },
+      "e8_moment_ladder": {
+        "files": 1760,
+        "bytes": 14478839320
+      },
+      "e8_residual": {
+        "files": 1500,
+        "bytes": 14719236745
+      },
+      "e8_rf1u_dual_anchor": {
+        "files": 12,
+        "bytes": 113298
+      },
+      "e8_target_harmonization": {
+        "files": 1744,
+        "bytes": 4844268931
+      },
+      "e8_target_probe": {
+        "files": 12,
+        "bytes": 211401
+      },
+      "e8_target_statistics": {
+        "files": 8,
+        "bytes": 668353355
+      },
+      "e8_transfer_figure": {
+        "files": 3,
+        "bytes": 57111
+      },
+      "e8_variance_components": {
+        "files": 8,
+        "bytes": 16037
+      },
+      "e9_pfm_contract": {
+        "files": 15,
+        "bytes": 8491934443
+      },
+      "exp05_spectral_cohort_109": {
+        "files": 1007,
+        "bytes": 29487368
+      },
+      "exp05_spectral_pilot_5slides": {
+        "files": 14,
+        "bytes": 1798050
+      },
+      "exp06_raw_nps_pilot_5slides": {
+        "files": 16,
+        "bytes": 140147834
+      },
+      "exp06_raw_nps_pilot_5slides_complete": {
+        "files": 21,
+        "bytes": 146782813
+      },
+      "exp06_raw_nps_pilot_5slides_final": {
+        "files": 21,
+        "bytes": 146804106
+      },
+      "exp06_raw_nps_supplement_versa_8-12_19": {
+        "files": 16,
+        "bytes": 9356016
+      },
+      "exp07_raw_background_109x6": {
+        "files": 5245,
+        "bytes": 3086943600
+      },
+      "exp08_background_mixed_effects": {
+        "files": 12,
+        "bytes": 1925118
+      },
+      "pannormal_contrast_audit": {
+        "files": 109,
+        "bytes": 7961807
+      },
+      "plism_core_condition_features": {
+        "files": 1,
+        "bytes": 61
+      },
+      "plism_core_condition_similarity": {
+        "files": 15,
+        "bytes": 20020051
+      },
+      "plism_core_eval_locations": {
+        "files": 40,
+        "bytes": 463919
+      },
+      "plism_core_feature_correction": {
+        "files": 4,
+        "bytes": 94395
+      },
+      "plism_core_gallery": {
+        "files": 1,
+        "bytes": 1693224
+      },
+      "plism_core_map_qc": {
+        "files": 13,
+        "bytes": 28308432
+      },
+      "plism_core_native_ert": {
+        "files": 3,
+        "bytes": 227013
+      },
+      "plism_core_native_psd": {
+        "files": 91,
+        "bytes": 37411844
+      },
+      "plism_core_pfm_frontier": {
+        "files": 3,
+        "bytes": 217907
+      },
+      "plism_core_population_stats": {
+        "files": 91,
+        "bytes": 211248672
+      },
+      "plism_core_random_slopes": {
+        "files": 8,
+        "bytes": 38229
+      },
+      "plism_core_refinement": {
+        "files": 13,
+        "bytes": 117983063
+      },
+      "plism_core_registration": {
+        "files": 13,
+        "bytes": 8185316
+      },
+      "plism_core_reinhard_bands": {
+        "files": 91,
+        "bytes": 206797178
+      },
+      "plism_core_render_gains": {
+        "files": 94,
+        "bytes": 54853
+      },
+      "plism_core_rf1u_destinations": {
+        "files": 8,
+        "bytes": 23083
+      },
+      "plism_core_stain_covariate": {
+        "files": 33,
+        "bytes": 103534
+      },
+      "plism_feature_correction": {
+        "files": 3,
+        "bytes": 98405
+      },
+      "plism_location_refinement": {
+        "files": 13,
+        "bytes": 3402657
+      },
+      "plism_native_ert": {
+        "files": 5,
+        "bytes": 219095
+      },
+      "plism_native_psd": {
+        "files": 91,
+        "bytes": 1520610
+      },
+      "plism_native_psd_v1": {
+        "files": 91,
+        "bytes": 1689334
+      },
+      "plism_pfm_features": {
+        "files": 1820,
+        "bytes": 2448266904
+      },
+      "plism_pfm_frontier": {
+        "files": 3,
+        "bytes": 282195
+      },
+      "plism_population_stats": {
+        "files": 91,
+        "bytes": 5896704
+      },
+      "plism_random_slopes": {
+        "files": 2,
+        "bytes": 9536
+      },
+      "plism_registration_models": {
+        "files": 13,
+        "bytes": 21288
+      },
+      "plism_registration_residual": {
+        "files": 13,
+        "bytes": 911979
+      },
+      "plism_reinhard_bands": {
+        "files": 91,
+        "bytes": 5312656
+      },
+      "plism_render": {
+        "files": 455,
+        "bytes": 100899960560
+      },
+      "plism_render_gains": {
+        "files": 3,
+        "bytes": 17918
+      },
+      "plism_report_assets": {
+        "files": 2,
+        "bytes": 12435563
+      },
+      "plism_rf1u_destinations": {
+        "files": 4,
+        "bytes": 11769
+      },
+      "plism_scratch": {
+        "files": 35,
+        "bytes": 22754881
+      },
+      "plism_section_registration": {
+        "files": 13,
+        "bytes": 257076
+      },
+      "plism_section_registration_v1": {
+        "files": 13,
+        "bytes": 330735
+      },
+      "plism_stain_covariate": {
+        "files": 2,
+        "bytes": 4013
+      },
+      "rf1_improvement_pilot": {
+        "files": 280,
+        "bytes": 209084236
+      },
+      "rf1m_candidate": {
+        "files": 158,
+        "bytes": 43379419
+      },
+      "rf1m_slide_adaptive": {
+        "files": 8,
+        "bytes": 144678
+      },
+      "rf1m_unpaired_estimator": {
+        "files": 2,
+        "bytes": 20979
+      },
+      "rf1u_multitarget": {
+        "files": 2697,
+        "bytes": 5570805451
+      }
+    }
+  }
+}

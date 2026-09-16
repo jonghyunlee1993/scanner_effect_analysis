@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
 import pandas as pd
 
-from fetch_e0_pfm_checkpoints import sha256
+from prenorm.provenance import sha256
 
 
 LOCKS = (
@@ -41,6 +42,14 @@ FROZEN_CONTRACTS = (
     ("e7_tissue_probe", "docs/e7_tissue_probe_execution_contract.md", "e7_contract_sha256"),
 )
 
+# Post-outcome notes may be appended to a frozen decision record without changing
+# the bytes that were hashed at freeze time.  The auditor accepts only an exact
+# frozen prefix followed by the named amendment marker; edits inside the prefix
+# still fail as contract drift.
+APPEND_ONLY_AMENDMENTS = {
+    "docs/e4_e7_decision_record.md": b"\n## Amendment A ",
+}
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -54,6 +63,27 @@ def resolve_artifact(root: Path, value: str) -> Path:
     return path if path.is_absolute() else root / path
 
 
+def audit_frozen_bytes(root: Path, path: Path, expected_sha256: str) -> tuple[int, str]:
+    payload = path.read_bytes()
+    observed = hashlib.sha256(payload).hexdigest()
+    if observed == expected_sha256:
+        return len(payload), observed
+
+    try:
+        relative = path.resolve().relative_to(root).as_posix()
+    except ValueError:
+        relative = ""
+    marker = APPEND_ONLY_AMENDMENTS.get(relative)
+    if marker is not None:
+        offset = payload.find(marker)
+        if offset >= 0:
+            frozen = payload[:offset]
+            frozen_sha256 = hashlib.sha256(frozen).hexdigest()
+            if frozen_sha256 == expected_sha256:
+                return len(frozen), frozen_sha256
+    raise ValueError(f"{path}: SHA-256 drift")
+
+
 def audit_artifact_manifest(root: Path, manifest_path: Path):
     frame = pd.read_csv(manifest_path)
     path_column = "path" if "path" in frame.columns else "artifact"
@@ -64,12 +94,10 @@ def audit_artifact_manifest(root: Path, manifest_path: Path):
         path = resolve_artifact(root, str(record[path_column]))
         if not path.is_file():
             raise FileNotFoundError(path)
-        observed = sha256(path)
-        if observed != record["sha256"]:
-            raise ValueError(f"{path}: SHA-256 drift")
+        frozen_bytes, observed = audit_frozen_bytes(root, path, str(record["sha256"]))
         rows.append({
             "artifact": str(path.resolve()),
-            "bytes": path.stat().st_size,
+            "bytes": frozen_bytes,
             "sha256": observed,
         })
     return rows
@@ -100,12 +128,15 @@ def main():
         })
     for lock_id, relative, hash_key in FROZEN_CONTRACTS:
         path = root / relative
-        if summaries[lock_id].get(hash_key) != sha256(path):
-            raise ValueError(f"{lock_id}: frozen contract drift at {path}")
+        expected_sha256 = str(summaries[lock_id].get(hash_key))
+        try:
+            frozen_bytes, observed = audit_frozen_bytes(root, path, expected_sha256)
+        except ValueError as exc:
+            raise ValueError(f"{lock_id}: frozen contract drift at {path}") from exc
         manifest_rows.append({
             "artifact": str(path.resolve()),
-            "bytes": path.stat().st_size,
-            "sha256": sha256(path),
+            "bytes": frozen_bytes,
+            "sha256": observed,
         })
     for stem in MAIN_FIGURES:
         for suffix in ("png", "pdf"):

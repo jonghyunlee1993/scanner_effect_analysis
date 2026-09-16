@@ -3,8 +3,7 @@ name = "scanner-spectrum"
 version = "0.1.0"
 description = "Frequency-resolved analysis of scanner effects in histopathology foundation models"
 requires-python = ">=3.10"
+dependencies = ["numpy", "scikit-learn", "torch"]
 
-[tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]
-addopts = "-ra"
+[tool.setuptools.packages.find]
+where = ["src"]

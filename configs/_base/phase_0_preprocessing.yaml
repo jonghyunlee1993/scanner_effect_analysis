@@ -1,4 +1,0 @@
-# Phase 0 entry: build per-slide HDF5 store + parquet index from registered WSIs.
-# Run order: qc00_registration_gate -> s01_build_grid -> s02_subsample
-#            -> s03_precompute_store -> s04_build_index
-_base_: preprocessing.yaml

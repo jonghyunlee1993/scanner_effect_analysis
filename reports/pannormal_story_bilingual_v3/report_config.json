@@ -1,0 +1,12 @@
+{
+  "report_version": "v3",
+  "release_date": "2026-08-29",
+  "primary_language": "ko",
+  "secondary_language": "en",
+  "title_ko": "스캐너 조화가 성공처럼 보일 때",
+  "title_en": "When scanner harmonization only looks successful",
+  "subtitle_ko": "병리 파운데이션 모델을 위한 paired fidelity-constrained evaluation",
+  "subtitle_en": "Paired fidelity-constrained evaluation for pathology foundation models",
+  "primary_venue": "Medical Image Analysis",
+  "alternative_venue": "IEEE Transactions on Medical Imaging"
+}

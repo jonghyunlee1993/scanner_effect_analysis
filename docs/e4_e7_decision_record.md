@@ -203,3 +203,18 @@ A second post-core condition, **E8**
 ([`e8_paired_residual_contract.md`](e8_paired_residual_contract.md)), was added after this
 record was frozen, under its own pre-registration. Neither E8 nor E9 enters the frozen
 five-method E5 primary ranking, and neither recomputed a locked artifact.
+
+## Amendment B — submission-facing interpretation note (2026-09-16)
+
+**All E8/E9 outcomes had been accessed when this note was written.** It changes no E0--E7
+decision or locked artifact. It corrects only the terminology in Amendment A after the v3 claim
+audit.
+
+- The E8 contract remained labelled `DRAFT`, and selection ordering was amended after fold-0
+  image results. Its thresholds were prospectively specified before PFM endpoint access, but the
+  study is not described as formal preregistration or as establishing a universal image-domain
+  ceiling.
+- On E9's retained native-spectrum endpoint, fixed predictions P1--P3 all failed. The broader
+  “5 of 8” exploratory scoreboard is not used as a confirmatory replication claim.
+- Neither post-core extension supports clinical utility, unseen-scanner generalization or a
+  deployment recommendation.

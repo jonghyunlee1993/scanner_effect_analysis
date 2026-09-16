@@ -1,0 +1,948 @@
+{
+  "benchmark": {
+    "CORAL": {
+      "by_encoder": {
+        "conch_v1": {
+          "delta_content_margin": 0.023177528699839633,
+          "difference_ci": [
+            0.05546073620937577,
+            0.059956571987999564
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.057673456029398204,
+          "relative_radius_reduction": 0.2197085006118331,
+          "representation_gate_pass": true
+        },
+        "resnet50": {
+          "delta_content_margin": 0.019569759140042102,
+          "difference_ci": [
+            0.07042205485567515,
+            0.07767119297339178
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.07404696047984873,
+          "relative_radius_reduction": 0.34936705984681693,
+          "representation_gate_pass": true
+        },
+        "uni_v1": {
+          "delta_content_margin": 0.06593271846561939,
+          "difference_ci": [
+            0.07532412826186803,
+            0.08244255511600912
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.0789177475625527,
+          "relative_radius_reduction": 0.163483701224574,
+          "representation_gate_pass": true
+        },
+        "virchow2": {
+          "delta_content_margin": 0.035571728574150134,
+          "difference_ci": [
+            0.058628050339211896,
+            0.06452134248635878
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.06166496857832123,
+          "relative_radius_reduction": 0.17553710539532408,
+          "representation_gate_pass": true
+        }
+      },
+      "condition": "coral",
+      "space": "feature"
+    },
+    "Frequency calibration": {
+      "by_encoder": {
+        "conch_v1": {
+          "delta_content_margin": -0.0005410922439652623,
+          "difference_ci": [
+            -0.0014149508359766654,
+            -0.0010455479029272906
+          ],
+          "joint_improvement_pass": false,
+          "raw_minus_condition": -0.0012266352797455176,
+          "relative_radius_reduction": -0.004672898360262856,
+          "representation_gate_pass": true
+        },
+        "resnet50": {
+          "delta_content_margin": 0.0002961944569168611,
+          "difference_ci": [
+            0.000951748992910762,
+            0.0011557364606741805
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.001053538851544978,
+          "relative_radius_reduction": 0.004970788383661384,
+          "representation_gate_pass": true
+        },
+        "uni_v1": {
+          "delta_content_margin": -0.00023606094443060448,
+          "difference_ci": [
+            -0.0003497091089596903,
+            -0.00015269783817977402
+          ],
+          "joint_improvement_pass": false,
+          "raw_minus_condition": -0.00025186085025677966,
+          "relative_radius_reduction": -0.000521747582328258,
+          "representation_gate_pass": true
+        },
+        "virchow2": {
+          "delta_content_margin": 0.0004178282602700322,
+          "difference_ci": [
+            0.0009557811477630499,
+            0.0012549081543382773
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.0011076314448075421,
+          "relative_radius_reduction": 0.0031530125150296406,
+          "representation_gate_pass": true
+        }
+      },
+      "condition": "frequency_calibration",
+      "space": "image"
+    },
+    "Orthogonal Procrustes": {
+      "by_encoder": {
+        "conch_v1": {
+          "delta_content_margin": 0.024432491490489323,
+          "difference_ci": [
+            0.06014718135477738,
+            0.06521102592245948
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.06268252990489061,
+          "relative_radius_reduction": 0.23879069520196405,
+          "representation_gate_pass": true
+        },
+        "resnet50": {
+          "delta_content_margin": 0.02364850436102141,
+          "difference_ci": [
+            0.08961263426642128,
+            0.09631861018352247
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.09300553938273692,
+          "relative_radius_reduction": 0.43881709165438165,
+          "representation_gate_pass": true
+        },
+        "uni_v1": {
+          "delta_content_margin": 0.0890842007894423,
+          "difference_ci": [
+            0.10446402826807566,
+            0.11265340405474276
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.10862357542295538,
+          "relative_radius_reduction": 0.2250214267242705,
+          "representation_gate_pass": true
+        },
+        "virchow2": {
+          "delta_content_margin": 0.0396497016526521,
+          "difference_ci": [
+            0.06720373540913264,
+            0.07356952231341754
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.07042608833757531,
+          "relative_radius_reduction": 0.20047673705357982,
+          "representation_gate_pass": true
+        }
+      },
+      "condition": "orthogonal_procrustes",
+      "space": "feature"
+    },
+    "Paired OD affine": {
+      "by_encoder": {
+        "conch_v1": {
+          "delta_content_margin": -0.007277673377186979,
+          "difference_ci": [
+            -0.011729871583736276,
+            -0.005562142290613593
+          ],
+          "joint_improvement_pass": false,
+          "raw_minus_condition": -0.008661970208498394,
+          "relative_radius_reduction": -0.03299799626856892,
+          "representation_gate_pass": true
+        },
+        "resnet50": {
+          "delta_content_margin": 0.013096798891902966,
+          "difference_ci": [
+            0.050243926108385684,
+            0.0587384675700124
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.05453174516384119,
+          "relative_radius_reduction": 0.2572907159557454,
+          "representation_gate_pass": true
+        },
+        "uni_v1": {
+          "delta_content_margin": 0.023087037377880166,
+          "difference_ci": [
+            0.036544543900780095,
+            0.048965441072451196
+          ],
+          "joint_improvement_pass": false,
+          "raw_minus_condition": 0.04278408047170329,
+          "relative_radius_reduction": 0.08863025168654248,
+          "representation_gate_pass": false
+        },
+        "virchow2": {
+          "delta_content_margin": -0.030638353361590466,
+          "difference_ci": [
+            -0.046607172824157724,
+            -0.03605396382647466
+          ],
+          "joint_improvement_pass": false,
+          "raw_minus_condition": -0.04127216018080951,
+          "relative_radius_reduction": -0.1174864059542946,
+          "representation_gate_pass": false
+        }
+      },
+      "condition": "paired_od_affine",
+      "space": "image"
+    },
+    "Reinhard": {
+      "by_encoder": {
+        "conch_v1": {
+          "delta_content_margin": 0.013581942379276834,
+          "difference_ci": [
+            0.02965441148707007,
+            0.032803743165605324
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.03123681292771158,
+          "relative_radius_reduction": 0.11899743495069082,
+          "representation_gate_pass": true
+        },
+        "resnet50": {
+          "delta_content_margin": 0.014884551623552783,
+          "difference_ci": [
+            0.05562764550781991,
+            0.06116683147396811
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.05841401436188045,
+          "relative_radius_reduction": 0.2756079698506161,
+          "representation_gate_pass": true
+        },
+        "uni_v1": {
+          "delta_content_margin": 0.02072324831335135,
+          "difference_ci": [
+            0.026657784223176172,
+            0.03175894070481944
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.029177980585653237,
+          "relative_radius_reduction": 0.06044425249998919,
+          "representation_gate_pass": true
+        },
+        "virchow2": {
+          "delta_content_margin": 0.0031137308272241337,
+          "difference_ci": [
+            0.010495348885421746,
+            0.015272313012440315
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.012940991129540332,
+          "relative_radius_reduction": 0.0368381623504902,
+          "representation_gate_pass": true
+        }
+      },
+      "condition": "reinhard_lab",
+      "space": "image"
+    }
+  },
+  "benchmark_contract": {
+    "analysis_gate_pass": true,
+    "conditions_including_raw": 6,
+    "pfms": 4
+  },
+  "claim_ledger": {
+    "not_supported": [
+      "clinical safety or utility",
+      "unseen-scanner generalization",
+      "pure scanner-hardware effect",
+      "universal image-domain ceiling",
+      "scanner-information removal or deployment superiority of CORAL/Procrustes",
+      "confirmatory external replication"
+    ],
+    "supported": [
+      "paired scanner/acquisition-pipeline differences are representation-visible",
+      "invariance-only evaluation is degenerate",
+      "tested corrections occupy different invariance-fidelity trade-offs",
+      "a post-colour spatial-frequency residual is target-dependent"
+    ]
+  },
+  "controls": {
+    "complete_hf_removal": {
+      "by_encoder": {
+        "conch_v1": {
+          "collapse_every_scanner_pass": false,
+          "content_noninferiority_pass": false,
+          "delta_content_margin": -0.6248935078769473,
+          "difference_ci": [
+            0.06385857098761624,
+            0.07730933105581113
+          ],
+          "joint_improvement_pass": false,
+          "raw_minus_condition": 0.07025097043776085,
+          "relative_radius_reduction": 0.2676228623014896
+        },
+        "resnet50": {
+          "collapse_every_scanner_pass": false,
+          "content_noninferiority_pass": false,
+          "delta_content_margin": -0.2805343095636576,
+          "difference_ci": [
+            0.06077647475590293,
+            0.06808892718794368
+          ],
+          "joint_improvement_pass": false,
+          "raw_minus_condition": 0.06423821058138536,
+          "relative_radius_reduction": 0.3030875894864975
+        },
+        "uni_v1": {
+          "collapse_every_scanner_pass": false,
+          "content_noninferiority_pass": false,
+          "delta_content_margin": -0.7424542281900044,
+          "difference_ci": [
+            0.23320482635913398,
+            0.25061317355438323
+          ],
+          "joint_improvement_pass": false,
+          "raw_minus_condition": 0.24193130851068761,
+          "relative_radius_reduction": 0.5011778336182429
+        },
+        "virchow2": {
+          "collapse_every_scanner_pass": false,
+          "content_noninferiority_pass": false,
+          "delta_content_margin": -0.6550314664700387,
+          "difference_ci": [
+            0.16911499714025247,
+            0.19006378777317906
+          ],
+          "joint_improvement_pass": false,
+          "raw_minus_condition": 0.17948490037409628,
+          "relative_radius_reduction": 0.5109263914376379
+        }
+      },
+      "condition": "hf_retention_0p00"
+    },
+    "partial_hf_control": {
+      "by_encoder": {
+        "conch_v1": {
+          "collapse_every_scanner_pass": true,
+          "content_noninferiority_pass": true,
+          "delta_content_margin": 0.0014602701895206113,
+          "difference_ci": [
+            0.03312013566207468,
+            0.04101083291484224
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.03669530694087901,
+          "relative_radius_reduction": 0.13979170700923338
+        },
+        "resnet50": {
+          "collapse_every_scanner_pass": true,
+          "content_noninferiority_pass": true,
+          "delta_content_margin": 0.0038489727496662973,
+          "difference_ci": [
+            0.024052169052823112,
+            0.029214101559955633
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.02639903192213569,
+          "relative_radius_reduction": 0.1245554457019038
+        },
+        "uni_v1": {
+          "collapse_every_scanner_pass": true,
+          "content_noninferiority_pass": true,
+          "delta_content_margin": 0.02407022496244218,
+          "difference_ci": [
+            0.04294572177220292,
+            0.0490873599690355
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.045755080464283844,
+          "relative_radius_reduction": 0.09478488850939737
+        },
+        "virchow2": {
+          "collapse_every_scanner_pass": true,
+          "content_noninferiority_pass": true,
+          "delta_content_margin": 0.011914444722933737,
+          "difference_ci": [
+            0.03496680811674872,
+            0.04089113158544708
+          ],
+          "joint_improvement_pass": true,
+          "raw_minus_condition": 0.03764677054392574,
+          "relative_radius_reduction": 0.10716627740382734
+        }
+      },
+      "condition": "registered_loo_hf_mean_0p25"
+    }
+  },
+  "design": {
+    "acquisitions": 65400,
+    "bootstrap_replicates": 5000,
+    "bootstrap_seed": 20260803,
+    "bootstrap_unit": "physical_slide",
+    "collapse_lower_ci_threshold": 0.85,
+    "collapse_point_threshold": 0.9,
+    "content_noninferiority_margin": -0.02,
+    "geometry_gate_pass": true,
+    "locations_per_slide": 100,
+    "paired_tuples": 10900,
+    "scanners": 6,
+    "slides": 109
+  },
+  "e8": {
+    "arm_a_folds_passing": 3,
+    "arm_a_gate_pass": false,
+    "arm_b_folds_passing": 5,
+    "arm_b_gate_pass": true,
+    "chance": 0.16666666666666666,
+    "decision_status": {
+      "amendment": "selection ordering amended after fold-0 image results",
+      "document_header": "DRAFT",
+      "endpoint_access": "specified before PFM endpoint access"
+    },
+    "frontier": {
+      "conch_v1": {
+        "delta_content_margin": 0.03020732263182455,
+        "difference_ci": [
+          0.06376691126304657,
+          0.07217513522352108
+        ],
+        "joint_improvement_pass": true,
+        "raw_minus_condition": 0.06807413700681392,
+        "relative_radius_reduction": 0.25933015986743946,
+        "representation_gate_pass": true
+      },
+      "resnet50": {
+        "delta_content_margin": 0.04537620901980631,
+        "difference_ci": [
+          0.09826979982195037,
+          0.1045805857557447
+        ],
+        "joint_improvement_pass": true,
+        "raw_minus_condition": 0.1014650285858658,
+        "relative_radius_reduction": 0.47873050405579043,
+        "representation_gate_pass": true
+      },
+      "uni_v1": {
+        "delta_content_margin": 0.024799190339345398,
+        "difference_ci": [
+          0.05305708617104431,
+          0.06424024542525025
+        ],
+        "joint_improvement_pass": true,
+        "raw_minus_condition": 0.058577313804779416,
+        "relative_radius_reduction": 0.12134705265134538,
+        "representation_gate_pass": true
+      },
+      "virchow2": {
+        "delta_content_margin": -0.012657210455577347,
+        "difference_ci": [
+          0.007650782786501442,
+          0.017019961567249883
+        ],
+        "joint_improvement_pass": true,
+        "raw_minus_condition": 0.012230223144464626,
+        "relative_radius_reduction": 0.03481487169480135,
+        "representation_gate_pass": true
+      }
+    },
+    "phase_correlation": 0.6939621895569599,
+    "probes": {
+      "e8:e8_free_gt450": {
+        "knn": {
+          "conch_v1": 0.3312842712842713,
+          "resnet50": 0.4092929292929293,
+          "uni_v1": 0.6936652236652237,
+          "virchow2": 0.5781240981240983
+        },
+        "linear": {
+          "conch_v1": 0.7660548340548341,
+          "resnet50": 0.7587763347763348,
+          "uni_v1": 0.9418326118326117,
+          "virchow2": 0.9667330447330448
+        },
+        "mlp": {
+          "conch_v1": 0.7503722943722944,
+          "resnet50": 0.8022049062049061,
+          "uni_v1": 0.9463463203463205,
+          "virchow2": 0.972020202020202
+        }
+      },
+      "feature:coral": {
+        "knn": {
+          "conch_v1": 0.24416161616161616,
+          "resnet50": 0.276037518037518,
+          "uni_v1": 0.2149264069264069,
+          "virchow2": 0.20305050505050506
+        },
+        "linear": {
+          "conch_v1": 0.09918614718614718,
+          "resnet50": 0.10152958152958154,
+          "uni_v1": 0.0823088023088023,
+          "virchow2": 0.08817893217893218
+        },
+        "mlp": {
+          "conch_v1": 0.1838874458874459,
+          "resnet50": 0.26920634920634917,
+          "uni_v1": 0.07423953823953824,
+          "virchow2": 0.16114574314574315
+        }
+      },
+      "feature:orthogonal_procrustes": {
+        "knn": {
+          "conch_v1": 0.2662568542568543,
+          "resnet50": 0.3369004329004329,
+          "uni_v1": 0.29504184704184705,
+          "virchow2": 0.28181240981240985
+        },
+        "linear": {
+          "conch_v1": 0.14800577200577197,
+          "resnet50": 0.16166810966810968,
+          "uni_v1": 0.1334862914862915,
+          "virchow2": 0.1168253968253968
+        },
+        "mlp": {
+          "conch_v1": 0.6141616161616161,
+          "resnet50": 0.6892265512265513,
+          "uni_v1": 0.62802886002886,
+          "virchow2": 0.7783492063492063
+        }
+      },
+      "raw": {
+        "knn": {
+          "conch_v1": 0.6236825396825397,
+          "resnet50": 0.8307215007215006,
+          "uni_v1": 0.9266782106782105,
+          "virchow2": 0.7497113997113998
+        },
+        "linear": {
+          "conch_v1": 0.9402568542568543,
+          "resnet50": 0.9696075036075035,
+          "uni_v1": 0.9965021645021643,
+          "virchow2": 0.9964126984126984
+        },
+        "mlp": {
+          "conch_v1": 0.9306753246753245,
+          "resnet50": 0.9703290043290043,
+          "uni_v1": 0.9957691197691197,
+          "virchow2": 0.9965829725829725
+        }
+      }
+    },
+    "rf1u_phase_correlation": 0.9460032361864997,
+    "target": "GT450"
+  },
+  "e9": {
+    "analysis_status": "amended external robustness analysis",
+    "band_high_cyc_um": [
+      0.1,
+      0.99
+    ],
+    "bootstrap_replicates": 5000,
+    "confounding": "stain fully confounded with serial section",
+    "endpoints": {
+      "AT2": {
+        "ci": [
+          0.0,
+          0.0
+        ],
+        "estimate": 0.0,
+        "n_sections": 13
+      },
+      "GT450": {
+        "ci": [
+          -2.145855878533989,
+          -2.123336615286028
+        ],
+        "estimate": -2.1348399783725753,
+        "n_sections": 13
+      },
+      "P": {
+        "ci": [
+          -2.478672165814776,
+          -2.393715014908238
+        ],
+        "estimate": -2.4374809511072604,
+        "n_sections": 13
+      },
+      "S210": {
+        "ci": [
+          -0.2897151575859744,
+          -0.131817133770085
+        ],
+        "estimate": -0.20520074257904922,
+        "n_sections": 13
+      },
+      "S360": {
+        "ci": [
+          0.01880318491951611,
+          0.09149861129581278
+        ],
+        "estimate": 0.06133818198998765,
+        "n_sections": 13
+      },
+      "S60": {
+        "ci": [
+          -1.0500293031544277,
+          -0.49938176736640066
+        ],
+        "estimate": -0.7243911064042654,
+        "n_sections": 13
+      },
+      "SQ": {
+        "ci": [
+          -0.5372605669500207,
+          -0.2137409814684748
+        ],
+        "estimate": -0.3617158258500334,
+        "n_sections": 13
+      }
+    },
+    "estimator_relation": "non-equivalent to the PanNormal primary ERT estimator",
+    "scanners": 7,
+    "sections": 13,
+    "verdicts": {
+      "P1": {
+        "ci": [
+          -2.145855878533989,
+          -2.123336615286028
+        ],
+        "direction": "greater",
+        "locked_log2": 0.5636462694840638,
+        "log2_ert": -2.1348399783725753,
+        "normalised_pass": true,
+        "pass": false,
+        "scanner": "GT450"
+      },
+      "P2": {
+        "ci": [
+          0.01880318491951611,
+          0.09149861129581278
+        ],
+        "direction": "less",
+        "locked_log2": -0.248107861595691,
+        "log2_ert": 0.06133818198998765,
+        "normalised_pass": false,
+        "pass": false,
+        "scanner": "S360"
+      },
+      "P3": {
+        "observed": {
+          "GT450": -2.1348399783725753,
+          "S360": 0.06133818198998765,
+          "S60": -0.7243911064042654
+        },
+        "pass": false,
+        "requested_order": [
+          "GT450",
+          "S60",
+          "S360"
+        ]
+      },
+      "S1": {
+        "pearson": -0.9584397292199037,
+        "scanners": [
+          "GT450",
+          "S60",
+          "AT2",
+          "S360"
+        ],
+        "spearman": -1.0
+      },
+      "S3": {
+        "interaction_residual": 0.030493885518502958,
+        "scanner": 0.6347860078648271,
+        "stain": 0.33472010661667134
+      },
+      "content_check": {
+        "median_within_section_relative_spread": 0.7136654246007244,
+        "od_mean_by_scanner": {
+          "AT2": 0.235,
+          "GT450": 0.1046,
+          "P": 0.1409,
+          "S210": 0.2097,
+          "S360": 0.2422,
+          "S60": 0.2065,
+          "SQ": 0.2232
+        },
+        "worst_within_section_relative_spread": 0.7814188389805008
+      }
+    }
+  },
+  "rf1u": {
+    "at2": {
+      "by_encoder": {
+        "conch_v1": {
+          "incremental_rr_points": -5.396803678732209,
+          "joint_improvement_pass": true,
+          "paired_ci": [
+            -0.01575361784754173,
+            -0.012676009273510846
+          ],
+          "paired_radius_difference": -0.014166603422166038,
+          "reinhard_rr": 0.11906920427597079,
+          "rf1u_better_than_reinhard": false,
+          "rf1u_rr": 0.06510116748864869
+        },
+        "resnet50": {
+          "incremental_rr_points": -8.112334501741303,
+          "joint_improvement_pass": true,
+          "paired_ci": [
+            -0.018686880559882896,
+            -0.015767606100140382
+          ],
+          "paired_radius_difference": -0.017193770715336818,
+          "reinhard_rr": 0.2757182726560742,
+          "rf1u_better_than_reinhard": false,
+          "rf1u_rr": 0.19459492763866115
+        },
+        "uni_v1": {
+          "incremental_rr_points": -7.166838153591881,
+          "joint_improvement_pass": false,
+          "paired_ci": [
+            -0.037003801941554934,
+            -0.032190469823656274
+          ],
+          "paired_radius_difference": -0.034596153622060186,
+          "reinhard_rr": 0.06047197098607138,
+          "rf1u_better_than_reinhard": false,
+          "rf1u_rr": -0.011196410549847435
+        },
+        "virchow2": {
+          "incremental_rr_points": -11.00525266560367,
+          "joint_improvement_pass": false,
+          "paired_ci": [
+            -0.04281887936580669,
+            -0.034790721581590495
+          ],
+          "paired_radius_difference": -0.03866068990328767,
+          "reinhard_rr": 0.03631639975243417,
+          "rf1u_better_than_reinhard": false,
+          "rf1u_rr": -0.07373612690360254
+        }
+      }
+    },
+    "gt450": {
+      "by_encoder": {
+        "conch_v1": {
+          "incremental_rr_points": 5.036602407891988,
+          "joint_improvement_pass": true,
+          "paired_ci": [
+            0.012008228991730853,
+            0.014544057451171169
+          ],
+          "paired_radius_difference": 0.013221075502322878,
+          "reinhard_rr": 0.14522155737789977,
+          "rf1u_better_than_reinhard": true,
+          "rf1u_rr": 0.19558758145681965
+        },
+        "resnet50": {
+          "incremental_rr_points": 4.318772417985095,
+          "joint_improvement_pass": true,
+          "paired_ci": [
+            0.008477167640199122,
+            0.009842027303622795
+          ],
+          "paired_radius_difference": 0.009153466577422,
+          "reinhard_rr": 0.28534129912839,
+          "rf1u_better_than_reinhard": true,
+          "rf1u_rr": 0.32852902330824096
+        },
+        "uni_v1": {
+          "incremental_rr_points": 2.815712379703772,
+          "joint_improvement_pass": true,
+          "paired_ci": [
+            0.012258313619622508,
+            0.015014941383509785
+          ],
+          "paired_radius_difference": 0.013592160999889014,
+          "reinhard_rr": 0.04040915811760648,
+          "rf1u_better_than_reinhard": true,
+          "rf1u_rr": 0.0685662819146442
+        },
+        "virchow2": {
+          "incremental_rr_points": 4.122734649517401,
+          "joint_improvement_pass": true,
+          "paired_ci": [
+            0.012766275653987517,
+            0.016191826074347104
+          ],
+          "paired_radius_difference": 0.014482881100648446,
+          "reinhard_rr": -0.0008496002275879544,
+          "rf1u_better_than_reinhard": true,
+          "rf1u_rr": 0.04037774626758606
+        }
+      }
+    },
+    "s60": {
+      "by_encoder": {
+        "conch_v1": {
+          "incremental_rr_points": 4.748331293648578,
+          "joint_improvement_pass": true,
+          "paired_ci": [
+            0.010790999373837883,
+            0.014234530610989091
+          ],
+          "paired_radius_difference": 0.012464364160451056,
+          "reinhard_rr": 0.12132471050578353,
+          "rf1u_better_than_reinhard": true,
+          "rf1u_rr": 0.1688080234422693
+        },
+        "resnet50": {
+          "incremental_rr_points": 4.186172820753942,
+          "joint_improvement_pass": true,
+          "paired_ci": [
+            0.00813021378702008,
+            0.009619908067343653
+          ],
+          "paired_radius_difference": 0.008872426998586917,
+          "reinhard_rr": 0.2765382993574894,
+          "rf1u_better_than_reinhard": true,
+          "rf1u_rr": 0.31840002756502883
+        },
+        "uni_v1": {
+          "incremental_rr_points": 0.2665314094364546,
+          "joint_improvement_pass": true,
+          "paired_ci": [
+            -0.00024469920701960184,
+            0.002923087254138484
+          ],
+          "paired_radius_difference": 0.0012866150160438779,
+          "reinhard_rr": 0.052962815808706654,
+          "rf1u_better_than_reinhard": false,
+          "rf1u_rr": 0.0556281299030712
+        },
+        "virchow2": {
+          "incremental_rr_points": 2.3932226363906572,
+          "joint_improvement_pass": true,
+          "paired_ci": [
+            0.006713410847575413,
+            0.01004876113404317
+          ],
+          "paired_radius_difference": 0.00840722526109798,
+          "reinhard_rr": 0.04295271254131383,
+          "rf1u_better_than_reinhard": true,
+          "rf1u_rr": 0.0668849389052204
+        }
+      }
+    }
+  },
+  "rf1u_contract": {
+    "encoders": [
+      "resnet50",
+      "uni_v1",
+      "conch_v1",
+      "virchow2"
+    ],
+    "rf1u_better_than_reinhard_cells": 7,
+    "rf1u_cells": 12,
+    "targets": [
+      "at2",
+      "gt450",
+      "s60"
+    ]
+  },
+  "schema_version": "pannormal_story_evidence_v1",
+  "sources": {
+    "e4_endpoints": {
+      "path": "outputs/e4_control_frontier/endpoint_summary.csv",
+      "role": "construct-validity control endpoints",
+      "sha256": "ef39a7dafd5605da09fc8949f5fb819ca64e32eb087e50a568a1e637cfcd5c57"
+    },
+    "e4_summary": {
+      "path": "outputs/e4_control_frontier/summary.json",
+      "role": "control analysis contract and uncertainty",
+      "sha256": "29f9e7829d3fb30080dffd419cb1fe5076635849c7dc0d76f1ebb3bb9554d188"
+    },
+    "e5_endpoints": {
+      "path": "outputs/e5_comparator_frontier/endpoint_summary.csv",
+      "role": "comparator endpoints",
+      "sha256": "7fe365d681bd243b58792c329d395b3ae8a16ecb9da6de6dab0bc98eb6bc3656"
+    },
+    "e5_summary": {
+      "path": "outputs/e5_comparator_frontier/summary.json",
+      "role": "comparator benchmark contract",
+      "sha256": "2229005e9ae8840b8efe1fdddc66f69bd1f57011741c633949411d9bc014e546"
+    },
+    "e8_audit": {
+      "path": "outputs/e8_residual/audit/gt450/summary.json",
+      "role": "image-only selection and phase audit",
+      "sha256": "93f7b3b7e06001df368d761a6d8afba6f4c33772f1f02504bf200a061761fad9"
+    },
+    "e8_contract": {
+      "path": "docs/e8_paired_residual_contract.md",
+      "role": "prospective/amended decision-status metadata",
+      "sha256": "82e680725a893b1e7e6d389684a2692b5893bf22c4a87766f1117dbac8005975"
+    },
+    "e8_frontier": {
+      "path": "outputs/e8_residual/frontier/gt450/endpoint_summary.csv",
+      "role": "learned image-correction endpoints",
+      "sha256": "a87ece5c74aec4c6d7ec8b251e9ab42e295844c4232070ca465d34502a2eb0e4"
+    },
+    "e8_probe_conch_v1": {
+      "path": "outputs/e8_residual/probe/conch_v1.csv",
+      "role": "scanner-probe endpoint",
+      "sha256": "68ecdfcfd7b1eb2e6c9e236d7c8e8d1021650ebf9f19fe2fef79001da3963b1a"
+    },
+    "e8_probe_resnet50": {
+      "path": "outputs/e8_residual/probe/resnet50.csv",
+      "role": "scanner-probe endpoint",
+      "sha256": "d129797a14e6f56d367c9bc140ec711c8ab4fdd16b752e3b1817c4f2976faea9"
+    },
+    "e8_probe_uni_v1": {
+      "path": "outputs/e8_residual/probe/uni_v1.csv",
+      "role": "scanner-probe endpoint",
+      "sha256": "cff54f7c3999a938c673fcbc6c50218ed35f36c79722f014216641cc48b3f004"
+    },
+    "e8_probe_virchow2": {
+      "path": "outputs/e8_residual/probe/virchow2.csv",
+      "role": "scanner-probe endpoint",
+      "sha256": "a49abc62c17a4f03db8d5ed6a4a76d856bf60fb48b223ba1b162defca11db0a8"
+    },
+    "e8_reading": {
+      "path": "outputs/e8_residual/reading/gt450/summary.json",
+      "role": "scanner-probe ranges and decision reading",
+      "sha256": "ca240713489cff3552425aee0f08505ccfbba19bc222bfa74160fef8ed0887e4"
+    },
+    "e9_contract": {
+      "path": "docs/e9_plism_native_ert_contract.md",
+      "role": "external robustness-analysis status metadata",
+      "sha256": "06e4a9fa613db28ad4a28cc4fe453b381e5d4488d9193be91c8b5ed11ff28f6f"
+    },
+    "e9_endpoints": {
+      "path": "outputs/plism_core_native_ert/ert_summary.csv",
+      "role": "external scanner-level ERT endpoints",
+      "sha256": "5638d948099c855816be11529720d012469a48aca212e4bd388fe2042c34e41e"
+    },
+    "e9_summary": {
+      "path": "outputs/plism_core_native_ert/summary.json",
+      "role": "external native-spectrum predictions and uncertainty",
+      "sha256": "98254538fcea17452fa6f0684cbef640a4de9359f50c3e9618e6dcedaa7ef4b3"
+    },
+    "geometry": {
+      "path": "outputs/e0_native_geometry_final/summary.json",
+      "role": "paired cohort identity and geometry gate",
+      "sha256": "261d509dab264facd0a44d31ac7ed8495987cd3b58916da4a7722ca6b2371288"
+    },
+    "rf1u_endpoints": {
+      "path": "outputs/rf1u_multitarget/frontier/endpoint_summary.csv",
+      "role": "multi-target frequency endpoints",
+      "sha256": "59ee7cabb190a375ab09dc751078864b19b8eaa1952fb5d2dd6aa636aa12ea01"
+    },
+    "rf1u_incremental": {
+      "path": "outputs/rf1u_multitarget/frontier/incremental_vs_reinhard.csv",
+      "role": "paired incremental contrasts versus Reinhard",
+      "sha256": "5f674b3d7bb2ca3c720f4652fa9cda9a1e52eab2e95e08173f3d6c4e58f431b4"
+    },
+    "rf1u_summary": {
+      "path": "outputs/rf1u_multitarget/frontier/summary.json",
+      "role": "multi-target frequency analysis contract",
+      "sha256": "6239136846ca56b226c617aae923b7870604a182f6f974da559b3b5408835740"
+    }
+  }
+}

@@ -12,6 +12,7 @@ __pycache__/
 *.pyo
 /.pytest_cache/
 /.mplconfig/
+/.analysis_tmp/
 .mypy_cache/
 .ruff_cache/
 .coverage
@@ -31,6 +32,7 @@ env/
 /logs/
 /wandb/
 /archived/
+/bak/runtime/
 
 # Model and experiment artifacts that may be emitted outside outputs/
 *.ckpt

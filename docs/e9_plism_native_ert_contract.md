@@ -268,8 +268,16 @@ Outputs are written beside the locked ones rather than over them:
 `plism_core_native_psd`, `plism_core_rf1u_destinations`,
 `plism_core_random_slopes`, `plism_core_stain_covariate`,
 `plism_core_native_ert`, `plism_core_feature_correction`,
-`plism_core_pfm_frontier`, `plism_core_condition_features`. The locked results
-stand as they are; this is a second cohort build, not an edit of the first.
+`plism_core_pfm_frontier`. The locked results stand as they are; this is a
+second cohort build, not an edit of the first.
+
+The features themselves are not an `outputs/` artefact: they live in the shared
+dataset at `data/PLISM_dataset/features/<condition>/<encoder>/`, one folder per
+encoding condition. The uncorrected condition is `registered_AT2`, named for the
+geometry every condition shares; within a section all seven scanners carry the
+same `location` set, so a scanner contrast needs no intersection step.
+`outputs/plism_core_condition_features` is a symlink to that store, kept so paths
+written before the move still resolve.
 
 ### Four decisions that needed making
 
@@ -390,4 +398,4 @@ on twelve sections, not thirteen. Both variants are kept for this reason.
     sbatch scripts/plism_core_arma_analysis.sbatch              # ERT, nesting x2, destinations
     sbatch scripts/plism_core_featcorr.sbatch                   # CORAL/Procrustes + sweep
     sbatch scripts/plism_core_pfm_frontier.sbatch               # image-space endpoints
-    python src/build_pannormal_plism_report.py                  # Part IV, data-driven
+    sbatch scripts/report_v3_validate.sbatch                    # active KO/EN report
