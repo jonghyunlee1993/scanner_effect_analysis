@@ -6,6 +6,10 @@
 /.git-data/
 /checkpoints/
 
+00_manuscript/
+skills/
+writing_samples/
+
 # Python and test caches
 __pycache__/
 *.py[cod]
