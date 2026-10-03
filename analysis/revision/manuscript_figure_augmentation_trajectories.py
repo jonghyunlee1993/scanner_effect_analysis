@@ -148,9 +148,9 @@ def main() -> None:
     ax.set_aspect("equal", adjustable="box")
     ax.legend(handles=[
         Line2D([0], [0], marker="o", color=".45", markerfacecolor=".45", markersize=8,
-               label="Blur: σ = 0, .5, 1, 3, 6"),
+               label="Blur: σ = 0, 0.5, 1, 3, 6"),
         Line2D([0], [0], marker="s", color=".45", markerfacecolor=".45", markersize=8,
-               label="Sharpen: α = 0, .25, .5, 1, 2"),
+               label="Sharpen: α = 0, 0.25, 0.5, 1, 2"),
     ], loc="upper left", frameon=False, fontsize=9)
     fig.tight_layout()
     # Inset arrows are drawn as ordinary annotations from the box edge: with matplotlib 3.9 an

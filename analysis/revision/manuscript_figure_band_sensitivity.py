@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
-"""Figure 5 and Supplementary band figures on set20 (UNI v1, UNI2-h, Virchow2, H-optimus-1).
+"""Band-sensitivity figures on set20 (UNI, UNI2-h, Virchow2, H-optimus-1).
 
-Same design as `scripts/frequency/plot_bandwise_uni.py` (UNI) and
-`scripts/frequency/review_bandwise_crosspfm_aggregate.py` (other PFMs):
-A. cosine displacement against dose for the low-mid, mid and high bands (both signs, all
-   scanners; slide means, bootstrap 95% CI);
-B. target-direction gain over Reinhard by scanner and band at dose 0.25, dashed scanner separators.
-Values are read from RV02 `analysis/revision/results/band_manipulation_set20/summary_statistics.csv`
-(`set == "set20"`: 103 slides x 20 locations, five scanners equally weighted, 2,000 slide
-bootstrap resamples, seed 20260924). Panel letters are drawn here (previously added in PowerPoint).
+Main figure: one panel per PFM, side by side, with the cosine displacement against dose for the
+low-mid, mid and high bands (both signs, all scanners; slide means, bootstrap 95% CI). Each panel
+starts at zero so that the relative weighting of the bands can be compared across PFMs whose
+distance scales differ.
 
-Writes `00_manuscript/figures/fig_uni_band_sensitivity_set20.{png,pdf}` and
-`fig_{uni2,virchow2,hoptimus1}_band_sensitivity_set20_supp.{png,pdf}`.
+Supplementary figure: one panel per PFM with the target-direction gain over Reinhard by scanner
+and band at dose 0.25, dashed scanner separators.
+
+Same encodings as the former per-PFM figures (`scripts/frequency/plot_bandwise_uni.py`,
+`scripts/frequency/review_bandwise_crosspfm_aggregate.py`), now regrouped by panel type. Values are
+read from RV02 `analysis/revision/results/band_manipulation_set20/summary_statistics.csv`
+(`set == "set20"`: 103 slides x 20 locations, five scanners equally weighted, 2,000 slide bootstrap
+resamples, seed 20260924). No new statistics.
+
+Writes `00_manuscript/figures/fig_band_sensitivity_pfms.{png,pdf}` and
+`fig_band_target_gain_supp.{png,pdf}`.
 """
 
 from __future__ import annotations
@@ -29,6 +34,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
 
 PROJECT = Path(__file__).resolve().parents[2]
 SUMMARY = PROJECT / "analysis/revision/results/band_manipulation_set20/summary_statistics.csv"
@@ -38,13 +44,8 @@ BAND_LABELS = {"low_mid": "Low–mid", "mid": "Mid", "high": "High"}
 SCANNERS = ("versa", "akoya", "gt450", "s360", "s60")
 COLORS = {"low_mid": "#5A7DA5", "mid": "#50A698", "high": "#D46B43"}
 DOSES = (0.25, 0.50)
-# model -> (axis label, output name, base font size of the paper renderer)
-MODELS = {
-    "uni_v1": ("UNI", "fig_uni_band_sensitivity_set20", 12),
-    "uni2": ("UNI2-h", "fig_uni2_band_sensitivity_set20_supp", 11),
-    "virchow2": ("Virchow2", "fig_virchow2_band_sensitivity_set20_supp", 11),
-    "hoptimus1": ("H-optimus-1", "fig_hoptimus1_band_sensitivity_set20_supp", 11),
-}
+MODELS = {"uni_v1": "UNI", "uni2": "UNI2-h", "virchow2": "Virchow2", "hoptimus1": "H-optimus-1"}
+FONT_SIZE = 11
 
 
 def pick(summary: pd.DataFrame, **query) -> pd.DataFrame:
@@ -54,46 +55,77 @@ def pick(summary: pd.DataFrame, **query) -> pd.DataFrame:
     return summary[mask]
 
 
-def render(summary: pd.DataFrame, model: str) -> None:
-    label, name, font_size = MODELS[model]
-    plt.rcParams.update({"font.size": font_size, "pdf.fonttype": 42})
-    figure, axes = plt.subplots(1, 2, figsize=(8.8, 4.3), constrained_layout=True)
-    figure.get_layout_engine().set(w_pad=0.06)
+def letter(ax, label: str) -> None:
+    ax.text(-0.02, 1.04, label, transform=ax.transAxes, fontsize=FONT_SIZE + 4, fontweight="bold",
+            ha="right", va="bottom")
 
-    for band in BANDS:
-        rows = pick(summary, model=model, statistic=f"shift_{band}", subset="both_signs",
-                    scanner="all").sort_values("dose_fraction")
-        if tuple(rows.dose_fraction) != DOSES:
-            raise ValueError(f"{model} {band}: doses {tuple(rows.dose_fraction)}")
-        means = rows["mean"].to_numpy()
-        axes[0].errorbar(rows.dose_fraction, means,
-                         yerr=(means - rows.ci_low.to_numpy(), rows.ci_high.to_numpy() - means),
-                         color=COLORS[band], marker="o", capsize=3, label=BAND_LABELS[band])
-    axes[0].set(xlabel="Dose (fraction of weakest band RMS)", ylabel=f"{label} cosine displacement")
-    axes[0].legend(frameon=False, loc="lower right")
-    axes[0].grid(axis="y", alpha=0.2)
 
-    for boundary in np.arange(len(SCANNERS) - 1) + 0.5:
-        axes[1].axvline(boundary, color="#C8CDD3", linestyle="--", linewidth=0.8, zorder=0)
-    for scanner_index, scanner in enumerate(SCANNERS):
-        for band_index, band in enumerate(BANDS):
-            rows = pick(summary, model=model, statistic=f"target_gain_{band}", dose_fraction=0.25,
-                        subset="target_direction", scanner=scanner)
-            if len(rows) != 1:
-                raise ValueError(f"{model} {scanner} {band}: {len(rows)} rows")
-            row = rows.iloc[0]
-            x = scanner_index + (band_index - 1) * 0.21
-            axes[1].errorbar(x, row["mean"], yerr=[[row["mean"] - row.ci_low], [row.ci_high - row["mean"]]],
-                             fmt="o", color=COLORS[band], capsize=2, markersize=5)
-    axes[1].axhline(0, color="black", linewidth=0.8)
-    axes[1].set_xlim(-0.5, len(SCANNERS) - 0.5)
-    axes[1].set_xticks(range(len(SCANNERS)), [s.upper() for s in SCANNERS], rotation=30)
-    axes[1].set(ylabel=f"{label} target gain over Reinhard")
-    axes[1].grid(axis="y", alpha=0.2)
+def band_legend(**kwargs):
+    handles = [Line2D([], [], color=COLORS[b], marker="o", markersize=5, label=BAND_LABELS[b]) for b in BANDS]
+    return dict(handles=handles, frameon=False, title="Band", title_fontsize=FONT_SIZE - 1,
+                fontsize=FONT_SIZE - 1, **kwargs)
 
-    for ax, letter in zip(axes, "AB"):
-        ax.set_title(letter, loc="left", fontsize=font_size + 6, fontweight="bold", x=-0.2, y=1.0, pad=6)
 
+def displacement(summary: pd.DataFrame) -> None:
+    figure, axes = plt.subplots(1, len(MODELS), figsize=(10.2, 3.2))
+    figure.subplots_adjust(left=0.075, right=0.985, top=0.86, bottom=0.2, wspace=0.45)
+    for ax, (model, name), label in zip(axes, MODELS.items(), "ABCD"):
+        top = 0.0
+        for band in BANDS:
+            rows = pick(summary, model=model, statistic=f"shift_{band}", subset="both_signs",
+                        scanner="all").sort_values("dose_fraction")
+            if tuple(rows.dose_fraction) != DOSES:
+                raise ValueError(f"{model} {band}: doses {tuple(rows.dose_fraction)}")
+            means = rows["mean"].to_numpy()
+            ax.errorbar(rows.dose_fraction, means,
+                        yerr=(means - rows.ci_low.to_numpy(), rows.ci_high.to_numpy() - means),
+                        color=COLORS[band], marker="o", markersize=4.5, capsize=2.5, linewidth=1.4)
+            top = max(top, float(rows.ci_high.max()))
+        ax.set_ylim(0, top * 1.12)
+        ax.set_xlim(0.2, 0.55)
+        ax.set_xticks(DOSES, ["0.25", "0.50"])
+        ax.set_title(name, fontsize=FONT_SIZE + 1, pad=6)
+        ax.grid(axis="y", alpha=0.25)
+        for side in ("top", "right"):
+            ax.spines[side].set_visible(False)
+        letter(ax, label)
+    axes[0].set_ylabel("Cosine displacement")
+    axes[0].legend(**band_legend(loc="upper left"))
+    figure.supxlabel("Dose (fraction of the weakest band's OD RMS)", fontsize=FONT_SIZE, y=0.02)
+    save(figure, "fig_band_sensitivity_pfms")
+
+
+def target_gain(summary: pd.DataFrame) -> None:
+    figure, axes = plt.subplots(2, 2, figsize=(9.6, 6.6))
+    figure.subplots_adjust(left=0.1, right=0.98, top=0.86, bottom=0.08, hspace=0.42, wspace=0.3)
+    for ax, (model, name), label in zip(axes.flat, MODELS.items(), "ABCD"):
+        for boundary in np.arange(len(SCANNERS) - 1) + 0.5:
+            ax.axvline(boundary, color="#C8CDD3", linestyle="--", linewidth=0.8, zorder=0)
+        for scanner_index, scanner in enumerate(SCANNERS):
+            for band_index, band in enumerate(BANDS):
+                rows = pick(summary, model=model, statistic=f"target_gain_{band}", dose_fraction=0.25,
+                            subset="target_direction", scanner=scanner)
+                if len(rows) != 1:
+                    raise ValueError(f"{model} {scanner} {band}: {len(rows)} rows")
+                row = rows.iloc[0]
+                x = scanner_index + (band_index - 1) * 0.21
+                ax.errorbar(x, row["mean"], yerr=[[row["mean"] - row.ci_low], [row.ci_high - row["mean"]]],
+                            fmt="o", color=COLORS[band], capsize=2, markersize=4.5)
+        ax.axhline(0, color="black", linewidth=0.8)
+        ax.set_xlim(-0.5, len(SCANNERS) - 0.5)
+        ax.set_xticks(range(len(SCANNERS)), [s.upper() for s in SCANNERS])
+        ax.set_title(name, fontsize=FONT_SIZE + 1, pad=6)
+        ax.grid(axis="y", alpha=0.25)
+        for side in ("top", "right"):
+            ax.spines[side].set_visible(False)
+        letter(ax, label)
+    for ax in axes[:, 0]:
+        ax.set_ylabel("Target gain over Reinhard")
+    figure.legend(**band_legend(loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.0)))
+    save(figure, "fig_band_target_gain_supp")
+
+
+def save(figure, name: str) -> None:
     FIGURES.mkdir(parents=True, exist_ok=True)
     for suffix in ("png", "pdf"):
         figure.savefig(FIGURES / f"{name}.{suffix}", dpi=300, facecolor="white")
@@ -102,12 +134,13 @@ def render(summary: pd.DataFrame, model: str) -> None:
 
 
 def main() -> None:
+    plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": FONT_SIZE, "pdf.fonttype": 42})
     summary = pd.read_csv(SUMMARY)
     summary = summary[summary["set"].eq("set20")]
     if summary.slides.ne(103).any():
         raise ValueError("set20 summary is not over 103 slides")
-    for model in MODELS:
-        render(summary, model)
+    displacement(summary)
+    target_gain(summary)
 
 
 if __name__ == "__main__":

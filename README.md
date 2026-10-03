@@ -1,48 +1,38 @@
 # Scanner Spectrum
 
-동일 조직의 multi-scanner H&E 영상에서 scanner-associated variation과 병리
-foundation-model 표현 변화를 분석한 연구 저장소다. 핵심 결론은 scanner separability
-감소만으로는 조화를 입증할 수 없고, paired evaluation과 content/representation fidelity
-gate가 함께 필요하다는 것이다.
+PanNormal scanner batch effect 논문의 분석 코드와 고정된 근거다. 현재 영문 원고는
+별도 Git 저장소인 `00_manuscript/`에 있으며, 이 저장소와 나란히 있어야 한다.
 
-## Final release
+## 구조
 
-- E0--E7: result-locked core
-- E8: learned paired residual stress test
-- E9: PLISM external robustness analysis; 고정 예측 P1--P3 모두 실패
-- [국문 보고서](presentations/pannormal_scanner_harmonization_report_v3_2026-08-29/pannormal_scanner_harmonization_evidence_report_ko.html)
-- [English report](presentations/pannormal_scanner_harmonization_report_v3_2026-08-29/pannormal_scanner_harmonization_evidence_report_en.html)
-- 편집 source: `reports/pannormal_story_bilingual_v3/`
+| 경로 | 내용 |
+| --- | --- |
+| `analysis/revision/` | 현재 원고의 분석(RV-P0–RV14, RV18–RV19)과 그림·표 생성기. 분석별 프로토콜, 결과 색인, 원고 자산 지도는 [`analysis/revision/README.md`](analysis/revision/README.md) |
+| `analysis/paper/` | revision 이전에 고정되어 현재 원고에도 쓰이는 분석(혼합효과 모형, 색·주파수 위치, 증강 오라클, 영상 교정 벤치마크 등). [`analysis/paper/README.md`](analysis/paper/README.md) |
+| `src/` | 재사용 함수(`prenorm/`), 영상 변환 모델(`scanner_gan/`), 업스트림 파이프라인 프로그램 |
+| `scripts/` | 업스트림 파이프라인의 SLURM 래퍼. [`scripts/README.md`](scripts/README.md) |
+| `data/` | 매칭된 패치와 출처 정보 (Git 제외) |
+| `outputs/` | 고정된 업스트림 결과와 모델 (Git 제외) |
+| `docs/records/` | 정리하며 지운 분석과 파일의 기록. [`docs/records/README.md`](docs/records/README.md) |
 
-## Reproduction
+`analysis/*/results/`도 Git에서 제외된다.
+
+## 원고 재생성
+
+`cpath` 환경에서 저장소 루트를 기준으로 실행한다.
 
 ```bash
-sbatch --export=ALL,JOB_CONDA_PREFIX="$CONDA_PREFIX",JOB_WORKDIR="$PWD" scripts/report_v3_validate.sbatch
-sbatch --export=ALL,JOB_CONDA_PREFIX="$CONDA_PREFIX",JOB_WORKDIR="$PWD" scripts/pannormal_core_results_audit.sbatch
+# 그림과 표 다시 만들기 (00_manuscript/figures, 00_manuscript/tables)
+sbatch --export=ALL,JOB_CONDA_PREFIX="$CONDA_PREFIX",JOB_WORKDIR="$PWD" analysis/revision/manuscript_assets_rebuild.sbatch
+# PDF 빌드 (analysis/paper/results/manuscript_build/)
+sbatch --export=ALL,JOB_CONDA_PREFIX="$CONDA_PREFIX",JOB_WORKDIR="$PWD" analysis/paper/build_scanner_tissue_manuscript.sbatch
 ```
 
-보고서 검증은 임시 디렉터리에서 두 번 재생성한 뒤 국문·영문 HTML, release manifest와
-evidence registry를 보존된 release와 byte 단위로 비교한다. Core audit은 8개 result lock,
-Main Figure 1--6과 130개 artifact의 hash를 확인한다.
+그림 1(raw paired gallery)은 `00_manuscript/figures/make_raw_paired_gallery.py`,
+보충 그림 S2(coherence)는 `analysis/revision/frequency_transfer_figures.py`가 만든다.
 
-## Active code
+## 정리 기록
 
-```text
-src/build_pannormal_story_report_v3.py   deterministic final-report builder
-src/audit_pannormal_core_results.py      locked-result integrity gate
-src/prenorm/                             reusable frequency, pairing and embedding library
-scripts/_verify_report_v3.py             release semantic/hash checks
-scripts/report_v3_validate.sbatch        report reproduction entrypoint
-scripts/pannormal_core_results_audit.sbatch core-lock entrypoint
-```
-
-`docs/`에는 일반 설명 문서를 두지 않는다. 그 안의 8개 Markdown 파일은 최종 report와
-core-lock hash가 직접 참조하는 immutable execution input이므로 이름과 내용을 유지한다.
-
-## Artifact retention
-
-`outputs/`에는 core-lock artifact와 최종 보고서의 직접 입력만 남긴다. 유지 기준과 정리
-규모는 `reports/pannormal_story_bilingual_v3/output_retention_manifest.json`에 기록한다.
-대용량 원본과 feature store는 `data/`, 최종 standalone 문서는 `presentations/`에 둔다.
-로그, 임시 파일, 과거 실험 script/config/output은 보존하지 않으며 Git history의 tracked
-파일만 복구 경로로 사용한다.
+2026-10-02에 원고에 없는 분석(RV15–RV17, Virchow2 epoch 2–3), 쓰지 않는 체크포인트,
+smoke test, 캐시, 로그, 이전 원고용 검증 도구, 테스트, `.Trash/`를 지웠다. 지운 경로와
+이유, 지운 분석의 요약은 `docs/records/`에 있다.

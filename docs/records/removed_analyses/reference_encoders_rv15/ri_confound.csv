@@ -1,0 +1,6 @@
+model,robustness_index,os_rate,so_rate,normalized_distance,tissue_retrieval,ri_below_wsi_range,os_above_wsi_range,distance_above_wsi_range,so_below_wsi_range,retrieval_below_wsi_range,os_within_wsi_range,reading
+plip,0.05899301655515945,0.6297058823529412,0.039477124183006536,0.45974028263052813,0.33796296296296297,True,True,False,True,True,False,low RI read as scanner organization
+dinov2,0.2728092439219877,0.35580065359477125,0.13348039215686275,0.17829921677163543,0.3634259259259259,False,False,False,False,True,True,RI within or above the WSI range
+clip,0.0901982224821676,0.5845996732026144,0.05795751633986928,0.3565318880428476,0.2879629629629629,True,True,False,True,True,False,low RI read as scanner organization
+resnet50,0.16651651651651653,0.45351307189542484,0.09060457516339869,0.2341153234580065,0.23240740740740737,True,False,False,True,True,True,low RI read as weak tissue information
+resnet50_layer3,0.12053071881494112,0.5393790849673202,0.07392156862745099,0.21007794550456188,0.2833333333333333,True,True,False,True,True,False,low RI read as scanner organization

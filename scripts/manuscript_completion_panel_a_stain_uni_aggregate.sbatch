@@ -1,0 +1,1 @@
+translation/manuscript_completion_panel_a_stain_uni_aggregate.sbatch

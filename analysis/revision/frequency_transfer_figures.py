@@ -114,25 +114,27 @@ def panel_curves(ax, spectra: pd.DataFrame) -> None:
     style_axis(ax)
 
 
-def panel_tissues(ax, spectra: pd.DataFrame) -> None:
+def panel_tissues(ax, spectra: pd.DataFrame,
+                  highlights=(("akoya", "aorta", "-", INK), ("akoya", "liver", (0, (4, 2)), INK))) -> None:
+    """Every tissue curve for AKOYA and GT450; ``highlights`` = (scanner, tissue, linestyle, colour)."""
     means = tissue_means(spectra[spectra.scanner.isin(["akoya", "gt450"])], "log2_relative_transfer")
     ax.axhline(0, color=INK, linewidth=0.9)
     shade_bands(ax, 1.25)
     for scanner in ("akoya", "gt450"):
         for tissue, part in means[means.scanner == scanner].groupby("tissue_type"):
             ax.plot(part.frequency, part.log2_relative_transfer, color=COLORS[scanner], linewidth=0.7, alpha=0.35)
-    for tissue, style in (("aorta", "-"), ("liver", (0, (4, 2)))):
-        part = means[(means.scanner == "akoya") & (means.tissue_type == tissue)]
-        ax.plot(part.frequency, part.log2_relative_transfer, color=INK, linewidth=1.6, linestyle=style)
-        ax.text(1.005, float(part.log2_relative_transfer.iloc[-1]), f"AKOYA,\n{tissue}", fontsize=8, color=INK,
-                va="center", ha="left", transform=ax.get_yaxis_transform())
+    for scanner, tissue, style, color in highlights:
+        part = means[(means.scanner == scanner) & (means.tissue_type == tissue)]
+        ax.plot(part.frequency, part.log2_relative_transfer, color=color, linewidth=1.6, linestyle=style)
+        ax.text(1.005, float(part.log2_relative_transfer.iloc[-1]), f"{LABELS[scanner]},\n{tissue}", fontsize=8,
+                color=color, va="center", ha="left", transform=ax.get_yaxis_transform())
     ax.text(0.03, 0.55, "GT450: 37 tissues", fontsize=8, color=INK)
     ax.text(0.03, -1.9, "AKOYA: 37 tissues", fontsize=8, color=INK)
     ax.set(xlim=(0, 1.0), ylim=(-2.9, 1.45), xlabel="Spatial frequency (cycles/µm)")
     style_axis(ax)
 
 
-def heatmaps(effects: pd.DataFrame) -> plt.Figure:
+def heatmaps(effects: pd.DataFrame, show_title: bool = True) -> plt.Figure:
     order = (effects[(effects.endpoint == "frequency_high") & (effects.scanner == "akoya")]
              .sort_values("effect").tissue_type.tolist())
     fig, axes = plt.subplots(1, len(HEATMAP_MEASURES), figsize=(12, 9.5), sharey=True,
@@ -151,9 +153,10 @@ def heatmaps(effects: pd.DataFrame) -> plt.Figure:
         bar = fig.colorbar(image, ax=ax, orientation="horizontal", fraction=0.035, pad=0.09)
         bar.ax.tick_params(labelsize=7, colors=MUTED, labelcolor=INK)
         bar.outline.set_visible(False)
-    axes[0].set_yticks(range(len(order)), order, fontsize=7)
-    fig.suptitle("Tissue-specific scanner effects relative to AT2 (rows ordered by AKOYA high-frequency transfer)",
-                 fontsize=10, color=INK, y=0.93)
+    axes[0].set_yticks(range(len(order)), [t.replace("(", " (") for t in order], fontsize=7)
+    if show_title:
+        fig.suptitle("Tissue-specific scanner effects relative to AT2 (rows ordered by AKOYA high-frequency transfer)",
+                     fontsize=10, color=INK, y=0.93)
     return fig
 
 

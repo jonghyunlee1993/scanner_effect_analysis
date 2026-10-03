@@ -36,6 +36,10 @@ env/
 /logs/
 /wandb/
 /archived/
+/analysis/paper/results/
+/analysis/revision/results/
+/.cleanup_tmp/
+/.Trash/
 /bak/runtime/
 
 # Model and experiment artifacts that may be emitted outside outputs/

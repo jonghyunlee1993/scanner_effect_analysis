@@ -1,0 +1,31 @@
+{
+  "aggregation": "location -> core -> section x scanner; five frozen folds averaged; equal scanner weight; 13 sections",
+  "gt450_learned_ssim_max_abs_difference_from_prior": 0.0,
+  "gt450_output": "/mnt/isilon/oldridge_lab/leej/prenorm/00_manuscript/analysis/results/plism_gt450_extension",
+  "gt450_raw_uni_max_abs_difference_from_prior": 4.65839637003862e-07,
+  "input_manifest_sha256": "86be3221986b8cff4bb088ebb8c4b761af953805a416d3e43e59717b0930679e",
+  "metric_contract": "SSIM, LPIPS-VGG16, UNI-v1 cosine distance, identical to prior benchmark",
+  "old_benchmark": "/mnt/isilon/oldridge_lab/leej/prenorm/outputs/scanner_batch_effect_analysis_2026-09-17/12_manuscript_completion/09_table2_benchmark",
+  "output_sha256": {
+    "table2_baseline_summary.csv": "06d995c96d8afb96702d234283d02c2d5c46ad24253661033739ecb3d1a1a32f",
+    "table2_main.tex": "c417078173301fe4c0dfe566ae075bb1b04e1bca97da52a2b20ef487d8642980",
+    "table2_main_summary.csv": "97b11631f39f1749852f8ca0c103125b444026e40765ea3cda31c8718d30c397",
+    "table2_scanner.tex": "fc47f1d475122f1ad94fba4c9dcda0ccc79d53d146e96a0736abe2addb932217",
+    "table2_scanner_summary.csv": "48507ed7bdb6823b6c901413d9dd388ecb02171456bf7c6d8815f948a37fc8fa",
+    "table_frequency_hypothesis.tex": "5422ab4b216a392a43102ae66232b381be17f711f6d7d524a6a2a22992ae7800",
+    "table_frequency_summary.csv": "ef6560ba246f4ee3e6f57faf01e4d53be28479b9f609dd3281aac8c87473ac9e"
+  },
+  "pan_scanners": [
+    "VERSA",
+    "AKOYA",
+    "GT450",
+    "S360",
+    "S60"
+  ],
+  "plism_scanners": [
+    "GT450",
+    "S360",
+    "S60"
+  ],
+  "prior_two_scanner_mean_max_abs_difference": 8.326672684688674e-17
+}

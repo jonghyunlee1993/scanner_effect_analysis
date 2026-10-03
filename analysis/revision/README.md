@@ -73,6 +73,11 @@ close these gaps without changing the study question.
 | RV12 | Can the frequency phenotype and its tissue dependence be shown directly (transfer curves, tissue × scanner map)? | ★★ | 0.5 d / CPU minutes | RV11 | done |
 | RV13 | Why are PFMs scanner-sensitive: image-only pretraining, frequency reliance, or narrow data sources? Does stain-normalized pretraining (EXAONEPath) remove only the colour part? | ★★ | 1–1.5 d / ~8 GPU-h | RV02, RV03 | done |
 | RV14 | Does a model's sensitivity to small spatial-frequency perturbations predict its robustness to real scanner differences? | ★★★ | 0.5 d / CPU | RV13 | done |
+| RV15 | Is PLIP's scanner-organized representation inherited from its natural-image parent (CLIP ViT-B/32), and where do CLIP and ResNet50-ImageNet fall on the RV14 sensitivity–robustness trend? | ★★ | 0.5 d / ~1 GPU-h | RV13, RV14 | done; removed 2026-10-02 (not in the manuscript; record in `docs/records/`) |
+| RV16 | Pilot: does the scanner composition of pretraining data alone (AT2 vs GT450, same tissue, same init and draws) change frequency-band sensitivity and the response to frequency correction? Protocol in `docs/records/removed_analyses/scanner_composition_pilot/protocol.md` | ★★ | 1 d / ~4 × 4.5 GPU-h | RV02, RV03 | done (NO-GO; exploratory signals); results removed 2026-10-02, library modules kept for RV18 |
+| RV17 | Pilot: do scanner-response endpoints follow the AT2 share of the pretraining data (100:0, 80:20, 20:80, 0:100; ViT-Tiny, blur augmentation off)? Protocol in `docs/records/removed_analyses/scanner_mixture/protocol.md` | ★★ | 0.5 d / 4 × 1 GPU-h | RV16 | done (GO: S2, S3 dose–response; single seed); results removed 2026-10-02, library modules kept for RV18 |
+| RV18 | Continued self-supervised training of UNI (ViT-L/16, 3 epochs, blur off) on AT2/GT450 mixtures (100:0, 80:20, 20:80, 0:100), two data-order seeds. Protocol in `uni_continued_protocol.md` | ★★ | 1 d / 8 × 1 GPU-h | RV17 | done (S2, S6, S3, P3 dose-dependent and replicated; band ratio monotone over 11 AT2 shares × 2 seeds at epoch 1, ρ −1.00 per seed) |
+| RV19 | Does pretraining scanner composition shift band weighting in a PFM with the opposite starting profile? Continued Virchow2 (ViT-H/14), AT2 share 0–1 in 6 steps × 2 seeds, epoch 1, then epochs 2–3 by the pre-registered contingency. Protocol in `virchow2_continued_protocol.md` | ★★ | 1 d / 24 × 1 GPU-h | RV18 | done (band ratio flat with the AT2 share at epochs 1–3, both bands moving together; S6 rises and unseen-scanner kNN falls with the AT2 share, as in UNI); the manuscript reports epoch 1, epochs 2–3 removed 2026-10-02 (record in `docs/records/`) |
 
 ★★★ required for the revision · ★★ strongly recommended · ★ optional.
 
@@ -401,6 +406,99 @@ close these gaps without changing the study question.
   all variants (PLIP and CONCH contrast).
 - **Output:** `results/sensitivity_robustness/`.
 
+## RV15 Natural-image reference encoders: CLIP (PLIP's parent) and ResNet50 (amendment)
+
+*Removed on 2026-10-02: not in the manuscript. Summary and result tables are in `docs/records/removed_analyses/reference_encoders_rv15/`.*
+
+*Added on 2026-10-01, before any RV15 outcome was computed.*
+
+- **Question:** (a) PLIP is the least scanner-robust variant in RV13/RV14 (RI 0.06; 63% of its
+  neighbours are other-tissue / same-scanner; normalized scanner distance 0.46). PLIP is CLIP
+  fine-tuned on pathology image–text pairs. Is its scanner-organized representation inherited
+  from the natural-image initialization, added by the pathology fine-tuning, or reduced by it?
+  (b) Where do two common natural-image encoders, CLIP ViT-B/32 and ResNet50-ImageNet, fall
+  relative to the RV14 sensitivity–robustness trend?
+- **Why:** without its parent, PLIP's position cannot be attributed to the fine-tuning. CLIP vs
+  PLIP is a within-backbone parent–child contrast, like SEAL vs its base model in RV13 H1.
+  ResNet50-ImageNet, used directly or as CLAM's truncated layer-3 features, is the most common
+  non-pathology encoder in WSI pipelines.
+- **Models (reference only; not added to RV14's eight-model ρ):**
+  - *CLIP ViT-B/32*, `openai/clip-vit-base-patch32`, revision `3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`
+    (`pytorch_model.bin` SHA-256 `a63082132ba4…`). PLIP was checked to be ViT-B/32: the
+    `vinid/plip` config has patch 32, width 768, 12 layers, 12 heads, projection 512, quick-GELU,
+    and its vision config and preprocessor config are identical to this checkpoint's. CLIP is
+    loaded and embedded exactly as PLIP in RV13: `CLIPModel(config)` with
+    `torch.load(weights_only=True)`, `get_image_features` (image projection, 512-d), PLIP's
+    float-tensor processor (antialiased bicubic 256 → 224, centre crop as a no-op, CLIP
+    normalization), fp32, batch 64. CLIP and PLIP therefore differ only in their weights.
+  - *ResNet50*, torchvision `IMAGENET1K_V1` (`resnet50-0676ba61.pth`, SHA-256
+    `0676ba61b6795bbe1773cffd859882e5e297624d384b6993f7c9e683e722fb8a`). Preprocessing on float
+    tensors: the whole 256 field resized to 224 (antialiased bicubic, as the other loaders),
+    ImageNet normalization, fp32. The released torchvision transform (resize 256 bilinear, centre
+    crop 224) would discard the border of the field; the full field is kept so ResNet50 sees the
+    same field as CLIP and PLIP (CLAM also resizes patches to 224). The cosine between the two
+    preprocessing choices is reported in the parity check. Two streams from one forward pass:
+    **primary `resnet50`** = global-average-pooled layer-4 features (2048-d, the classifier
+    input); secondary `resnet50_layer3` = CLAM-style truncated network (through layer 3),
+    global-average-pooled (1024-d). The features are post-ReLU (non-negative), so cosine
+    distances are compressed; every endpoint is scale-free.
+- **Conditions:** as RV13. PanNormal `set20` (103 slides × 20 locations), 81 images per location
+  (raw six scanners; Reinhard, frequency and colour + frequency to the five targets; the 60 RV02
+  band manipulations). RV13 did not store rendered images, so they are re-rendered with RV13's
+  rendering function, imported unchanged; EXAONEPath's Macenko step is skipped.
+- **Quality checks (fatal):** band renders identical to the RV02 shards (RV13 check); PLIP
+  re-embedded in the same job agrees with RV13's stored PLIP embeddings (cosine ≥ 0.999 for
+  every image, which shows that the inputs are identical); CLIP float path vs the released
+  `CLIPImageProcessor` on uint8 patches (cosine ≥ 0.999); ResNet50 weight SHA-256, and the
+  two-stream forward vs torchvision's own `forward` (cosine ≥ 0.999).
+- **Endpoints (RV13/RV14 definitions, same 2,000 slide resamples, so every difference with an RV13
+  model is paired):** band sensitivity (normalized shift; low–mid, mid, high; dose 0.25 primary,
+  0.50 secondary); normalized scanner distance; detectability (linear, MLP, k-NN, best probe);
+  six-way probe; PathoROB RI at k*; SO and OS fractions at k* (RV14 definitions, now with bootstrap
+  CIs) and their chance levels from the label counts; same-tissue retrieval; colour,
+  frequency-alone and frequency shares. Reported for CLIP, ResNet50 (both streams), PLIP, DINOv2
+  and the eight WSI-pretrained models.
+- **Primary comparison: CLIP − PLIP (paired bootstrap).**
+  - Primary endpoints (scanner organization): normalized scanner distance, RI, OS fraction.
+    Secondary: SO fraction, tissue retrieval, band sensitivities, detectability, colour and
+    frequency shares.
+  - Margin m = ¼ × |median of the eight WSI models − PLIP|, from the RV14 point estimates and
+    fixed now: normalized distance 0.064, RI 0.085, OS 0.080; SO 0.041, retrieval 0.072.
+  - Per endpoint, with Δ = CLIP − PLIP and its 95% CI: CI within (−m, +m) → **CLIP ≈ PLIP**;
+    CI entirely beyond m in the direction of CLIP being more robust (higher RI, SO or
+    retrieval; lower distance or OS) → **PLIP worse**; CI entirely beyond m in the other
+    direction → **PLIP better**; otherwise **partial / inconclusive**. Always reported with the
+    inherited share f = (W − CLIP) / (W − PLIP), W = median of the eight WSI models within each
+    resample (f ≈ 1: CLIP already has PLIP's deviation; f ≈ 0: CLIP sits with the WSI models;
+    f > 1: CLIP deviates more than PLIP).
+  - **How we read it:** CLIP ≈ PLIP → PLIP's scanner-organized representation is inherited from
+    natural-image initialization; PLIP worse → pathology fine-tuning added scanner organization;
+    PLIP better → fine-tuning helped. The overall reading is the category shared by the three
+    primary endpoints. If they differ, the reading is given per endpoint, and SO and retrieval
+    decide whether an RI difference comes from tissue information (SO and retrieval change, OS
+    and distance do not) or from scanner organization (OS and distance change).
+  - Band sensitivity: ratio CLIP / PLIP; similar if its CI lies within [0.8, 1.25], higher or
+    lower if the CI lies entirely above 1.25 or below 0.8, otherwise inconclusive.
+- **RI confound (natural-image models):** RI = SO / (SO + OS) also falls when tissue information is
+  low and the representation is not organized by scanner. A low RI is read as scanner
+  organization only if the OS fraction is above the range of the eight WSI models or the
+  normalized scanner distance is above their range; if SO and retrieval are low while OS is
+  within the WSI range, the low RI is read as weak tissue information.
+- **Position on the trend (descriptive):** ordinary least squares of RI, and of normalized scanner
+  distance, on normalized high-band sensitivity (dose 0.25) across the eight WSI models (point
+  estimates); each reference variant's residual, with a CI from refitting in every resample;
+  "on trend" if the residual lies within the range of the eight WSI residuals; flagged when the
+  sensitivity lies outside the WSI range (extrapolation). Exploratory, not a test: Spearman ρ
+  across the eight WSI models plus PLIP, DINOv2, CLIP and ResNet50 (primary stream), with a
+  permutation p from 100,000 random permutations.
+- **ResNet50 streams:** layer 3 − average pool reported as paired differences, with no decision
+  rule.
+- **Figure:** the RV14 main figure redrawn with CLIP and ResNet50 (primary) added as open
+  reference markers (new file; RV14 outputs are not overwritten).
+- **Caveat:** CLIP vs PLIP is the only controlled comparison. ResNet50 differs from every other
+  model in architecture, input resolution and objective. Results go to the supplement.
+- **Output:** `results/reference_encoders_rv15/`.
+
 ## RV05 Downstream proxy: cross-scanner tissue classification
 
 - **Question:** when a classifier is built on one scanner, does correcting images or
@@ -542,6 +640,11 @@ Script `summary_figure.py` (+ `.sbatch`); output `results/summary_figure/`.
 | 2026-09-29 | RV03 | UNI v1 embedded through the paper path (`prenorm.embedding`), not the review script, which clamps after resizing. | The smoke test showed per-location differences up to 9e-3 with the clamping path. |
 | 2026-09-29 | RV07 | Two panels: (A) image-residual reduction vs representation gain per image correction × scanner × PFM (PanNormal); (B) representation gain vs best-probe detectability (RV04b) per correction × PFM, both datasets. Tissue preservation is not encoded (it is in Tables 2–3); detectability is pooled over directions because RV04b has no per-scanner estimate. Representation gain = target gain / raw between-tissue distance of the PFM; Spearman ρ across the 35 cells per PFM added as a descriptive summary. | One panel with every encoding was unreadable; the scale-free gain avoids the blow-up of relative gains where raw distances are small (Virchow2). |
 | 2026-09-29 | RV03 | Affine OLS fitted for UNI2-h, Virchow2 and H-optimus-1 with the same code. | No paper counterpart; protocol lists OLS as secondary. |
+| 2026-10-01 | RV15 | Images re-rendered by RV13's own worker (`anchor_frequency_diversity_embed._location`, unmodified) with its Macenko slot filled by a no-op stub; the RV13 UNI v1 parity gate is replaced by a PLIP gate (PLIP re-embedded in the same job vs RV13's stored PLIP, every one of the 81 conditions, cosine ≥ 0.999). | RV13 stored no rendered images; the PLIP gate covers all conditions, including band renders, and ties CLIP's inputs to PLIP's. |
+| 2026-10-01 | RV15 | RV13 metrics code reused unmodified by pointing its module-level paths at the RV15 folder for the new streams; RV13's `model_draws("exaonepath")` write of `qc/macenko_failures.csv` is redirected to RV15 `qc/rv13_macenko_failures.csv`. SO/OS CIs weight anchors by their slide's resample count (as RI); exploratory permutation p = (1 + #{\|ρ\*\| ≥ \|ρ\|}) / (1 + 100,000). | No RV13/RV14 file is written; choices left open by the protocol. |
+| 2026-10-01 | RV15 | CLIP float path vs released `CLIPImageProcessor`: min cosine 0.99911 (PLIP in RV13: 0.99930; same 0.18 maximum pixel difference from PIL's 8-bit rounding after resize). | Passes the 0.999 gate; recorded because it is the closest to the gate. |
+| 2026-10-01 | RV15 | Figure: RV14 layout with an added dashed OLS line of the eight WSI models (descriptive, the line behind the residual read-out) and the chance label kept at the left edge as in RV14; PLIP and ResNet50 labels in panel B placed left of their points. | Shows the trend against which reference models are placed. |
+| 2026-10-01 | RV15 | Post hoc, not pre-specified: CLIP's k* is 10 and PLIP's is 5, so RI, SO and OS were also read at a common k (point estimates): k = 5, CLIP 0.083 / 0.054 / 0.597 vs PLIP 0.059 / 0.039 / 0.630; k = 10, CLIP 0.090 / 0.058 / 0.585 vs PLIP 0.069 / 0.046 / 0.624. Differences stay within the margins. Jobs: parity 24453584, smoke 24453954, embed 24456423, metric tasks 24456424, aggregate 24456426, figure redraw 24500691. | The protocol fixed each model's own k*; checked because k* differs within the pair. |
 
 ## Open issues
 
@@ -575,25 +678,31 @@ of its summary.
 | RV05 | No raw-to-target gap: a classifier built on real target-scanner embeddings classifies raw AT2 as well as the targets (0/20 PanNormal and 0/12 PLISM cells reach 2 pp; median gap −0.9 and +0.2 pp), so recovery is not computed. Several corrections lower tissue accuracy instead: Pix2Pix in Virchow2 52.0 → 43.8%, Macenko in UNI 57.5 → 51.9%; in PLISM Vahadane, Pix2Pix and CycleGAN lower Virchow2 by 8–10 pp. | `results/downstream_tissue_proxy/summary.md` |
 | RV07 | Image alignment explains part of representation alignment: Spearman ρ between image-residual reduction and representation gain across 35 correction × scanner cells 0.55 (UNI v1), 0.52 (UNI2-h), 0.17 (Virchow2, n.s.), 0.68 (H-optimus-1). In 17/35 cells the same images move at least one PFM toward and another away from the target; median range across PFMs 8.6 points of between-tissue distance. Best-probe detectability: PanNormal image 0.92–1.00, feature 0.61–0.87; PLISM ≥ 0.99 for every method. | `results/summary_figure/summary.md` |
 | RV09 | Gains depend on tissue for every method in every PFM (all BH q ≤ 0.034; scanner × tissue 8–43% of variance). For AKOYA, the frequency increment is larger in tissues with a stronger high-frequency deficit: Spearman −0.57 (UNI v1), −0.35 (Virchow2, H-optimus-1), −0.16 n.s. (UNI2-h). GT450: no association. | `results/gain_tissue_dependence/summary.md` |
+| RV15 | CLIP vs PLIP (paired, pre-registered margins): RI 0.090 vs 0.059 (Δ +0.031 [+0.014, +0.051], within m = 0.085: CLIP ≈ PLIP) and OS 0.585 vs 0.630 (Δ −0.045 [−0.070, −0.019], within 0.080: ≈), i.e. PLIP's same-scanner neighbourhoods are largely inherited from CLIP (inherited share 0.91 and 0.86); normalized scanner distance 0.357 vs 0.460 (Δ −0.103 [−0.127, −0.081], beyond 0.064: PLIP worse; share 0.60), so fine-tuning enlarged scanner distance relative to tissue distance (raw target distance 0.028 → 0.094; between-tissue distance 0.077 → 0.205). Overall reading by the rule: mixed. CLIP is ~1.8× more sensitive than PLIP in the low–mid and mid bands and similar in the high band. ResNet50 (avgpool): RI 0.17, normalized distance 0.23, best-probe detectability 0.85 (lowest of all variants), retrieval 0.23: low RI read as weak tissue information; CLAM layer 3: RI 0.12, OS 0.54 (above the WSI range), detectability 0.94. Every reference variant lies below the eight-model RI trend (residuals −0.14 to −0.33); on the normalized-distance trend DINOv2 and both ResNet50 streams are on trend, CLIP (+0.13) and PLIP (+0.22) above. Exploratory 12-model ρ (high band): −0.51 with RI (p = 0.09), +0.83 with normalized distance (p = 0.001). | `results/reference_encoders_rv15/summary.md` |
 
 ## Manuscript assets
 
-Written for the full revision of `00_manuscript/pannormal_scanner_batch_effects.tex` (2026-09-29).
-Nothing is typed by hand; every asset is regenerated by the script named.
+Written for the full revision of `00_manuscript/pannormal_scanner_batch_effects.tex` (2026-09-29),
+updated 2026-10-02 (Table 1 and its supplementary tables from the mixed-effects model only; the
+fixed-effects permutation test of RV11 is no longer reported; band figures regrouped; former Fig. 5
+`fig_image_vs_representation` and panel C of the sensitivity figure removed).
+Nothing is typed by hand; every asset is regenerated by the script named, and
+`manuscript_assets_rebuild.sbatch` reruns all producers changed on 2026-10-02.
 
 | Asset (in `00_manuscript/`) | Producer | Source results |
 | --- | --- | --- |
-| `tables/table_scanner_tissue_interaction.tex` (Table 1), `tables/table_scanner_tissue_interaction_full_supp.tex` | `manuscript_tables.py` | RV11; `analysis/paper/results/direct_slide_lmm/endpoint_summary.csv` |
+| `tables/table_scanner_tissue_interaction.tex` (Table 1), `tables/table_scanner_tissue_variance_full.tex`, `tables/table_scanner_tissue_variance_components.tex` | `manuscript_tables.py` | `analysis/paper/results/direct_slide_lmm/endpoint_summary.csv` |
 | `tables/table_image_correction_three_axis.tex` (Table 2) | `manuscript_tables.py` | RV04, RV04b |
 | `tables/table_cross_pfm_detectability.tex` (Table 3) | `manuscript_tables.py` | RV04, RV04b |
 | `tables/table_detectability_probes_supp.tex`, `tables/table_cross_pfm_distance_supp.tex` | `manuscript_tables.py` | RV04b, RV04 |
 | `tables/table_pfm_robustness_supp.tex` | `manuscript_tables.py` | RV13, RV14 |
-| `figures/fig_scanner_phenotype_transfer.{png,pdf}` (Fig. 2) | `manuscript_figure_phenotype_transfer.py` | RV-P0d positions, RV12 |
+| `figures/fig_scanner_phenotype_transfer.{png,pdf}` (Fig. 2), `figures/fig_tissue_scanner_heatmap_supp.{png,pdf}` | `manuscript_figure_phenotype_transfer.py` | RV-P0d positions, RV12, RV11 tissue means; panel C highlights from `band_summary.csv` |
 | `figures/fig_augmentation_uni_trajectories_set20.{png,pdf}` (Fig. 3) | `manuscript_figure_augmentation_trajectories.py` | RV01 |
-| `figures/fig_uni_band_sensitivity_set20.{png,pdf}` (Fig. 5), `figures/fig_{uni2,virchow2,hoptimus1}_band_sensitivity_set20_supp.{png,pdf}` | `manuscript_figure_band_sensitivity.py` | RV02 |
-| `figures/fig_sensitivity_robustness.png` (Fig. 6), `figures/fig_tissue_vs_scanner_supp.png` | copied from `results/sensitivity_robustness/` | RV14 |
-| `figures/fig_image_vs_representation.png` (Fig. 5) | copied from `results/summary_figure/` (`summary_figure.py`) | RV07 |
-| `figures/fig_tissue_scanner_heatmap_supp.png`, `figures/fig_coherence_supp.png` | copied from `results/frequency_transfer_figures/` | RV12 |
+| `figures/fig_frequency_incremental_uni_gain.png` (Fig. 4) | `analysis/paper/plot_frequency_incremental_uni_gain.py` | table 4 cross-encoder summary |
+| `figures/fig_band_sensitivity_pfms.{png,pdf}` (Fig. 5), `figures/fig_band_target_gain_supp.{png,pdf}` | `manuscript_figure_band_sensitivity.py` | RV02 |
+| `figures/fig_sensitivity_robustness.{png,pdf}` (Fig. 6, panels A-B), `figures/fig_tissue_vs_scanner_supp.{png,pdf}` | `manuscript_figure_sensitivity_robustness.py` | RV14 (`model_table.csv`, `correlations.csv`) |
+| `figures/fig_pretraining_composition_uni.{png,pdf}` (Fig. 7), `figures/fig_pretraining_composition_virchow2_supp.{png,pdf}` | `manuscript_figure_pretraining_composition.py` | RV18, RV19 |
+| `figures/fig_coherence_supp.png` | copied from `results/frequency_transfer_figures/` | RV12 |
 
-The paper asset audit (`scripts/checks/audit_paper_assets.py`, `analysis/paper/artifact_map.json`) does not
-yet list these assets; it is updated once the revised text and assets are final.
+The hash-based audit of the previous manuscript version (`scripts/checks/`,
+`analysis/paper/artifact_map.json`) was removed on 2026-10-02; this table is the asset map.

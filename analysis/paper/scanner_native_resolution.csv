@@ -1,0 +1,14 @@
+dataset,scanner,manufacturer,model,native_mpp_um_px,magnification
+PanNormal,AKOYA,Akoya Biosciences,PhenoCycler-Fusion,0.4999,20
+PanNormal,S360,Hamamatsu Photonics,NanoZoomer S360,0.4603,20
+PanNormal,S60,Hamamatsu Photonics,NanoZoomer S60,0.4426,20
+PanNormal,AT2,Leica Biosystems,Aperio AT2,0.5052,20
+PanNormal,GT450,Leica Biosystems,Aperio GT 450,0.2624,40
+PanNormal,VERSA,Leica Biosystems,Aperio VERSA,0.2742,20
+PLISM,S210,Hamamatsu Photonics,NanoZoomer S210,0.2208,40
+PLISM,S360,Hamamatsu Photonics,NanoZoomer S360,0.2297,40
+PLISM,S60,Hamamatsu Photonics,NanoZoomer S60,0.2208,40
+PLISM,SQ,Hamamatsu Photonics,NanoZoomer SQ,0.2211,40
+PLISM,AT2,Leica Biosystems,Aperio AT2,0.2532,40
+PLISM,GT450,Leica Biosystems,Aperio GT 450,0.2621,40
+PLISM,P,Philips,Ultra Fast Scanner,0.2500,40

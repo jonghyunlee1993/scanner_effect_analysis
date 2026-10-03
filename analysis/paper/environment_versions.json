@@ -1,0 +1,28 @@
+{
+  "environment": "cpath",
+  "note": "Version snapshot of the conda environment used to build and audit the finalized paper. Model weights and system libraries are separate inputs.",
+  "packages": {
+    "Pillow": "11.0.0",
+    "conch": "0.1.0",
+    "h5py": "3.14.0",
+    "huggingface-hub": "0.36.2",
+    "matplotlib": "3.9.3",
+    "neurocombat": "0.2.12",
+    "numpy": "1.26.4",
+    "opencv-python-headless": "4.11.0.86",
+    "openslide-python": "1.4.1",
+    "pandas": "2.2.3",
+    "pyvips": "3.1.1",
+    "scikit-image": "0.24.0",
+    "scikit-learn": "1.5.2",
+    "scipy": "1.13.1",
+    "timm": "1.0.12",
+    "torch": "2.5.1",
+    "torchmetrics": "1.8.2",
+    "torchvision": "0.20.1",
+    "transformers": "4.57.6"
+  },
+  "platform": "Linux-5.14.0-162.6.1.el9_1.x86_64-x86_64-with-glibc2.34",
+  "python": "3.9.25",
+  "schema": "paper_environment_versions_v1"
+}

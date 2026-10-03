@@ -2,8 +2,16 @@
 name = "scanner-spectrum"
 version = "0.1.0"
 description = "Frequency-resolved analysis of scanner effects in histopathology foundation models"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = ["numpy", "scikit-learn", "torch"]
+
+[project.optional-dependencies]
+paper = [
+  "pandas", "scipy", "h5py", "matplotlib", "scikit-image", "Pillow",
+  "opencv-python-headless", "torchvision", "torchmetrics", "timm",
+  "transformers", "huggingface-hub", "pyvips", "openslide-python",
+  "neurocombat",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -8,9 +8,14 @@ A. Colour-high-frequency map, redrawn from the data and encoding of
    and a leader line added from "AT2 reference" to the AT2 origin.
 B, C. `panel_curves` and `panel_tissues` from `analysis/revision/frequency_transfer_figures.py`
    (imported, so content is identical to RV12 `fig_transfer_curves.png`); only text sizes are
-   unified across panels and the "AT2 (reference)" note in B is moved off the curves.
+   unified across panels and the "AT2 (reference)" note in B is moved off the curves. In C, the
+   highlighted tissues are, for AKOYA and for GT450, the tissue types with the lowest and the
+   highest high-band log2 transfer (`band_summary.csv`, mean over slides) among tissue types with
+   at least two slides.
 
-Writes `00_manuscript/figures/fig_scanner_phenotype_transfer.{png,pdf}`. No new statistics.
+Writes `00_manuscript/figures/fig_scanner_phenotype_transfer.{png,pdf}` and the supplementary
+heatmap `fig_tissue_scanner_heatmap_supp.{png,pdf}` (RV12 heatmap without its in-figure title).
+No new statistics.
 """
 
 from __future__ import annotations
@@ -46,6 +51,8 @@ COLORS = {
     "s360": "#78a26d", "s60": "#9379b3", "p": "#877f73",
     "s210": "#4c9f9a", "sq": "#c37aab",
 }
+# Darker shade of the GT450 colour for its highlighted tissue curves in C.
+GT450_DARK = "#7a4c10"
 # Text sizes shared by all panels (points).
 LABEL_SIZE, TICK_SIZE, TEXT_SIZE, NAME_SIZE, LETTER_SIZE = 10.5, 9.5, 9, 10, 15
 # (offset in points, ha, va) of each scanner-mean label in panel A: the paper renderer's offsets,
@@ -103,6 +110,22 @@ def panel_phenotype(ax) -> None:
     rv12.style_axis(ax)
 
 
+def extreme_tissues() -> tuple:
+    """Lowest and highest high-band transfer per scanner, among tissue types with >= 2 slides."""
+    bands = pd.read_csv(rv12.FREQUENCY / "band_summary.csv", dtype={"slide_id": str})
+    high = bands[bands.band == "high"]
+    slides = high.groupby("tissue_type").slide_id.nunique()
+    high = high[high.tissue_type.isin(slides[slides >= 2].index)]
+    means = high.groupby(["scanner", "tissue_type"]).log2_relative_transfer.mean()
+    highlights = []
+    for scanner, color in (("akoya", rv12.INK), ("gt450", GT450_DARK)):
+        ordered = means.loc[scanner].sort_values()
+        highlights += [(scanner, ordered.index[0], "-", color), (scanner, ordered.index[-1], (0, (4, 2)), color)]
+        print(f"{scanner}: lowest {ordered.index[0]} {ordered.iloc[0]:+.3f}, "
+              f"highest {ordered.index[-1]} {ordered.iloc[-1]:+.3f}", flush=True)
+    return tuple(highlights)
+
+
 def unify_text(ax) -> None:
     """Scale the RV12 panel annotations (hard-coded at 8 pt) to the shared text size."""
     for text in ax.texts:
@@ -134,7 +157,9 @@ def main() -> None:
 
     panel_phenotype(ax_a)
     rv12.panel_curves(ax_b, spectra)
-    rv12.panel_tissues(ax_c, spectra)
+    rv12.panel_tissues(ax_c, spectra, highlights=extreme_tissues())
+    for text in ax_c.texts:
+        text.set_text(text.get_text().replace("eye(cornea)", "eye (cornea)"))
     for ax in (ax_b, ax_c):
         unify_text(ax)
     # The RV12 note sits on the low-frequency curves; place it on the zero line at the right end,
@@ -155,6 +180,15 @@ def main() -> None:
         fig.savefig(FIGURES / f"{NAME}.{suffix}", dpi=300, facecolor="white")
     plt.close(fig)
     print(f"wrote {FIGURES / NAME}.png/.pdf", flush=True)
+
+    # Supplementary Fig. S1: the RV12 tissue x scanner heatmap, without the in-figure title (the
+    # caption carries it).
+    heatmap = rv12.heatmaps(pd.read_csv(rv12.EFFECTS), show_title=False)
+    for suffix in ("png", "pdf"):
+        heatmap.savefig(FIGURES / f"fig_tissue_scanner_heatmap_supp.{suffix}", dpi=300, bbox_inches="tight",
+                        facecolor="white")
+    plt.close(heatmap)
+    print(f"wrote {FIGURES / 'fig_tissue_scanner_heatmap_supp'}.png/.pdf", flush=True)
 
 
 if __name__ == "__main__":

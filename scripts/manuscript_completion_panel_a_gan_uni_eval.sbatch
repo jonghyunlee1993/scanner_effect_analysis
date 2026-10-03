@@ -1,0 +1,1 @@
+translation/manuscript_completion_panel_a_gan_uni_eval.sbatch
